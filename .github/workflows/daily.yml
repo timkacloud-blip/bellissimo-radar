@@ -30,7 +30,7 @@ jobs:
       - name: Collect Ad Library
         run: node collector/adlib_headless.js collector/collect.js data/raw data/thumbs_store.json 2>&1 | tail -40 | tee data/logs/adlib.txt
       - name: Build site
-        run: set -o pipefail; ./build.sh 2>&1 | tee data/logs/build.txt
+        run: set -o pipefail; bash build.sh 2>&1 | tee data/logs/build.txt
       - name: Save history
         if: always()
         run: |
