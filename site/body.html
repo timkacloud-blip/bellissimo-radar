@@ -5,14 +5,49 @@
     <div class="ctrls"><div class="seg" id="lang"><button data-v="all">Все языки</button><button data-v="UZ">UZ</button><button data-v="RU">RU</button></div></div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
-    <button data-t="ov">Неделя</button><button data-t="ads">Реклама Meta</button><button data-t="off">Офферы и цены</button>
-    <button data-t="app">Приложения</button><button data-t="tg">Telegram</button><button data-t="me">Как читать</button>
+    <button data-t="boss">Для руководства</button><button data-t="ov">Неделя</button><button data-t="ads">Реклама Meta</button><button data-t="off">Офферы и цены</button>
+    <button data-t="app">Приложения</button><button data-t="tg">Telegram</button><button data-t="jr">Журнал</button><button data-t="me">Как читать</button>
   </nav>
 </header>
 
-<section class="panel" id="p-ov">
+<section class="panel" id="p-boss" hidden>
+  <p class="note" id="boss-cov" style="margin:0 0 12px"></p>
+  <div class="card c7">
+    <div class="chd"><h2>Главное за 7 дней</h2><span class="sub">новые акции, открытия, резкие изменения рекламы у конкурентов</span></div>
+    <div class="ins" id="boss-top"></div>
+  </div>
+  <div class="card c5">
+    <div class="chd"><h2>Активность в рекламе</h2><span class="sub">активные объявления в Meta: сейчас и неделю назад</span></div>
+    <div id="boss-ads"></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Офферы за 14 дней: мы и конкуренты</h2><span class="sub">цена или механика из рекламы и Telegram</span></div>
+    <div id="boss-off"></div>
+  </div>
+  <div class="card" id="boss-note-card" hidden>
+    <div class="chd"><h2>Что это значит для нас</h2><span class="sub" id="boss-note-d"></span></div>
+    <div id="boss-note" style="white-space:pre-line"></div>
+  </div>
+</section>
+
+<section class="panel" id="p-jr" hidden>
+  <div class="card">
+    <div class="chd"><h2>Журнал событий</h2><span class="sub" id="jr-sub"></span></div>
+    <div class="filters" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px">
+      <select id="jr-per"><option value="7">7 дней</option><option value="30" selected>30 дней</option><option value="9999">Всё время</option></select>
+      <select id="jr-b"><option value="">Все бренды</option></select>
+      <select id="jr-t"><option value="">Все события</option></select>
+      <label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="jr-hi"> только важные</label>
+      <label class="note" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="jr-own" checked> без Bellissimo</label>
+    </div>
+    <div id="jr-list"></div>
+    <p class="note">Журнал собирается автоматически из ежедневных снимков: Meta Ad Library, App Store, Google Play и Telegram. Событие датируется днём, когда мы его увидели (для рекламы — датой старта объявления). Ручные записи (наружка, ТВ, блогеры) помечены «Вручную».</p>
+  </div>
+</section>
+
+<section class="panel" id="p-ov" hidden>
   <div class="tiles" id="ov-tiles"></div>
-  <p class="note" style="margin:0 0 12px">Цифры обновляются каждый день в 10:40. Что значит каждая цифра и чего мы не знаем — во вкладке «Как читать».</p>
+  <p class="note" style="margin:0 0 12px">Цифры обновляются каждый день около 9:30 по Ташкенту. Что значит каждая цифра и чего мы не знаем — во вкладке «Как читать».</p>
   <div class="card c7">
     <div class="chd"><h2>Главное</h2><span class="sub">правила, без догадок: новые креативы, механики, рейтинги</span></div>
     <div class="ins" id="ov-ins"></div>
