@@ -1,0 +1,144 @@
+<div class="wrap">
+<header class="top">
+  <div class="hrow">
+    <div class="brand"><h1>Bellissimo <b>Competitor Radar</b></h1><span class="stamp" id="stamp">Загружаю данные…</span></div>
+    <div class="ctrls"><div class="seg" id="lang"><button data-v="all">Все языки</button><button data-v="UZ">UZ</button><button data-v="RU">RU</button></div></div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button data-t="ov">Неделя</button><button data-t="ads">Реклама Meta</button><button data-t="off">Офферы и цены</button>
+    <button data-t="app">Приложения</button><button data-t="tg">Telegram</button><button data-t="me">Как читать</button>
+  </nav>
+</header>
+
+<section class="panel" id="p-ov">
+  <div class="tiles" id="ov-tiles"></div>
+  <p class="note" style="margin:0 0 12px">Цифры обновляются каждый день в 10:40. Что значит каждая цифра и чего мы не знаем — во вкладке «Как читать».</p>
+  <div class="card c7">
+    <div class="chd"><h2>Главное</h2><span class="sub">правила, без догадок: новые креативы, механики, рейтинги</span></div>
+    <div class="ins" id="ov-ins"></div>
+  </div>
+  <div class="card c5">
+    <div class="chd"><h2>Доля рекламного шума</h2><span class="sub">активные объявления в UZ, Meta Ad Library</span></div>
+    <div class="bars" id="ov-sov"></div>
+    <p class="note" id="ov-sov-n"></p>
+  </div>
+  <div class="card c7">
+    <div class="chd"><h2>Активные объявления по дням</h2><span class="sub">только реальные снимки, без достраивания прошлого</span><div class="right legend" id="ov-cad-leg"></div></div>
+    <div id="ov-cad"></div>
+    <p class="note">Высота столбика — сколько активных объявлений было у брендов в этот день. Наведите на цвет, чтобы увидеть бренд.</p>
+  </div>
+  <div class="card c5">
+    <div class="chd"><h2>Куда ведёт реклама</h2><span class="sub">цель по ссылке и тексту, в сообщениях</span><div class="right legend" id="ov-goal-leg"></div></div>
+    <div class="bars" id="ov-goal"></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Новые сообщения за 7 дней</h2><span class="sub" id="ov-new-sub"></span></div>
+    <div class="gal" id="ov-new"></div>
+  </div>
+</section>
+
+<section class="panel" id="p-ads" hidden>
+  <div class="card">
+    <div class="filters">
+      <div class="chips" id="f-brand"></div>
+    </div>
+    <div class="filters">
+      <select id="f-goal" aria-label="Цель"></select>
+      <select id="f-tag" aria-label="Механика"></select>
+      <select id="f-fmt" aria-label="Формат"><option value="">Любой формат</option><option value="IMAGE">Картинка</option><option value="VIDEO">Видео</option><option value="DCO">Динамический (DCO)</option></select>
+      <select id="f-sort" aria-label="Сортировка"><option value="new">Сначала новые</option><option value="long">Дольше всех крутятся</option><option value="ver">Больше всего копий</option></select>
+      <label class="note"><input type="checkbox" id="f-hire"> показать найм</label><label class="note"><input type="checkbox" id="f-raw"> все копии</label>
+      <input type="search" id="f-q" placeholder="Поиск по тексту: 1+1, бесплатно, DODO30…">
+    </div>
+    <div class="chd"><h2 id="ads-h">Объявления</h2><span class="sub" id="ads-sub"></span></div>
+    <div class="gal" id="ads-gal"></div>
+    <div class="more"><button class="btn ghost" id="ads-more" hidden>Показать ещё</button></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Долгожители</h2><span class="sub">крутятся 30+ дней — косвенный признак, что реклама работает</span></div>
+    <div class="tbl" id="ads-long"></div>
+  </div>
+</section>
+
+<section class="panel" id="p-off" hidden>
+  <div class="card">
+    <div class="chd"><h2>Главный оффер по брендам</h2><span class="sub">у каждого объявления один главный оффер — по заголовку, без стандартных строк про доставку за 35 минут</span></div>
+    <div class="tbl" id="off-mx"></div>
+  </div>
+  <div class="card c6">
+    <div class="chd"><h2>Цены в рекламе</h2><span class="sub">цены офферов; скидки, минималки и зарплаты исключены</span></div>
+    <div class="tbl" id="off-pr"></div>
+  </div>
+  <div class="card c6">
+    <div class="chd"><h2>Промокоды</h2><span class="sub">найдены в рекламе и Telegram</span></div>
+    <div class="tbl" id="off-codes"></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Офферы дословно</h2><span class="sub">уникальные тексты без найма, свежие сверху</span></div>
+    <div class="tbl" id="off-list"></div>
+  </div>
+</section>
+
+<section class="panel" id="p-app" hidden>
+  <div class="card c8">
+    <div class="chd"><h2>App Store, Узбекистан</h2><span class="sub">место в «Еда и напитки», оценки, версия</span></div>
+    <div class="tbl" id="app-ios"></div>
+  </div>
+  <div class="card c4">
+    <div class="chd"><h2>Топ-25 «Еда и напитки»</h2><span class="sub" id="app-ch-sub"></span></div>
+    <div class="rank" id="app-chart"></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Google Play</h2><span class="sub">рейтинг, отзывы, установки, последнее обновление</span></div>
+    <div class="tbl" id="app-play"></div>
+    <p class="note">Прирост оценок в день — лучший бесплатный индикатор установок. Появится со второго дня сбора.</p>
+  </div>
+</section>
+
+<section class="panel" id="p-tg" hidden>
+  <div class="tiles" id="tg-tiles"></div>
+  <div class="card">
+    <div class="chd"><h2>Последние посты</h2><span class="sub">просмотры — охват канала</span></div>
+    <div id="tg-posts"></div>
+  </div>
+</section>
+
+<section class="panel" id="p-me" hidden>
+  <div class="card c6">
+    <div class="chd"><h2>Как считаем</h2></div>
+    <dl class="gloss">
+      <dt>Объявления</dt><dd>Как считает Meta. Одна и та же картинка на двух языках, в разных размерах или в разных группах — это несколько объявлений. Показывает, насколько широко бренд раскатил рекламу.</dd>
+      <dt>Сообщения</dt><dd>Разные по тексту объявления. Пример: у KFC 139 объявлений, но по сути это 3 сообщения — комбо «Yoki Yoki» на UZ и RU и открытие филиала. Показывает, сколько разных идей бренд сейчас крутит. В галерее похожие объявления склеены в одну карточку.</dd>
+      <dt>Новые за 7 дней</dt><dd>Сообщения, у которых дата старта в Meta — последние 7 дней.</dd>
+      <dt>Активные по дням</dt><dd>Только дни, когда мы реально сняли данные. Мы собираем их с 14.10.2026, поэтому история пока короткая и растёт каждый день. Прошлое мы не достраиваем.</dd>
+      <dt>Долгожители</dt><dd>Объявления, которые крутятся 30+ дней. Бренды редко держат долго то, что не работает, но это косвенный признак, не факт.</dd>
+    </dl>
+  </div>
+  <div class="card c6">
+    <div class="chd"><h2>Чего мы не знаем</h2></div>
+    <dl class="gloss">
+      <dt>Бюджеты и охваты</dt><dd>Meta не раскрывает их для Узбекистана. Больше объявлений ≠ больше денег.</dd>
+      <dt>Выключенные объявления</dt><dd>Meta показывает только то, что активно сейчас. Что бренд крутил до 14.10 и уже выключил, мы не видим.</dd>
+      <dt>Результаты конкурентов</dt><dd>Продажи, установки и стоимость заказа у конкурентов неизвестны. Места в App Store — единственный косвенный показатель скачиваний.</dd>
+      <dt>Другие каналы</dt><dd>Google, Яндекс, Telegram Ads, блогеры здесь не учитываются, только Meta, магазины приложений и публичные Telegram-каналы.</dd>
+    </dl>
+  </div>
+    <div class="card c6">
+    <div class="chd"><h2>Откуда данные</h2></div>
+    <dl class="gloss">
+      <dt>Meta Ad Library</dt><dd>Все активные объявления страниц брендов в Узбекистане: текст, формат, площадки, дата старта. «Вариантов» — сколько объявлений Meta склеила с этим креативом, включая остановленные. По Bellissimo сюда попадает вся страница (франшиза, найм, филиалы), а не только наш рекламный кабинет. Охват и бюджеты Meta для UZ не раскрывает.</dd>
+      <dt>App Store</dt><dd>Место в чарте «Еда и напитки» (UZ), число и средняя оценок, распределение 5→1, версия.</dd>
+      <dt>Google Play</dt><dd>Рейтинг, число отзывов, порог установок, дата обновления.</dd>
+      <dt>Telegram</dt><dd>Публичные каналы: подписчики, посты, просмотры.</dd>
+      <dt>Цель</dt><dd>По ссылке объявления: магазин приложений → «Приложение», карты → «Филиал», формы найма → «Найм» и т.д.</dd>
+      <dt>Главный оффер</dt><dd>Определяется по первым строкам объявления (дальше обычно перевод и стандартный текст). Строки вроде «бесплатная доставка за 35 минут» и «опоздал курьер — промокод» считаются обещанием сервиса, а не оффером. Каталожная реклама из фида помечается отдельно.</dd>
+    </dl>
+  </div>
+  <div class="card c6">
+    <div class="chd"><h2>Бренды</h2></div>
+    <div class="tbl" id="me-br"></div>
+    <p class="note" id="me-upd"></p>
+  </div>
+</section>
+</div>
+<script src="app.js?v=1"></script>
