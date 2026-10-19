@@ -1,1 +1,18 @@
-/home/runner/work/_temp/523fd5dd-284b-4ff9-b9aa-e60435357363.sh: line 1: ./build.sh: Permission denied
+ads 356 active 307 thumbs 356 insights 26 dates ['2026-10-14', '2026-10-15', '2026-10-19']
+journal 28 events; 22 high
+_site:
+total 72
+drwxr-xr-x 3 runner runner  4096 Oct 19 06:49 .
+drwxr-xr-x 9 runner runner  4096 Oct 19 06:49 ..
+-rw-r--r-- 1 runner runner     0 Oct 19 06:49 .nojekyll
+-rw-r--r-- 1 runner runner 26365 Oct 19 06:49 app.js
+drwxr-xr-x 2 runner runner  4096 Oct 19 06:49 data
+-rw-r--r-- 1 runner runner 31423 Oct 19 06:49 index.html
+
+_site/data:
+total 4292
+drwxr-xr-x 2 runner runner    4096 Oct 19 06:49 .
+drwxr-xr-x 3 runner runner    4096 Oct 19 06:49 ..
+-rw-r--r-- 1 runner runner  327119 Oct 19 06:49 comp.json
+-rw-r--r-- 1 runner runner   12547 Oct 19 06:49 journal.json
+-rw-r--r-- 1 runner runner 4042700 Oct 19 06:49 thumbs.json
