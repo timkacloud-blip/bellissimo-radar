@@ -1,0 +1,22 @@
+{
+ "play": {
+  "ok": true,
+  "msg": "11 прил.",
+  "at": "07:05"
+ },
+ "tg": {
+  "ok": true,
+  "msg": "evos:15.1K/12 uzum:24.6K/8 safia:8.51K/20",
+  "at": "07:05"
+ },
+ "ios": {
+  "ok": true,
+  "msg": "11 прил., чарт 25",
+  "at": "07:06"
+ },
+ "adlib": {
+  "ok": false,
+  "msg": "HTTP Error 403: Client challenge",
+  "at": "07:17"
+ }
+}
