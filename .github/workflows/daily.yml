@@ -26,12 +26,13 @@ jobs:
       - name: Install Playwright
         run: npm install --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
       - name: Collect apps and Telegram
-        run: python3 collector/collect.py all
+        run: python3 collector/collect.py all 2>&1 | tee data/logs/collect.txt
       - name: Collect Ad Library
-        run: node collector/adlib_headless.js collector/collect.js data/raw data/thumbs_store.json
+        run: node collector/adlib_headless.js collector/collect.js data/raw data/thumbs_store.json 2>&1 | tail -40 | tee data/logs/adlib.txt
       - name: Build site
-        run: ./build.sh
+        run: set -o pipefail; ./build.sh 2>&1 | tee data/logs/build.txt
       - name: Save history
+        if: always()
         run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
