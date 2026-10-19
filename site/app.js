@@ -4,7 +4,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const fmt=n=>n==null||!isFinite(n)?"—":Math.round(n).toLocaleString("ru-RU");
 const kfmt=n=>n==null?"—":n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+" млн":n>=1e4?Math.round(n/1e3)+" тыс":fmt(n);
 const ls={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const S={tab:ls.get("cr.tab","ov"),lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,limit:60};
+const S={tab:ls.get("cr.tab","boss"),lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,limit:60};
 let D=null, TH={}, thumbsLoaded=false;
 
 async function load(u,tries=4){ for(let i=0;i<tries;i++){ try{ const r=await fetch(u,{cache:"no-cache"}); if(r.ok) return await r.json() }catch(e){} await new Promise(r=>setTimeout(r,600*(i+1))) } throw new Error("Не удалось загрузить "+u) }
@@ -131,8 +131,39 @@ function renderMe(){
   $("#me-upd").textContent=`Снимков: ${D.info.dates.length} (${D.info.dates[0]} — ${L}). Собрано ${D.info.built} UTC. Обновляется ежедневно утром.`;
 }
 
-const R={ov:renderOv,ads:renderAds,off:renderOff,app:renderApp,tg:renderTg,me:renderMe};
-function show(t){ S.tab=R[t]?t:"ov"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); R[S.tab](); rise($("#p-"+S.tab)) }
+
+// ---------- leadership + journal ----------
+let J={events:[],coverage:{}};
+const TYP={offer:"Оффер",open:"Открытие",ads:"Реклама",wave:"Новые креативы",app:"Приложение",rating:"Рейтинг и топ",hire:"Найм",other:"Другое"};
+const dfmt=x=>x?x.slice(8,10)+"."+x.slice(5,7):"—";
+const dago=(d,n)=>{ const t=new Date(Date.now()+5*3600e3); t.setUTCDate(t.getUTCDate()-n); return t.toISOString().slice(0,10)>d };
+function evRow(e){ const lv=e.imp==="high"?"p-acc":"p-mute";
+  return `<div class="srow"><span class="pill ${lv}">${esc(TYP[e.type]||e.type)}</span><div><div class="t">${dot(e.b)}<b>${esc(B(e.b).name)}</b> · ${dfmt(e.date)} · ${esc(e.title)}</div>${e.detail?`<div class="m">${esc(e.detail.slice(0,200))}</div>`:""}<div class="m">${esc(e.src||"")}${e.link?` · <a href="${esc(e.link)}" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:none">открыть ↗</a>`:""}</div></div></div>` }
+function renderBoss(){
+  const cov=J.coverage||{}, last7=d=>!dago(d,7), ad=(cov.adlib||[]).filter(last7).length;
+  $("#boss-cov").textContent=`Реклама Meta собрана за ${ad} из последних 7 дней · приложения и Telegram — ежедневно. Сравнение идёт только по реальным снимкам.`;
+  const top=J.events.filter(e=>e.imp==="high"&&e.b!=="bellissimo"&&last7(e.date));
+  $("#boss-top").innerHTML=top.slice(0,8).map(evRow).join("")||'<div class="empty">За 7 дней крупных изменений у конкурентов не было</div>';
+  const ds=Object.keys(D.daily).sort(), now=ds[ds.length-1], wk=[...ds].reverse().find(d=>dago(d,6)&&d<now)||ds[0];
+  const T=d=>ORDER.reduce((s,b)=>s+(((D.daily[d]||{})[b]||{}).total||0),0);
+  const rows=ORDER.filter(b=>(D.daily[now]||{})[b]).sort((x,y)=>D.daily[now][y].total-D.daily[now][x].total).map(b=>{ const n=D.daily[now][b].total, o=((D.daily[wk]||{})[b]||{}).total, ch=o?Math.round(100*(n-o)/o):null;
+    return `<tr><td>${bname(b)}</td><td><b>${fmt(n)}</b></td><td>${o==null?"—":fmt(o)}</td><td>${ch==null||wk===now?"—":`<span class="${ch>0?"up":ch<0?"dn":""}">${ch>0?"+":""}${ch}%</span>`}</td><td>${(100*n/Math.max(1,T(now))).toFixed(0)}%</td></tr>` }).join("");
+  $("#boss-ads").innerHTML=`<table><thead><tr><th>Бренд</th><th>Сейчас</th><th>${wk===now?"Неделю назад":dfmt(wk)}</th><th>Изменение</th><th>Доля</th></tr></thead><tbody>${rows}</tbody></table><p class="note">Доля — от всех активных объявлений брендов в радаре на ${dfmt(now)}.</p>`;
+  const off=J.events.filter(e=>(e.type==="offer")&&!dago(e.date,14));
+  const by={}; off.forEach(e=>{ (by[e.b]=by[e.b]||[]).push(e) });
+  $("#boss-off").innerHTML=Object.keys(by).length?`<table><thead><tr><th>Бренд</th><th>Дата</th><th style="text-align:left">Оффер</th><th>Где</th></tr></thead><tbody>${ORDER.filter(b=>by[b]).flatMap(b=>by[b].slice(0,3).map(e=>`<tr><td>${bname(b)}</td><td>${dfmt(e.date)}</td><td style="text-align:left;white-space:normal;max-width:640px"><b>${esc(e.title.replace(/^(Новый оффер|Акция в Telegram)\s*·?\s*/,"")||"")}</b> ${esc(e.detail.slice(0,150))}</td><td>${e.link?`<a href="${esc(e.link)}" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:none">${esc(e.src)} ↗</a>`:esc(e.src)}</td></tr>`)).join("")}</tbody></table>`:'<div class="empty">Новых офферов за 14 дней не найдено</div>';
+  if(J.note&&J.note.text){ $("#boss-note-card").hidden=false; $("#boss-note").textContent=J.note.text; $("#boss-note-d").textContent="от "+dfmt(J.note.date) }
+}
+function renderJr(){
+  const per=+$("#jr-per").value, bb=$("#jr-b").value, tt=$("#jr-t").value, hi=$("#jr-hi").checked, own=$("#jr-own").checked;
+  if($("#jr-b").options.length<2){ $("#jr-b").innerHTML+=ORDER.filter(b=>J.events.some(e=>e.b===b)).map(b=>`<option value="${b}">${esc(B(b).name)}</option>`).join(""); $("#jr-t").innerHTML+=Object.keys(TYP).filter(t=>J.events.some(e=>e.type===t)).map(t=>`<option value="${t}">${TYP[t]}</option>`).join("") }
+  const E=J.events.filter(e=>!dago(e.date,per)&&(!bb||e.b===bb)&&(!tt||e.type===tt)&&(!hi||e.imp==="high")&&(!own||e.b!=="bellissimo"));
+  $("#jr-sub").textContent=E.length+" событий · снимки рекламы с "+dfmt((J.coverage.adlib||[])[0]);
+  $("#jr-list").innerHTML=E.map(evRow).join("")||'<div class="empty">Событий нет</div>';
+}
+["#jr-per","#jr-b","#jr-t","#jr-hi","#jr-own"].forEach(s=>$(s).addEventListener("change",()=>renderJr()));
+const R={boss:renderBoss,jr:renderJr,ov:renderOv,ads:renderAds,off:renderOff,app:renderApp,tg:renderTg,me:renderMe};
+function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); R[S.tab](); rise($("#p-"+S.tab)) }
 function rerender(){ R[S.tab]() }
 
 $("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.t) });
@@ -147,6 +178,7 @@ $("#ads-more").addEventListener("click",()=>{ S.limit+=60; renderAds() });
 (async()=>{
   try{ D=await load("data/comp.json") }catch(e){ $("#stamp").textContent=e.message; return }
   const ad_=D.info.date, ap_=Object.keys(D.apps||{}).sort().pop()||"—", f_=x=>x&&x.length>=10?x.slice(8,10)+"."+x.slice(5,7):x; $("#stamp").textContent=`Реклама на ${f_(ad_)} · приложения на ${f_(ap_)} · Telegram на ${f_(Object.keys(D.tg_hist||{}).sort().pop()||"—")} · обновлено ${f_(D.info.built.slice(0,10))} ${D.info.built.slice(11,16)} UTC`;
+  try{ J=await load("data/journal.json") }catch(e){}
   $$("#lang button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v==="all"));
   show(S.tab);
   try{ TH=await load("data/thumbs.json") }catch(e){ TH={} }
