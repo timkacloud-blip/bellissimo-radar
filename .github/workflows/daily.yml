@@ -1,0 +1,43 @@
+name: daily
+on:
+  schedule:
+    - cron: '10 4 * * *'   # 09:10 Tashkent
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: daily
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pillow
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
+      - name: Collect apps and Telegram
+        run: python3 collector/collect.py all
+      - name: Collect Ad Library
+        run: node collector/adlib_headless.js collector/collect.js data/raw data/thumbs_store.json
+      - name: Build site
+        run: ./build.sh
+      - name: Save history
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data
+          git commit -m "data $(date -u +%F)" || echo "nothing to commit"
+          git push
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - uses: actions/deploy-pages@v4
