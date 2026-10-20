@@ -162,7 +162,11 @@ function renderJr(){
   $("#jr-list").innerHTML=E.map(evRow).join("")||'<div class="empty">Событий нет</div>';
 }
 ["#jr-per","#jr-b","#jr-t","#jr-hi","#jr-own"].forEach(s=>$(s).addEventListener("change",()=>renderJr()));
-function renderMn(){ const p=document.getElementById("p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>'; fetch("mentions_frag.html?"+Date.now()).then(r=>{ if(!r.ok) throw 0; return r.text() }).then(h=>{ p.innerHTML=h; p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Данные упоминаний пока не опубликованы.</div>' }) }
+function renderMn(){ const p=document.getElementById("p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>';
+  if(!p.dataset.wired){ p.dataset.wired=1; p.addEventListener("click",e=>{
+    const sg=e.target.closest("#mn-seg button"); if(sg){ p.querySelectorAll("#mn-seg button").forEach(b=>b.setAttribute("aria-pressed",b===sg)); p.querySelectorAll(".mn-svg").forEach(d=>d.hidden=d.dataset.n!==sg.dataset.n); return }
+    const ch=e.target.closest("#mn-chips .chip"); if(ch){ const on=ch.getAttribute("aria-pressed")!=="true"; ch.setAttribute("aria-pressed",on); p.querySelectorAll('path[data-b="'+ch.dataset.b+'"]').forEach(x=>x.style.display=on?"":"none") } }) }
+  fetch("mentions_frag.html?"+Date.now()).then(r=>{ if(!r.ok) throw 0; return r.text() }).then(h=>{ p.innerHTML=h; p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Данные упоминаний пока не опубликованы.</div>' }) }
 const R={mn:renderMn,boss:renderBoss,jr:renderJr,ov:renderOv,ads:renderAds,off:renderOff,app:renderApp,tg:renderTg,me:renderMe};
 function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); R[S.tab](); rise($("#p-"+S.tab)) }
 function rerender(){ R[S.tab]() }
