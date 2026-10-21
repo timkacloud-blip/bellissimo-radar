@@ -19,7 +19,7 @@ const INFO={
  search:"Сколько людей ищут бренд в Google в Узбекистане. Это интерес людей, он не зависит от нашей рекламы. Google отдаёт индекс, а не число запросов. Доли считаются от суммы по всем 14 брендам.",
  talk:"Сколько раз бренд упомянули чужие: новостные сайты и каналы, чаты и блогеры, области, YouTube. Наши посты, реклама, комментарии под ними, пересылки и промокоды не считаются. Доля = упоминания бренда / упоминания всех брендов за период.",
  rev:"Сколько новых отзывов получило приложение в магазине. Показывает, о чьём приложении люди пишут чаще. Dodo и Yandex не входят: их приложение одно на несколько стран.",
- rat:"Оценка приложения в магазине и как она изменилась за выбранный период. История копится с момента запуска сбора.",
+ rat:"Оценка приложения в магазине и как она изменилась за выбранный период. Данные из вкладки «Приложения», снимки ежедневно с 14.10. Рейтинг App Store округлён до 0,1.",
  ig:"Рост подписчиков за период и активность вокруг аккаунтов. Это не упоминания, а размер и живость аккаунта. У аккаунтов с розыгрышами комментарии накручены."
 };
 const CSS=`#p-mn tr.me td{background:var(--acc-soft);font-weight:650}#p-mn .info{color:var(--fg3);cursor:help;font-size:13px}
@@ -104,14 +104,14 @@ out.push(card("Как пользоваться","коротко",`<p class="note
   tile("Доля негатива",negPct(O).toFixed(0)+"%",OKP?dlt(negPct(O),negPct(OP),true,"%"):NOC,negPct(O)>=20?"st-bad":negPct(O)>=10?"st-warn":"st-good"),
   tile("Негативных",O.o.neg,OKP?dlt(O.o.neg,OP.o.neg,true):NOC),
   tile("Google Play",lp?"★ "+lp[3].toFixed(2):"—",bp&&lp?dlt(lp[3],bp[3],false,"★"):'<span class="note">наше приложение</span>'),
-  tile("App Store",la?"★ "+la[3].toFixed(2):"—",ba&&la?dlt(la[3],ba[3],false,"★"):'<span class="note">наше приложение</span>')].join("")+"</div>");
+  tile("App Store",la?"★ "+la[3].toFixed(1):"—",ba&&la?dlt(la[3],ba[3],false,"★"):'<span class="note">наше приложение</span>')].join("")+"</div>");
  /* полнота данных */
  {const c=CV(),f=d=>d?`<span class="${d>R.a?"cw":""}">${dm(d)}${d>R.a?" ⚠":""}</span>`:"–",tg=c.tgw||{};
   const rowsC=[["Google Trends (поиск)",f(c.trends),"данные по неделям, год назад"],
    ["Наши комментарии в Instagram",f((c.own||{}).ig),"под нашими постами"],["Комментарии под рекламой",f((c.own||{}).ads),"Facebook и Instagram"],
    ["Отзывы Google Play: наши / конкурентов",f((c.own||{}).play)+" / "+f((c.rev_comp||{}).play),"у конкурентов история короче, доли считаются с общей даты"],
    ["Отзывы App Store: наши / конкурентов",f((c.own||{}).appstore)+" / "+f((c.rev_comp||{}).appstore),""],
-   ["Рейтинги приложений / Instagram конкурентов",f(c.rat)+" / "+f(c.ig),"история копится с запуска, рост виден с этой даты"],
+   ["Рейтинги приложений (вкладка «Приложения»)",f(c.rat),"ежедневные снимки Google Play и App Store"],["Instagram конкурентов",f(c.ig),"история копится с запуска, рост виден с этой даты"],
    ["Telegram: поиск и список каналов",f((c.talk||{}).tg),tg.total?(tg.full?"список из "+tg.total+" каналов прочитан":`прочитано ${tg.read} из ${tg.total} каналов, идёт сбор`):""],
    ["YouTube",f((c.talk||{}).yt),"видео и комментарии, собирается по лимиту запросов"],
    ["Сайты СМИ",c.media_on?f((c.talk||{}).media):"не подключены","лента новостных сайтов"]];
@@ -133,8 +133,8 @@ out.push(card("Как пользоваться","коротко",`<p class="note
  out.push(revCard("Отзывы: Google Play","play",rp,rpp,"play"));out.push(revCard("Отзывы: App Store","appstore",ra,rap,"appstore"));
  /* рейтинги */
  {const brs=[...new Set(D.rat.map(r=>r[1]))].sort((x,y)=>(x!=="bellissimo")-(y!=="bellissimo")||(latest("play",y)?latest("play",y)[4]:0)-(latest("play",x)?latest("play",x)[4]:0));
-  const cell=(st,b)=>{const l=latest(st,b),bs=base(st,b);if(!l)return"–";const d0=bs?l[3]-bs[3]:null,d=d0!=null&&Math.abs(d0)>=0.005?d0:null,dc0=bs&&l[4]!=null&&bs[4]!=null?l[4]-bs[4]:null,dc=dc0;return `★ ${l[3].toFixed(2)}${d!=null?` <span class="${d>0.004?"cg":d<-0.004?"cb":"note"}">${sg(d,"",2)}</span>`:""}${dc!=null&&dc!==0?` <span class="note" data-tip="Прирост числа оценок за период">${dc>=0?"+":"−"}${fn(Math.abs(dc))} оц.</span>`:""}`};
-  const rows=brs.filter(sel).map(b=>row([dot(b)+E(nm(b)),cell("play",b),cell("appstore",b),fn((latest("appstore",b)||[])[4])],b==="bellissimo")).join("");
+  const cell=(st,b)=>{const l=latest(st,b),bs=base(st,b);if(!l)return"–";const d0=bs?l[3]-bs[3]:null,d=d0!=null&&Math.abs(d0)>=0.005?d0:null,dc0=bs&&l[4]!=null&&bs[4]!=null?l[4]-bs[4]:null,dc=dc0;if(st==="appstore"){const dc1=bs&&l[4]!=null&&bs[4]!=null?l[4]-bs[4]:null;return `★ ${l[3].toFixed(1)}${dc1?` <span class="note" data-tip="Прирост числа оценок за период">${dc1>=0?"+":"−"}${fn(Math.abs(dc1))} оц.</span>`:""}`}return `★ ${l[3].toFixed(2)}${d!=null?` <span class="${d>0.004?"cg":d<-0.004?"cb":"note"}">${sg(d,"",2)}</span>`:""}${dc!=null&&dc!==0?` <span class="note" data-tip="Прирост числа оценок за период">${dc>=0?"+":"−"}${fn(Math.abs(dc))} оц.</span>`:""}`};
+  const rows=brs.filter(sel).map(b=>row([dot(b)+E(nm(b))+(b==="dodo"||b==="yandex"?' <span class="note" data-tip="В Google Play у Dodo и Yandex один мировой рейтинг, не только Узбекистан">(мир)</span>':""),cell("play",b),cell("appstore",b),fn((latest("appstore",b)||[])[4])],b==="bellissimo")).join("");
   out.push(card("Рейтинги приложений",(CV().rat&&CV().rat>R.a?`история с ${dm(CV().rat)}: изменения видны с ${dm(CV().rat)}`:`изменения с ${dm(R.a)}`),tbl(["Бренд","Google Play","App Store","Оценок в App Store"],rows)+'<p class="note">Зелёное и красное число рядом с оценкой показывает, на сколько она изменилась. Изменения показываются, если сохранено не меньше 3 дней истории.</p>',"c6","",INFO.rat))}
  /* instagram */
  {const brs=[...new Set(D.ig.map(r=>r[1]))];const L=b=>{const r=D.ig.filter(x=>x[1]===b&&x[0]<=R.b);return r.length?r[r.length-1]:null},B=b=>{const r=D.ig.filter(x=>x[1]===b&&x[0]>=R.a&&x[0]<=R.b);return r.length>1&&nd(r[0][0],r[r.length-1][0])>=3?r[0]:null};
@@ -180,7 +180,14 @@ function paint(root){root.querySelector("#mn-body").innerHTML=blocks();
  root.querySelectorAll("#mn-per button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===M.preset));
  root.querySelectorAll("#mn-chips .chip[data-b]").forEach(b=>{if(b.dataset.b!=="*")b.setAttribute("aria-pressed",sel(b.dataset.b))});
  {const R=range();root.querySelector("#mn-pnote").innerHTML=`Период: <b>${dm(R.a)}–${dm(R.b)}</b> (${R.L} дн.). Сравниваем с: <b>${dm(R.pa)}–${dm(R.pb)}</b> (предыдущие ${R.L} дн.).`}root.querySelector("#mn-from").value=M.from;root.querySelector("#mn-to").value=M.to}
-window.renderMentions=function(panel,data){D=data;
+const EXTRA_COL={papajohns:"#c2410c",dominos:"#2b6cb0",apex:"#8d8d8d"};
+let CTX=null;
+function ratFromApps(apps){const rows=[];Object.keys(apps||{}).sort().forEach(d=>{const a=apps[d]||{};for(const b in a.play||{}){const v=a.play[b];if(v&&v[0]!=null)rows.push([d,b,"play",+v[0],v[1]])}for(const b in a.ios||{}){const v=a.ios[b];if(v&&v[0]!=null)rows.push([d,b,"appstore",+v[1],v[0]])}});return rows}
+function applyCtx(ctx){CTX=ctx||null;Object.assign(COL,EXTRA_COL);if(!ctx)return;
+ if(ctx.brands)for(const b in ctx.brands)if(ctx.brands[b].color)COL[b]=ctx.brands[b].color;
+ if(ctx.apps){const r=ratFromApps(ctx.apps);if(r.length){D.rat=r;D.cov=D.cov||{};D.cov.rat=r[0][0]}}}
+window.mentionsSummary=function(data,ctx,days){const keep=D;D=data;try{applyCtx(ctx);const b=D.today,a=ad(b,-((days||30)-1));return{a,b,S:searchAgg(a,b),T:talkAgg(a,b,"all"),O:ownAgg(a,b),cov:CV(),names:D.names,rat:D.rat}}finally{D=keep}};
+window.renderMentions=function(panel,data,ctx){D=data;applyCtx(ctx);
  const dates=[...D.trends.map(r=>r[0]),...D.own.map(r=>r[0]),...D.talk.map(r=>r[0]),...D.rev.map(r=>r[0])].sort();P={min:dates[0]||ad(D.today,-90)};
  setPreset("30");
  panel.innerHTML=barHtml()+'<div id="mn-body" style="display:contents"></div>';paint(panel);

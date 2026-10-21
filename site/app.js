@@ -126,20 +126,39 @@ function renderTg(){
 }
 
 function renderMe(){
-  const L=D.info.date, day=D.daily[L]||{};
+  const L=D.info.date, day=D.daily[L]||{}, dd=Object.keys(D.daily).sort(), aa=Object.keys(D.apps).sort(), tt=Object.keys(D.tg_hist||{}).sort();
   $("#me-br").innerHTML=`<table><thead><tr><th>Бренд</th><th>Объявлений</th><th>Групп</th><th>Подписчиков страницы</th></tr></thead><tbody>${ORDER.filter(b=>D.brands[b]).map(b=>`<tr><td>${bname(b)}</td><td>${day[b]?fmt(day[b].total):"—"}</td><td>${day[b]?fmt(day[b].groups):"—"}</td><td>${fmt(B(b).likes)}</td></tr>`).join("")}</tbody></table>`;
-  $("#me-upd").textContent=`Снимков: ${D.info.dates.length} (${D.info.dates[0]} — ${L}). Собрано ${D.info.built} UTC. Обновляется ежедневно утром.`;
+  const c=(MN&&MN.cov)||null, f=x=>x?dfmt(x)+(x.slice(0,4)!==String(new Date().getFullYear())?"."+x.slice(2,4):""):"—", tg=(c&&c.tgw)||{};
+  const R1=[
+    ["Реклама Meta (Ad Library)",f(dd[0]),"каждый день ~09:10","Все активные объявления страниц брендов в Узбекистане. Бюджетов и охвата нет."],
+    ["App Store: чарт, оценки",f(aa[0]),"каждый день","Место в «Еда и напитки», число и средняя оценок, версия."],
+    ["Google Play: рейтинг, отзывы",f(aa[0]),"каждый день","Рейтинг, число отзывов, порог установок, дата обновления."],
+    ["Telegram: официальные каналы",f(tt[0]),"каждый день","Подписчики и посты брендов, у которых есть публичный канал."]];
+  const R2=c?[
+    ["Google Trends (интерес в Google)",f(c.trends),"неделя за неделей","Индекс 0–100, не число запросов."],
+    ["Telegram: чужие каналы и чаты",f((c.talk||{}).tg),"утром и вечером",`Прочитано ${tg.read||0} из ${tg.total||"?"} каналов${tg.full?"":", первичный проход не закончен"}. Только публичные каналы.`],
+    ["Сайты СМИ",c.media_on?"подключены":"не подключены","утром и вечером","Ленты новостных сайтов (RSS)."],
+    ["Отзывы в магазинах, наши",f((c.own||{}).play),"утром и вечером","Тексты отзывов Google Play и App Store."],
+    ["Отзывы в магазинах, конкурентов",f((c.rev_comp||{}).play)+" / "+f((c.rev_comp||{}).appstore),"утром и вечером","Play / App Store. У конкурентов история короче."],
+    ["Комментарии под нашими постами",f((c.own||{}).ig),"утром и вечером","Instagram и Facebook."],
+    ["Комментарии под нашей рекламой",f((c.own||{}).ads),"утром и вечером","Часть комментариев Meta не отдаёт, негатив может быть занижен."],
+    ["YouTube",f((c.talk||{}).yt),"утром и вечером","Собирается по лимиту запросов, сейчас часто недоступен."],
+    ["Instagram конкурентов: подписчики",f(c.ig),"каждый день","Только число подписчиков, рост виден с этой даты."]]:[["Данные «Упоминаний» загружаются…","","",""]];
+  const rows=[...R1.map(r=>["Радар",...r]),...R2.map(r=>["Упоминания",...r])];
+  $("#me-src").innerHTML=`<table><thead><tr><th style="text-align:left">Источник</th><th>Данные с</th><th>Обновление</th><th style="text-align:left">Что и ограничения</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="text-align:left;white-space:normal">${esc(r[1])} <span class="note">· ${r[0]}</span></td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td style="text-align:left;white-space:normal">${esc(r[4])}</td></tr>`).join("")}</tbody></table>`;
+  $("#me-upd").textContent=`Снимков рекламы: ${dd.length} (${dd[0]} — ${dd[dd.length-1]}). Радар собран ${D.info.built} UTC и обновляется каждое утро. Упоминания обновляются на рабочем Mac утром и вечером.`;
+  if(!MN) loadMn().then(()=>{ if(S.tab==="me") renderMe() });
 }
 
 
 // ---------- leadership + journal ----------
 let J={events:[],coverage:{}};
-const TYP={offer:"Оффер",open:"Открытие",ads:"Реклама",wave:"Новые креативы",app:"Приложение",rating:"Рейтинг и топ",hire:"Найм",other:"Другое"};
+const TYP={mention:"Упоминания",offer:"Оффер",open:"Открытие",ads:"Реклама",wave:"Новые креативы",app:"Приложение",rating:"Рейтинг и топ",hire:"Найм",other:"Другое"};
 const dfmt=x=>x?x.slice(8,10)+"."+x.slice(5,7):"—";
 const dago=(d,n)=>{ const t=new Date(Date.now()+5*3600e3); t.setUTCDate(t.getUTCDate()-n); return t.toISOString().slice(0,10)>d };
 function evRow(e){ const lv=e.imp==="high"?"p-acc":"p-mute";
   return `<div class="srow"><span class="pill ${lv}">${esc(TYP[e.type]||e.type)}</span><div><div class="t">${dot(e.b)}<b>${esc(B(e.b).name)}</b> · ${dfmt(e.date)} · ${esc(e.title)}</div>${e.detail?`<div class="m">${esc(e.detail.slice(0,200))}</div>`:""}<div class="m">${esc(e.src||"")}${e.link?` · <a href="${esc(e.link)}" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:none">открыть ↗</a>`:""}</div></div></div>` }
-function renderBoss(){
+function renderBoss0(){
   const cov=J.coverage||{}, last7=d=>!dago(d,7), ad=(cov.adlib||[]).filter(last7).length;
   $("#boss-cov").textContent=`Реклама Meta собрана за ${ad} из последних 7 дней · приложения и Telegram — ежедневно. Сравнение идёт только по реальным снимкам.`;
   const top=J.events.filter(e=>e.imp==="high"&&e.b!=="bellissimo"&&last7(e.date));
@@ -154,6 +173,71 @@ function renderBoss(){
   $("#boss-off").innerHTML=Object.keys(by).length?`<table><thead><tr><th>Бренд</th><th>Дата</th><th style="text-align:left">Оффер</th><th>Где</th></tr></thead><tbody>${ORDER.filter(b=>by[b]).flatMap(b=>by[b].slice(0,3).map(e=>`<tr><td>${bname(b)}</td><td>${dfmt(e.date)}</td><td style="text-align:left;white-space:normal;max-width:640px"><b>${esc(e.title.replace(/^(Новый оффер|Акция в Telegram)\s*·?\s*/,"")||"")}</b> ${esc(e.detail.slice(0,150))}</td><td>${e.link?`<a href="${esc(e.link)}" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:none">${esc(e.src)} ↗</a>`:esc(e.src)}</td></tr>`)).join("")}</tbody></table>`:'<div class="empty">Новых офферов за 14 дней не найдено</div>';
   if(J.note&&J.note.text){ $("#boss-note-card").hidden=false; $("#boss-note").textContent=J.note.text; $("#boss-note-d").textContent="от "+dfmt(J.note.date) }
 }
+
+const SRCN={play:"Google Play",appstore:"App Store",ig:"Instagram",fb:"Facebook",ads:"реклама"};
+function mnEvents(){ if(!MN||!J||J._mn||!MN.own) return; J._mn=1;
+  const by={}; MN.own.forEach(([d,s,se,n])=>{ if(se!=="neg") return; ((by[d]=by[d]||{}).t=(by[d].t||0)+n); by[d][s]=(by[d][s]||0)+n });
+  const days=Object.keys(by).sort(), ev=[];
+  days.forEach((d,i)=>{ if(d<MN.today.slice(0,8)+"01"&&dago(d,60)) return; const prev=days.filter(x=>x<d&&!dago(x,0)&&((new Date(d)-new Date(x))/864e5)<=14).map(x=>by[x].t), avg=prev.length?prev.reduce((a,b)=>a+b,0)/prev.length:0, n=by[d].t;
+    if(n>=8&&n>=1.8*Math.max(avg,1)){ const src=Object.keys(by[d]).filter(k=>k!=="t").map(k=>(SRCN[k]||k)+" "+by[d][k]).join(", ");
+      ev.push({date:d,b:"bellissimo",type:"mention",imp:"high",title:`Негатив у нас: ${n} за день`+(avg?` (обычно около ${Math.round(avg)})`:""),detail:"Источники: "+src,src:"Упоминания"}) } });
+  J.events=J.events.concat(ev).sort((a,b)=>(b.date||"").localeCompare(a.date||"")); }
+const dDiff=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+function pickBase(ds){ const now=ds[ds.length-1], wk=[...ds].reverse().find(d=>dDiff(d,now)>=7)||ds[0]; return {now,wk,span:dDiff(wk,now)} }
+const spanTxt=b=>b.span>=7?`${dfmt(b.wk)}→${dfmt(b.now)}`:`${dfmt(b.wk)}→${dfmt(b.now)} <span class="cw" data-tip="Снимка недельной давности ещё нет, сравниваем с самым ранним: прошло ${b.span} дн.">⚠ ${b.span} дн.</span>`;
+const sgn=v=>v==null?"—":(v>0?"+":v<0?"−":"")+fmt(Math.abs(v));
+const ud=(v,u)=>v==null||v===0?"":`<span class="${v>0?"up":"dn"}">${v>0?"+":"−"}${fmt(Math.abs(v))}${u||""}</span>`;
+const BX=["papajohns","dominos","apex"];
+function renderBoss(){
+  renderBoss0();
+  const bn=EXTRA_B, nm=b=>(D.brands[b]||bn[b]||{name:b}).name, dt=b=>`<i class="bdot" style="background:${(D.brands[b]||bn[b]||{color:"#888"}).color}"></i>`;
+  const dd=Object.keys(D.daily).sort(), aa=Object.keys(D.apps).sort(), tt=Object.keys(D.tg_hist||{}).sort();
+  const bD=pickBase(dd), bA=pickBase(aa), bT=tt.length?pickBase(tt):null;
+  const sm=MN&&window.mentionsSummary?window.mentionsSummary(MN,MCTX(),30):null;
+  const rank=(sh)=>{ const o=Object.keys(sh).filter(k=>sh[k]!=null).sort((x,y)=>sh[y]-sh[x]); return b=>o.indexOf(b)+1 };
+  const rk=sm?rank(sm.S.sh):null;
+  const brands=[...ORDER.filter(b=>D.brands[b]),...BX];
+  const rows=brands.map(b=>{ const own=(D.brands[b]||{}).own, radar=!!D.brands[b];
+    const n=((D.daily[bD.now]||{})[b]||{}).total, o=((D.daily[bD.wk]||{})[b]||{}).total;
+    const ch=n!=null&&o?Math.round(100*(n-o)/o):null;
+    const ia=(D.apps[bA.now]||{}).ios||{}, ib=(D.apps[bA.wk]||{}).ios||{}, pa=(D.apps[bA.now]||{}).play||{}, pb=(D.apps[bA.wk]||{}).play||{};
+    const pl=ia[b]&&ia[b][3]?+ia[b][3]:null, plo=ib[b]&&ib[b][3]?+ib[b][3]:null, mv=pl&&plo?plo-pl:0;
+    const pp=pa[b], ppo=pb[b], world=["dodo","yandex"].includes(b);
+    const ts=(D.tg[b]||{}).subs, tso=tt.length&&bT&&D.tg_hist[bT.wk]?D.tg_hist[bT.wk][b]:null;
+    const cells=[
+      `${dt(b)}${esc(nm(b))}${radar?"":' <span class="note" data-tip="Радар этот бренд не отслеживает: нет рекламы, приложений и Telegram-канала в сводке">(только упоминания)</span>'}`,
+      n!=null?`<b>${fmt(n)}</b>${own?'<span class="note" data-tip="Вся страница бренда: франшиза, найм, филиалы, а не только продажи"> *</span>':""}${ch!=null&&bD.span>0?` <span class="${ch>0?"up":ch<0?"dn":""}">${ch>0?"+":""}${ch}%</span>`:""}`:"—",
+      pl?`<b>#${pl}</b>${mv?` <span class="${mv>0?"up":"dn"}">${mv>0?"↑":"↓"}${Math.abs(mv)}</span>`:""}`:"—",
+      pp?`★ ${(+pp[0]).toFixed(2)}${world?' <span class="note" data-tip="Общее приложение для всех стран, не только Узбекистана">(мир)</span>':ppo?" "+ud(pp[1]-ppo[1]," отз."):""}`:"—",
+      ts?`${kfmt(ts)}${tso!=null?" "+ud(ts-tso):""}`:(radar?'<span class="note">нет канала</span>':"—"),
+      sm?(sm.S.sh[b]!=null?`${sm.S.sh[b].toFixed(sm.S.sh[b]<10?1:0)}% <span class="note">#${rk(b)}</span>`:'<span class="note" data-tip="Google Trends не ответил по этому бренду">нет данных</span>'):"…",
+      sm?`${fmt(sm.T.c[b]||0)}`:"…"];
+    return `<tr class="${own?"me":""}" style="${radar?"":"opacity:.7"}">${cells.map((c,i)=>`<td${i===0?' style="text-align:left"':""}>${c}</td>`).join("")}</tr>` }).join("");
+  const cv=sm?sm.cov:{}, tg=cv.tgw||{};
+  const head=[["Бренд",""],["Реклама Meta, объявл.",spanTxt(bD)],["App Store, место",spanTxt(bA)],["Google Play",spanTxt(bA)],["Telegram-канал, подписчики",bT?spanTxt(bT):""],["Поиск Google, доля",sm?`${dfmt(sm.a)}–${dfmt(sm.b)}`:""],["Публикации о бренде",sm?`${dfmt(sm.a)}–${dfmt(sm.b)} ⚠`:""]];
+  $("#boss-sum").innerHTML=`<table><thead><tr>${head.map((h,i)=>`<th${i===0?' style="text-align:left"':""}>${h[0]}${h[1]?`<br><span class="note" style="font-weight:400">${h[1]}</span>`:""}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+  $("#boss-sum-sub").textContent="реклама, приложения и Telegram — снимки радара; поиск и публикации — последние 30 дней";
+  const tgTxt=sm?(tg.total?`Telegram прочитан частично: ${tg.read} из ${tg.total} каналов`:"Telegram прочитан не полностью")+(cv.media_on?"":", сайты СМИ не подключены"):"данные упоминаний загружаются";
+  $("#boss-sum-n").innerHTML=`Сравнение рекламы, приложений и Telegram: с ближайшим снимком 7 и более дней назад, даты в заголовках. Поиск: доля от 14 брендов по индексу Google Trends. <b>Публикации о бренде ⚠</b> — чужие публикации в Telegram и СМИ, ${esc(tgTxt)}; цифры занижены и между брендами пока не сравнимы. «Только упоминания» — у этих брендов нет данных радара.`;
+  // coverage line
+  $("#boss-cov").textContent=`Радар копит данные с ${dfmt(dd[0])}: реклама — ${dd.length} снимков, приложения — ${aa.length}, Telegram — ${tt.length}. Что было раньше, радар не показывает. Откуда что берётся — во вкладке «Как читать».`;
+  // our events
+  const us=[], ev7=J.events.filter(e=>e.b==="bellissimo"&&!dago(e.date,7));
+  if(sm){ const O=sm.O; us.push(`<div class="srow"><span class="pill p-mute">факт</span><div><div class="t"><b>Упоминания о нас за 30 дней: ${fmt(O.t)}, негатив ${O.t?Math.round(100*O.o.neg/O.t):0}%</b></div><div class="m">${dfmt(sm.a)}–${dfmt(sm.b)}: отзывы в магазинах, комментарии под нашими постами и рекламой. Подробности во вкладке «Упоминания».</div></div></div>`) }
+  const ib=(D.apps[bA.now]||{}).ios||{}, pb2=(D.apps[bA.now]||{}).play||{};
+  if(ib.bellissimo) us.push(`<div class="srow"><span class="pill p-mute">факт</span><div><div class="t"><b>App Store: место #${ib.bellissimo[3]||"—"}, ${ib.bellissimo[1]} ★</b></div><div class="m">Google Play: ★ ${pb2.bellissimo?(+pb2.bellissimo[0]).toFixed(2):"—"}, отзывов ${pb2.bellissimo?fmt(pb2.bellissimo[1]):"—"}</div></div></div>`);
+  us.push(...ev7.slice(0,5).map(evRow));
+  $("#boss-us").innerHTML=us.join("")||'<div class="empty">Нет событий</div>';
+  // reviews growth
+  const gr=ORDER.filter(b=>D.brands[b]&&!["dodo","yandex"].includes(b)).map(b=>{ const p1=pa0(bA.now,b),p0=pa0(bA.wk,b),i1=ia0(bA.now,b),i0=ia0(bA.wk,b); return {b,pg:p1!=null&&p0!=null?p1-p0:null,ig:i1!=null&&i0!=null?i1-i0:null} });
+  function pa0(d,b){ const v=((D.apps[d]||{}).play||{})[b]; return v?v[1]:null }
+  function ia0(d,b){ const v=((D.apps[d]||{}).ios||{})[b]; return v?v[0]:null }
+  gr.sort((x,y)=>(y.pg||0)-(x.pg||0)); const mx=Math.max(1,...gr.map(x=>x.pg||0));
+  $("#boss-gr").innerHTML=`<div class="bars">${gr.map(x=>`<div class="brow"><span>${dt(x.b)}${esc(nm(x.b))}</span><div class="bbar"><i class="grow" data-tip="${esc(nm(x.b))}: +${fmt(x.pg||0)} отзывов в Google Play" style="width:${100*(x.pg||0)/mx}%;background:${(D.brands[x.b]||{}).color}"></i></div><span class="num" style="text-align:right">${sgn(x.pg)} Play · ${sgn(x.ig)} App Store</span></div>`).join("")}</div>`;
+  $("#boss-gr-sub").innerHTML=`новые отзывы за ${spanTxt(bA)}`;
+  $("#boss-gr-n").textContent="Новые оценки в Google Play и App Store за период. Чем больше, тем больше людей скачивает и пользуется приложением. Dodo и Yandex не показаны: у них общее приложение на весь мир.";
+  if(!MN) loadMn().then(()=>{ if(S.tab==="boss") renderBoss() });
+}
 function renderJr(){
   const per=+$("#jr-per").value, bb=$("#jr-b").value, tt=$("#jr-t").value, hi=$("#jr-hi").checked, own=$("#jr-own").checked;
   if($("#jr-b").options.length<2){ $("#jr-b").innerHTML+=ORDER.filter(b=>J.events.some(e=>e.b===b)).map(b=>`<option value="${b}">${esc(B(b).name)}</option>`).join(""); $("#jr-t").innerHTML+=Object.keys(TYP).filter(t=>J.events.some(e=>e.type===t)).map(t=>`<option value="${t}">${TYP[t]}</option>`).join("") }
@@ -162,14 +246,30 @@ function renderJr(){
   $("#jr-list").innerHTML=E.map(evRow).join("")||'<div class="empty">Событий нет</div>';
 }
 ["#jr-per","#jr-b","#jr-t","#jr-hi","#jr-own"].forEach(s=>$(s).addEventListener("change",()=>renderJr()));
+const RAWU="https://raw.githubusercontent.com/timkacloud-blip/bellissimo-radar/main/site/";
+let MN=null, MNP=null;
+const EXTRA_B={papajohns:{name:"Papa Johns",color:"#c2410c"},dominos:{name:"Domino's",color:"#2b6cb0"},apex:{name:"APEX",color:"#8d8d8d"}};
+const MCTX=()=>({brands:Object.assign({},EXTRA_B,D.brands),apps:D.apps});
+function loadMn(){ if(!MNP){ const q="?"+Date.now(), g=u=>fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json() });
+  const js=window.renderMentions?Promise.resolve():new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="mentions.js"+q; s.onload=ok; s.onerror=no; document.head.appendChild(s) });
+  MNP=Promise.all([g(RAWU+"mentions_data.json"+q).catch(()=>g("mentions_data.json"+q)),js]).then(([d])=>{ MN=d; mnEvents(); return d }).catch(()=>null) } return MNP }
 function renderMn(){ const p=document.getElementById("p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>';
-  const RAW="https://raw.githubusercontent.com/timkacloud-blip/bellissimo-radar/main/site/", q="?"+Date.now();
-  const getJson=u=>fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json() });
-  const getData=()=>getJson(RAW+"mentions_data.json"+q).catch(()=>getJson("mentions_data.json"+q));
-  const getJs=()=>window.renderMentions?Promise.resolve():new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="mentions.js"+q; s.onload=ok; s.onerror=no; document.head.appendChild(s) });
-  Promise.all([getData(),getJs()]).then(([d])=>{ window.renderMentions(p,d); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Данные упоминаний пока не опубликованы.</div>' }) }
+  loadMn().then(d=>{ if(!d) throw 0; window.renderMentions(p,d,MCTX()); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Данные упоминаний пока не опубликованы.</div>' }) }
 const R={mn:renderMn,boss:renderBoss,jr:renderJr,ov:renderOv,ads:renderAds,off:renderOff,app:renderApp,tg:renderTg,me:renderMe};
-function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); R[S.tab](); rise($("#p-"+S.tab)) }
+
+function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector(":scope > .covnote");
+  const dd=Object.keys(D.daily||{}).sort(), aa=Object.keys(D.apps||{}).sort(), tt=Object.keys(D.tg_hist||{}).sort();
+  const CN={
+    ov:`⚠ Снимки рекламы с ${dfmt(dd[0])} (${dd.length} дн.), история растёт. Bellissimo в рекламе — вся страница бренда, включая франшизу и найм.`,
+    ads:`⚠ Снимки с ${dfmt(dd[0])}. Объявления, выключенные до этой даты, не видны. Bellissimo — вся страница бренда, включая франшизу и найм.`,
+    off:`⚠ Данные об офферах с ${dfmt(dd[0])}, только активные объявления и публичные Telegram-каналы. Выключенные акции не видны.`,
+    app:`⚠ Снимки с ${dfmt(aa[0])}. Прирост считается от первого снимка. Рейтинг App Store округлён до 0,1. У Dodo и Yandex в Google Play общий мировой рейтинг.`,
+    tg:`⚠ Снимки с ${dfmt(tt[0])}. Только официальные каналы трёх брендов, у остальных публичных каналов нет. Разговоры в чужих каналах — во вкладке «Упоминания».`,
+    jr:`⚠ События с ${dfmt(dd[0])}: до первого снимка радар ничего не знает. Всплески негатива о нас берутся из «Упоминаний».`};
+  if(!CN[t]){ if(el) el.remove(); return }
+  if(!el){ el=document.createElement("p"); el.className="note covnote"; el.style.cssText="margin:0 0 12px;color:var(--fg2)"; p.prepend(el) }
+  el.textContent=CN[t] }
+function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); if(D) covNote(S.tab); R[S.tab](); rise($("#p-"+S.tab)) }
 function rerender(){ R[S.tab]() }
 
 $("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.t) });
