@@ -8,4 +8,4 @@ bellissimo true
 sariqbola true
 hardees true
 safia true
-adlib OK kfc:139/10 evos:11/9 oqtepa:112/15 dodo:71/26 maxway:6/6 uzum:72/28 bellissimo:76/22 sariqbola:18/9 hardees:4/4 safia:24/17
+adlib OK уже есть более полный файл за сегодня (146 объявл.)
