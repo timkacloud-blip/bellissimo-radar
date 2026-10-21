@@ -3,6 +3,8 @@
 plus manual entries from DATA/journal_manual.json. Writes SITE/data/journal.json.
 Usage: python3 journal.py DATA_DIR SITE_DIR"""
 import json, os, re, sys, glob, datetime as dt
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from rules import gist, plural, prices as offer_prices  # noqa: E402
 DATA, SITE = sys.argv[1], sys.argv[2]; RAW = os.path.join(DATA, 'raw')
 NAMES = {'bellissimo': 'Bellissimo', 'kfc': 'KFC', 'evos': 'EVOS', 'oqtepa': 'Oqtepa', 'dodo': 'Dodo Pizza', 'maxway': 'MaxWay', 'uzum': 'Uzum Tezkor',
          'yandex': 'Yandex Eats', 'sariqbola': 'Sariq Bola', 'hardees': "Hardee's", 'safia': 'Safia'}
@@ -25,14 +27,10 @@ def snaps(kind):
 def head(a): return re.split(r'-{3,}|—{3,}|_{3,}', (a.get('body') or a.get('title') or ''))[0].strip()
 def key(t): return re.sub(r'[^\w]+', ' ', t.lower())[:70].strip()
 def tsd(x):
-    try: return dt.datetime.utcfromtimestamp(int(x) + 5 * 3600).date().isoformat()
+    try: return dt.datetime.fromtimestamp(int(x) + 5 * 3600, dt.timezone.utc).date().isoformat()
     except Exception: return str(x or '')[:10]
 def prices(t):
-    out = []
-    for p in PRICE.findall(t or ''):
-        v = int(re.sub(r'\D', '', p))
-        if 1000 <= v <= 2000000 and v not in out: out.append(v)
-    return out
+    return offer_prices(t or '')
 
 E = []
 def ev(date, b, typ, title, detail='', src='', link='', imp='mid', ref=''):
@@ -47,7 +45,8 @@ for i, d in enumerate(days):
         if prev:
             pt = ((ad[prev].get('brands') or {}).get(b) or {}).get('total'); t = B.get('total')
             if pt and t is not None and abs(t - pt) >= 5 and abs(t - pt) / pt >= .3:
-                ev(d, b, 'ads', ('Резкий рост' if t > pt else 'Резкий спад') + f' рекламы: {pt} → {t} объявлений', f'с {prev} по {d}', 'Ad Library', '', 'high')
+                ev(d, b, 'ads', ('Резкий рост' if t > pt else 'Резкий спад') + f' рекламы: {pt} → {t} {plural(t, "объявление", "объявления", "объявлений")}',
+                   f'активные объявления в Meta, снимки {prev[8:]}.{prev[5:7]} и {d[8:]}.{d[5:7]}', 'Ad Library', '', 'high')
             new = [a for a in ads if a.get('id') not in seen_ids and tsd(a.get('start')) > prev]
             if len(new) >= 5: ev(d, b, 'wave', f'Новая волна креативов: {len(new)} новых объявлений', '; '.join(head(a)[:60] for a in new[:3]), 'Ad Library', '', 'mid', new[0].get('id', ''))
         for a in ads:
@@ -57,7 +56,7 @@ for i, d in enumerate(days):
             if prev and (PROMO.search(h) or prices(h)) and tsd(a.get('start')) >= (dt.date.fromisoformat(d) - dt.timedelta(days=14)).isoformat():
                 p = prices(h); typ = 'open' if OPEN.search(h) else 'hire' if HIRE.search(h) else 'offer'
                 ev(tsd(a.get('start')) if tsd(a.get('start')) > prev else d, b, typ,
-                   {'offer': 'Новый оффер', 'open': 'Открытие', 'hire': 'Найм'}[typ] + (f' · {p[0]:,} сум'.replace(',', ' ') if p and typ == 'offer' else ''),
+                   ('Оффер: ' + gist(h, p[0] if p else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм'}[typ],
                    h, 'Реклама Meta', f"https://www.facebook.com/ads/library/?id={a.get('id')}", 'high' if typ in ('offer', 'open') else 'mid', a.get('id', ''))
 
 # ---- App Store
@@ -94,7 +93,7 @@ for d in sorted(tg):
             typ = 'open' if OPEN.search(t) else 'hire' if HIRE.search(t) else 'offer' if (PROMO.search(t) or prices(t)) else None
             if not typ: continue
             pr = prices(t)
-            ev(pd, b, typ, {'offer': 'Акция в Telegram', 'open': 'Открытие (Telegram)', 'hire': 'Найм (Telegram)'}[typ] + (f' · {pr[0]:,} сум'.replace(',', ' ') if pr and typ == 'offer' else ''),
+            ev(pd, b, typ, ('Оффер: ' + gist(t, pr[0] if pr else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм'}[typ],
                t[:240], 'Telegram', 'https://t.me/' + p['id'], 'high' if typ in ('offer', 'open') else 'mid')
 
 # ---- manual
@@ -105,5 +104,5 @@ for m in (L(os.path.join(DATA, 'journal_manual.json')) or []):
 u = {}; [u.setdefault((e['date'], e['b'], e['type'], e['title'][:60], e['detail'][:60]), e) for e in E]
 E = sorted(u.values(), key=lambda e: (e['date'], e['imp'] == 'high'), reverse=True)
 cov = {'adlib': sorted(ad), 'ios': sorted(ios), 'play': sorted(pl), 'tg': sorted(tg), 'baseline': base}
-json.dump({'built': dt.datetime.utcnow().isoformat()[:16], 'coverage': cov, 'events': E, 'note': L(os.path.join(DATA, 'boss_note.json'))}, open(os.path.join(SITE, 'data', 'journal.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+json.dump({'built': dt.datetime.now(dt.timezone.utc).isoformat()[:16], 'coverage': cov, 'events': E, 'note': L(os.path.join(DATA, 'boss_note.json'))}, open(os.path.join(SITE, 'data', 'journal.json'), 'w', encoding='utf-8'), ensure_ascii=False)
 print('journal', len(E), 'events;', sum(e['imp'] == 'high' for e in E), 'high')

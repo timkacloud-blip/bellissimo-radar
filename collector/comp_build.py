@@ -60,82 +60,8 @@ def goal(a):
         return 'Охват / бренд'
     return 'Сайт'
 
-TAGS = [
-    ('1+1 / второй в подарок', r"1\s*\+\s*1|второй в подарок|ikkinchisi\s*(sovg|bepul)|ikkinchisini bepul|bittasi sizga|по цене одного|bir set narxiga|2 ta katta|два больших"),
-    ('Скидка %', r"\d{1,2}\s*%(?!\s*(gacha\s*)?(keshbek|кешб|cashback))|chegirma|скидк"),
-    ('Бесплатная доставка', r"бесплатн\w* доставк|доставляем .{0,40}бесплатно|yetkazib berish bepul|bepul yetkaz|БЕСПЛАТНО"),
-    ('Промокод', r"промо-?код|promo-?kod|promokod|\b[A-Z]{3,}\d{2,}\b"),
-    ('Новинка', r"новинк|yangi format|новом формате|endilikda|новый вкус|yangi ta.m|endi .{0,20}da|теперь в|встречайте|tez kunda|yangilik|уже здесь"),
-    ('Открытие филиала', r"yangi .{0,25}filial|filial\w* ochil|ochilishi|ochildi|открыл\w*|новый филиал|нового филиала|kutib oling"),
-    ('Комбо / сет', r"комбо|kombo|combo|сет\b|set\b|набор"),
-    ('Дешевле в приложении', r"дешевле|arzonroq|в приложении .{0,30}сум|ilovada \d"),
-    ('Цена', r"\d[\d\s]{2,}\s*(so.?m|сум|sum)"),
-    ('Дети / праздник', r"tug.ilgan kun|день рожден|farzand|детск|animator|аниматор|shou\b|шоу"),
-    ('Гарантия времени', r"\d{2}\s*(daqiqa|минут)|kechiksa|опоздает|опоздани"),
-    ('Кешбэк / клуб', r"keshbek|кешб[еэ]к|cashback|\bclub\b|(?<![а-яё])клуб(?![а-яё])|bonus|бонус"),
-]
-TAGS = [(n, re.compile(p, re.I)) for n, p in TAGS]
-PRICE = re.compile(r"(\d{1,3}(?:[\s  ]\d{3})+|\d{4,6})\s*(?:so.?m|сум|sum)", re.I)
-
-SPLIT = re.compile(r"-{3,}|—{3,}|_{3,}|={3,}")
-BOILER = [  # standard lines that are not the offer itself
-    re.compile(r"\d{2}\s*(daqiqa\w*|минут\w*)[^.!?\n]{0,40}?(bepul|бесплатн\w*)", re.I),   # "35 daqiqada bepul yetkazib" = delivery promise
-    re.compile(r"(bepul|бесплатн\w*)\s+(yetkaz\w*|доставк\w*)[^.!?\n]{0,25}?\d{2}\s*(daqiqa\w*|минут\w*)", re.I),  # "с бесплатной доставкой за 35 минут"
-    re.compile(r"[^.!?\n]{0,60}(kechiks\w*|опозда\w*)[^.!?\n]{0,80}", re.I),              # late -> promo-code guarantee
-]
-COMBO_EXTRA = re.compile(r"ichimlik|напит\w*|\bkola\b|колой|\bfri\b|\bфри\b|uchta|3 ta |три пицц|ikki kishilik|на двоих|2 ta |два больш|комбо|kombo|combo|сет\b|set\b|набор", re.I)
-PRIMARY = ['1+1 / второй в подарок', 'Кешбэк / клуб', 'Скидка %', 'Промокод', 'Бесплатная доставка', 'Комбо / сет', 'Дешевле в приложении',
-           'Новинка', 'Открытие филиала', 'Дети / праздник', 'Цена']
-
-def headline(text):
-    """The offer lives in the opening lines; bilingual ads repeat it after ---, so take the first part only."""
-    return SPLIT.split(text or '')[0][:220]
-
-def tags(text):
-    head = headline(text)
-    clean = head
-    for p in BOILER: clean = p.sub(' ', clean)
-    out = [n for n, p in TAGS if p.search(clean)]
-    if any(p.search(head) for p in BOILER[:2]) and 'Гарантия времени' not in out: out.append('Гарантия времени')
-    if COMBO_EXTRA.search(clean) and 'Комбо / сет' not in out: out.append('Комбо / сет')
-    # explicit promo code (DODO30, SALOM30) counts anywhere in the text unless it is the lateness guarantee
-    full = text or ''
-    for p in BOILER[2:]: full = p.sub(' ', full)
-    if re.search(r"\b[A-Z]{3,}\d{2,}\b", full) and 'Промокод' not in out: out.append('Промокод')
-    if 'Промокод' in out and not re.search(r"промо|promo|\b[A-Z]{3,}\d{2,}\b", full, re.I): out.remove('Промокод')
-    return out
-
-def primary(tg):
-    return next((t for t in PRIMARY if t in tg), 'Без оффера')
-
-NOT_PRICE_BEFORE = re.compile(r"(скидк\w*|chegirma|вместо|минимал\w*|сумм\w* заказа|заказ\w* от|доход\w*|оплата\w*|экономи\w*|daromad\w*|bonus\w*|kassada|на кассе|(?<![а-яёa-z])до(?![а-яё])|gacha)[^\d]{0,12}$", re.I)
-NOT_PRICE_AFTER = re.compile(r"^\W{0,3}(so.?m|сум\w*|sum)?\W{0,2}(o.rniga|chegirma|скидк|бонус|bonus|dan (yuqori|ortiq|boshlab berilgan)|gacha|daromad|в (день|месяц)|в час)", re.I)
-NUM = re.compile(r"\d{1,3}(?:[\s\u00a0\u202f.]\d{3})+(?![\d.,]\d)|\d{4,6}")
-CUR_AFTER = re.compile(r"^\s*(so.?m|сум|sum|dan\b|so.?mdan)", re.I)
-PRICE_CUE_BEFORE = re.compile(r"(от|за|atigi|всего|narx\w*|цена|price|—|-|:)\s*[«\"“]?\s*$", re.I)
-
-def prices(text, hire=False):
-    """Offer prices only: number with currency, or with a price cue ("от 109 000", "109 000 dan").
-    Drops discounts, old prices ("вместо", "o'rniga", "kassada"), order minimums, savings and salaries."""
-    if hire: return []
-    out = []
-    for m in NUM.finditer(text):
-        raw = m.group(0); v = int(re.sub(r"\D", "", raw))
-        if not 3000 <= v <= 1_000_000: continue
-        before, after = text[max(0, m.start() - 30):m.start()], text[m.end():m.end() + 25]
-        if not (CUR_AFTER.search(after) or (re.search(r"[\s.]", raw) and PRICE_CUE_BEFORE.search(before[-12:])) or re.search(r"pizza|pitsa|пицц", before[-15:], re.I)): continue
-        if NOT_PRICE_BEFORE.search(before): continue
-        if NOT_PRICE_AFTER.search(after): continue
-        out.append(v)
-    return sorted(set(out))
-
-def codes(text):
-    return sorted(set(re.findall(r"\b[A-Z]{3,}\d{2,}\b", text)))
-
-def lang(text):
-    cyr = len(re.findall(r"[а-яё]", text, re.I)); lat = len(re.findall(r"[a-z]", text, re.I))
-    if cyr == 0 and lat == 0: return '—'
-    return 'RU' if cyr >= lat else 'UZ'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from rules import tags, primary, prices, price_items, codes, lang, plural  # noqa: E402
 
 # ---------- Ad Library snapshots ----------
 files = sorted(glob.glob(os.path.join(RAW, 'comp_adlib_*.json')))
@@ -165,7 +91,7 @@ json.dump(store, open(STORE, 'w'))
 last = dates[-1] if dates else None
 for r in ads.values():
     text = (r['body'] + ' ' + r['title'])
-    r['goal'] = goal(r); r['tags'] = tags(text); r['offer'] = 'Найм' if r['goal'] == 'Найм' else ('Каталог товаров' if r['catalog'] and not r['tags'] else 'Только видео/картинка' if not (r['body'] or r['title']) else primary(r['tags'])); r['prices'] = prices(text, r['goal'] == 'Найм'); r['codes'] = codes(text); r['lang'] = lang(text)
+    r['goal'] = goal(r); r['tags'] = tags(text); r['offer'] = 'Найм' if r['goal'] == 'Найм' else ('Каталог товаров' if r['catalog'] and not r['tags'] else 'Только видео/картинка' if not (r['body'] or r['title']) else primary(r['tags'])); r['pitems'] = price_items(text, r['goal'] == 'Найм'); r['prices'] = [x['p'] for x in r['pitems']]; r['codes'] = codes(text); r['lang'] = lang(text)
     r['active'] = 1 if r['last'] == last else 0
     end = r['last'] if r['active'] else r['last']
     r['days'] = (dt.date.fromisoformat(end) - dt.date.fromisoformat(r['start'])).days + 1 if r['start'] else None
@@ -202,7 +128,7 @@ for D, ch in tg.items():
     for b, c in ch.items():
         for p in c.get('posts', []):
             if p.get('id'):
-                q = dict(p); q['b'] = b; q['tags'] = tags(p.get('txt', '')); q['prices'] = prices(p.get('txt', ''))
+                q = dict(p); q['b'] = b; q['tags'] = tags(p.get('txt', '')); q['prices'] = prices(p.get('txt', '')); q['codes'] = codes(p.get('txt', ''))
                 tg_posts[p['id']] = q
 tg_last = tg[max(tg)] if tg else {}
 
@@ -215,44 +141,62 @@ def num(s):
     except: return None
 
 # ---------- Insights (rule based, no LLM) ----------
+# lvl is always from Bellissimo's point of view: bad = threat to us, warn = watch, good = in our favour, acc = new, mute = fact
 ins = []
+def msgkey(r): return (r.get('body') or r.get('title') or r['id'])[:80]
 if last:
     L = dt.date.fromisoformat(last)
     for b in BRANDS:
         A = [r for r in ads.values() if r['b'] == b and r['active']]
         if not A: continue
         new7 = [r for r in A if r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7]
-        _seen = set(); new7 = [r for r in new7 if not ((r.get('body') or r.get('title') or r['id'])[:80] in _seen or _seen.add((r.get('body') or r.get('title') or r['id'])[:80]))]
-        n_msg = len({(r.get('body') or r.get('title') or r['id'])[:80] for r in A})
-        nm = BRANDS[b]['name']
-        if new7:
+        _seen = set(); new7 = [r for r in new7 if not (msgkey(r) in _seen or _seen.add(msgkey(r)))]
+        n_msg = len({msgkey(r) for r in A})
+        nm = BRANDS[b]['name']; own = BRANDS[b].get('own')
+        if new7 and not own:
             g = collections.Counter(r['goal'] for r in new7).most_common(2)
-            ins.append({'b': b, 'lvl': 'acc', 't': f"{nm}: {len(new7)} новых сообщений за 7 дней", 'm': 'Цель: ' + ', '.join(f"{k} — {v}" for k, v in g)})
+            ins.append({'b': b, 'lvl': 'acc', 't': f"{nm}: {len(new7)} {plural(len(new7), 'новое сообщение', 'новых сообщения', 'новых сообщений')} в рекламе за 7 дней",
+                        'm': 'Куда ведут: ' + ', '.join(f"{k} — {v}" for k, v in g)})
         offers = collections.Counter(r['offer'] for r in A if r['offer'] not in ('Найм', 'Без оффера', 'Цена', 'Каталог товаров', 'Только видео/картинка'))
-        if offers:
-            ins.append({'b': b, 'lvl': 'mute', 't': f"{nm}: главные механики — " + ', '.join(k for k, _ in offers.most_common(3)), 'm': f"по {n_msg} активным сообщениям"})
-        hire = len({(r.get('body') or r.get('title') or r['id'])[:80] for r in A if r['goal'] == 'Найм'})
-        if hire >= 3 and hire / max(n_msg, 1) > .3:
-            ins.append({'b': b, 'lvl': 'warn', 't': f"{nm}: {hire} из {n_msg} сообщений — найм курьеров/персонала", 'm': 'Часть бюджета идёт не на заказы: расширение или нехватка курьеров'})
+        if offers and not own:
+            ins.append({'b': b, 'lvl': 'mute', 't': f"{nm}: чаще всего — " + ', '.join(k for k, _ in offers.most_common(3)),
+                        'm': f"среди {n_msg} {plural(n_msg, 'активного сообщения', 'активных сообщений', 'активных сообщений')}"})
+        hire = len({msgkey(r) for r in A if r['goal'] == 'Найм'})
+        if hire >= 3 and hire / max(n_msg, 1) > .3 and not own:
+            ins.append({'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} из {n_msg} сообщений в рекламе — найм",
+                        'm': 'Ищут курьеров и персонал'})
     if apps:
-        a = apps[max(apps)]
+        ds = sorted(apps); a = apps[ds[-1]]
         ch = a.get('ios_chart', [])
         pos = {b: (int(v[3]) if v and v[3] else None) for b, v in a.get('ios', {}).items()}
         me = pos.get('bellissimo')
         if me:
-            above = sorted((int(p), b) for b, p in pos.items() if p and b != 'bellissimo' and int(p) < int(me))
+            above = sorted((p, b) for b, p in pos.items() if p and b != 'bellissimo' and p < me)
             if above:
                 ins.append({'b': above[0][1], 'lvl': 'bad', 't': f"Выше нас в App Store «Еда и напитки» (мы #{me}): " + ', '.join(f"{BRANDS[b]['name']} #{p}" for p, b in above),
-                            'm': 'Чарт считает свежие скачивания. ' + ', '.join(f"{BRANDS[b]['name']}: {a['ios'][b][0]} оценок" for p, b in above if a['ios'].get(b))})
-        if len(apps) >= 2:
-            ds = sorted(apps); p0, p1 = apps[ds[-2]].get('ios', {}), apps[ds[-1]].get('ios', {})
+                            'm': 'Чарт считает свежие скачивания, а не все за всё время.'})
+        # week-over-week chart moves only (day-to-day jumps are noise); base = nearest snapshot 7+ days back, else the earliest
+        if len(ds) >= 2:
+            now = dt.date.fromisoformat(ds[-1])
+            base = next((d for d in reversed(ds[:-1]) if (now - dt.date.fromisoformat(d)).days >= 7), ds[0])
+            span = (now - dt.date.fromisoformat(base)).days
+            p0 = apps[base].get('ios', {}); p1 = a.get('ios', {})
+            fmtd = lambda d: d[8:10] + '.' + d[5:7]
             for b in p1:
-                if p0.get(b) and p1[b][3] and p0[b][3] and int(p1[b][3]) != int(p0[b][3]):
-                    dlt = int(p0[b][3]) - int(p1[b][3])
-                    ins.append({'b': b, 'lvl': 'good' if dlt > 0 else 'warn', 't': f"{BRANDS[b]['name']}: App Store #{p0[b][3]} → #{p1[b][3]}", 'm': 'изменение за день'})
-        newcomers = [n for n in ch[:10] if not any(k in n.lower() for k in ('kfc', 'bellissimo', 'evos', 'oqtepa', 'dodo', 'maxway', 'uzum', 'yandex', 'sariq', 'hardee', 'safia'))]
+                if not (p0.get(b) and p1[b] and p1[b][3] and p0[b][3]): continue
+                was, now_p = int(p0[b][3]), int(p1[b][3]); up = was - now_p
+                if abs(up) < 3: continue
+                if b == 'bellissimo': lvl = 'good' if up > 0 else 'bad'
+                elif up > 0: lvl = 'bad' if me and now_p < me <= was else 'warn'
+                else: lvl = 'good'
+                ins.append({'b': b, 'lvl': lvl, 't': f"{BRANDS[b]['name']}: App Store #{was} → #{now_p}",
+                            'm': f"{'поднялся' if up > 0 else 'опустился'} на {abs(up)} за {span} {plural(span, 'день', 'дня', 'дней')} ({fmtd(base)} → {fmtd(ds[-1])})"})
+        known = ('kfc', 'bellissimo', 'evos', 'oqtepa', 'dodo', 'maxway', 'uzum', 'yandex', 'sariq', 'hardee', 'safia')
+        newcomers = [n for n in ch[:10] if not any(k in n.lower() for k in known)]
         if newcomers:
-            ins.append({'b': None, 'lvl': 'mute', 't': 'Другие в топ-10 App Store: ' + ', '.join(newcomers), 'm': 'не в нашем списке конкурентов — стоит присмотреться'})
+            ins.append({'b': None, 'lvl': 'mute', 't': 'Не в списке конкурентов, но в топ-10 App Store: ' + ', '.join(newcomers), 'm': 'Стоит решить, добавлять ли их в радар'})
+ORDER_LVL = {'bad': 0, 'warn': 1, 'acc': 2, 'good': 3, 'mute': 4}
+ins.sort(key=lambda i: ORDER_LVL.get(i['lvl'], 9))
 
 out = {
     'info': {'date': last, 'dates': dates, 'built': dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d %H:%M'), 'n_ads': len(ads)},

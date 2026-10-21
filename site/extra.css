@@ -55,3 +55,53 @@
 
 @media (pointer:coarse){.chip,.seg button,.tabs button,select,input[type=date]{min-height:40px}.tabs button{padding:9px 14px}}
 html{scroll-behavior:smooth}
+
+/* ---- review fixes: header, hints, tables, mobile ---- */
+.helpbtn{border:1px solid var(--line);background:var(--card-solid);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--fg2);cursor:pointer}
+.helpbtn.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.fresh{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;margin-top:8px}
+.fresh .fd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+.hint{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--bg2);color:var(--fg2);font-size:11px;font-weight:700;cursor:help;flex:none}
+.lbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 14px}
+.chk{display:inline-flex;align-items:center;gap:6px}
+.btn.small{padding:5px 11px;font-size:12.5px}
+.chip .cnt{margin-left:6px;opacity:.65;font-size:11.5px}
+.tile .v.small{font-size:14px;line-height:1.35}
+.chg{color:var(--fg2)}
+.lnk{color:var(--acc);text-decoration:none;font-size:12px;cursor:pointer}
+th.l,td.l{text-align:left}
+td.w{white-space:normal;min-width:220px;max-width:560px}
+th[data-tc]:hover{color:var(--fg)}
+th.sa::after{content:" ▲";font-size:9px} th.sd::after{content:" ▼";font-size:9px}
+tr.me td{background:var(--acc-soft)}
+.lthumb{width:56px;height:70px;object-fit:cover;border-radius:8px;display:block;background:var(--bg2)}
+.cad rect.gap{fill:none;stroke:var(--fg3);stroke-dasharray:3 3;opacity:.6}
+.rk-mn{text-decoration:underline dotted;text-underline-offset:3px}
+.rank .hl{font-weight:650}
+.ad .txm{border:0;background:none;padding:0;color:var(--acc);font-size:11.5px;cursor:pointer;justify-self:start}
+.covnote{grid-column:1/-1;margin:0;color:var(--fg2)}
+.more{display:flex;justify-content:center;margin-top:12px}
+.brow .num b{color:var(--fg)}
+/* sticky first column in every wide table, so brand names stay visible while scrolling sideways */
+.tbl.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl.scroll th:first-child,.tbl.scroll td:first-child{position:sticky;left:0;z-index:1;background:var(--card-solid)}
+.tbl.scroll tr.me td:first-child{background:color-mix(in srgb,var(--acc) 12%,var(--card-solid))}
+/* tabs: fade where more tabs are hidden */
+.tabs.fr{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.tabs.fl.fr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 85%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 85%,transparent)}
+.tabs.fl:not(.fr){-webkit-mask-image:linear-gradient(90deg,transparent,#000 15%);mask-image:linear-gradient(90deg,transparent,#000 15%)}
+@media (max-width:600px){
+  header.top{padding:8px 16px 6px}
+  .brand h1{font-size:17px}
+  .helpbtn span{display:none}
+  .tabs{margin-top:6px}
+  .fresh{gap:2px 12px;font-size:11px;margin-top:4px}
+  .hide-m{display:none}
+  .tbl.scroll td:first-child{max-width:118px;white-space:normal}
+  .panel{gap:10px;margin-top:10px}
+  .card{padding:13px}
+  .gloss{grid-template-columns:1fr;gap:2px 0}.gloss dd{margin-bottom:8px}
+  td.w{min-width:200px}
+}
+#boss-sum tr.me td:first-child{background:color-mix(in srgb,var(--acc) 12%,var(--card-solid))}
+@media (max-width:600px){.gal{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ad .bd{padding:8px;font-size:12px}.ad .meta{font-size:10.5px}}
