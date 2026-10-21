@@ -45,3 +45,10 @@
 
 .brow{grid-template-columns:120px minmax(0,1fr) auto}.brow .num{white-space:nowrap;font-size:12px;color:var(--fg2)}
 @media (max-width:600px){.brow{grid-template-columns:90px minmax(0,1fr) auto}}
+
+/* мобильная вёрстка: карточки сетки не растягиваются по таблицам, первая колонка закреплена */
+.card{min-width:0}
+.tbl table{min-width:100%}
+#boss-sum th:first-child,#boss-sum td:first-child{position:sticky;left:0;background:var(--card-solid,#fff);z-index:1}
+@media (max-width:600px){#boss-sum td,#boss-sum th{white-space:nowrap}}
+#boss-ads,#boss-off,#boss-gr,#off-pr,#off-list,#off-codes,#app-ios,#app-play,#me-src{overflow-x:auto}

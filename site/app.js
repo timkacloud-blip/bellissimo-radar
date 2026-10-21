@@ -269,7 +269,9 @@ function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector("
   if(!CN[t]){ if(el) el.remove(); return }
   if(!el){ el=document.createElement("p"); el.className="note covnote"; el.style.cssText="margin:0 0 12px;color:var(--fg2)"; p.prepend(el) }
   el.textContent=CN[t] }
-function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); if(D) covNote(S.tab); R[S.tab](); rise($("#p-"+S.tab)) }
+let thumbsP=null;
+function ensureThumbs(){ if(thumbsP) return; thumbsP=load("data/thumbs.json").then(x=>{ TH=x }).catch(()=>{ TH={} }).then(()=>{ thumbsLoaded=true; if(S.tab==="ov"||S.tab==="ads") rerender() }) }
+function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); if(D){ covNote(S.tab); if(S.tab==="ov"||S.tab==="ads") ensureThumbs() } R[S.tab](); rise($("#p-"+S.tab)) }
 function rerender(){ R[S.tab]() }
 
 $("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.t) });
@@ -287,8 +289,7 @@ $("#ads-more").addEventListener("click",()=>{ S.limit+=60; renderAds() });
   try{ J=await load("data/journal.json") }catch(e){}
   $$("#lang button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v==="all"));
   show(S.tab);
-  try{ TH=await load("data/thumbs.json") }catch(e){ TH={} }
-  thumbsLoaded=true; if(S.tab==="ov"||S.tab==="ads") rerender();
+  if(S.tab==="ov"||S.tab==="ads") ensureThumbs();
 })();
 
 (()=>{ const tip=document.createElement("div"); tip.id="tip"; document.body.appendChild(tip);
