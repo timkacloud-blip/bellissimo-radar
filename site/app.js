@@ -410,7 +410,7 @@ function rerender(){ if(D){ R[S.tab](); writeURL() } }
 
 $("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.t) });
 $("#help").addEventListener("click",()=>show("me"));
-window.addEventListener("hashchange",()=>{ if(readURL()){ urlLock=true; show(S.tab); urlLock=false } });
+window.addEventListener("hashchange",()=>{ if(readURL()) show(S.tab) });
 document.addEventListener("click",e=>{ const b=e.target.closest(".seg.lang button"); if(!b) return; S.lang=b.dataset.v; S.limit=24; rerender() });
 $("#f-brand").addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b) return; const k=b.dataset.b; S.brands.has(k)?S.brands.delete(k):S.brands.add(k); S.limit=24; rerender() });
 [["#f-goal","goal"],["#f-tag","tag"],["#f-fmt","fmt"],["#f-sort","sort"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.value; S.limit=24; rerender() }));

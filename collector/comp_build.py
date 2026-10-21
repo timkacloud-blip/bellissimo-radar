@@ -70,7 +70,7 @@ ads = {}          # id -> record
 daily = collections.defaultdict(dict)   # date -> brand -> {total, groups}
 dates = []
 for f in files:
-    d = clean(json.load(open(f))); D = d['date']; dates.append(D)
+    d = clean(json.load(open(f))); D = re.search(r'(\d{4}-\d\d-\d\d)', os.path.basename(f)).group(1); dates.append(D)   # file name is the Tashkent date; the date inside can be UTC
     for b, B in d.get('brands', {}).items():
         if 'ads' not in B: continue
         daily[D][b] = {'total': B.get('total'), 'groups': len(B['ads'])}

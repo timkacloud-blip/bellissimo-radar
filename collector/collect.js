@@ -28,7 +28,7 @@ async function brand(b,pid){
   return {total:r.count, ads, pages, perr} }
 globalThis.__ST='run';
 (async()=>{ try{
-const out={date:new Date().toISOString().slice(0,10), ts:Date.now(), brands:{}};
+const out={date:new Date(Date.now()+5*3600e3).toISOString().slice(0,10), ts:Date.now(), brands:{}};
 await Promise.all(Object.entries(P).map(async([b,p])=>{ try{ out.brands[b]=await brand(b,p) }catch(e){ out.brands[b]={err:String(e).slice(0,80)} } }));
 let nt=0; const MAXT=globalThis.__MAXT??400; const Q=[];
 for(const B of Object.values(out.brands)) for(const a of B.ads||[]){ if(a.src && !KNOWN.has(a.id) && Q.length<MAXT) Q.push(a) }
