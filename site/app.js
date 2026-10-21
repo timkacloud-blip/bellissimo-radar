@@ -211,10 +211,11 @@ function renderBoss(){
       pp?`★ ${(+pp[0]).toFixed(2)}${world?' <span class="note" data-tip="Общее приложение для всех стран, не только Узбекистана">(мир)</span>':ppo?" "+ud(pp[1]-ppo[1]," отз."):""}`:"—",
       ts?`${kfmt(ts)}${tso!=null?" "+ud(ts-tso):""}`:(radar?'<span class="note">нет канала</span>':"—"),
       sm?(sm.S.sh[b]!=null?`${sm.S.sh[b].toFixed(sm.S.sh[b]<10?1:0)}% <span class="note">#${rk(b)}</span>`:'<span class="note" data-tip="Google Trends не ответил по этому бренду">нет данных</span>'):"…",
-      sm?`${fmt(sm.T.c[b]||0)}`:"…"];
+      sm?`<span style="opacity:.55" data-tip="Черновик: Telegram и СМИ читаются не полностью">${fmt(sm.T.c[b]||0)}</span>`:"…"];
     return `<tr class="${own?"me":""}" style="${radar?"":"opacity:.7"}">${cells.map((c,i)=>`<td${i===0?' style="text-align:left"':""}>${c}</td>`).join("")}</tr>` }).join("");
   const cv=sm?sm.cov:{}, tg=cv.tgw||{};
-  const head=[["Бренд",""],["Реклама Meta, объявл.",spanTxt(bD)],["App Store, место",spanTxt(bA)],["Google Play",spanTxt(bA)],["Telegram-канал, подписчики",bT?spanTxt(bT):""],["Поиск Google, доля",sm?`${dfmt(sm.a)}–${dfmt(sm.b)}`:""],["Публикации о бренде",sm?`${dfmt(sm.a)}–${dfmt(sm.b)} ⚠`:""]];
+  const gb='<span class="pill p-good" style="font-weight:500">надёжно</span>', bb='<span class="pill p-bad" style="font-weight:500">не готово</span>';
+  const head=[["Бренд",""],["Реклама Meta, объявл.",spanTxt(bD)+"<br>"+gb],["App Store, место",spanTxt(bA)+"<br>"+gb],["Google Play",spanTxt(bA)+"<br>"+gb],["Telegram-канал, подписчики",(bT?spanTxt(bT):"")+"<br>"+gb],["Поиск Google, доля",(sm?`${dfmt(sm.a)}–${dfmt(sm.b)}`:"")+"<br>"+gb],["Публикации о бренде",(sm?`${dfmt(sm.a)}–${dfmt(sm.b)} ⚠`:"")+"<br>"+bb]];
   $("#boss-sum").innerHTML=`<table><thead><tr>${head.map((h,i)=>`<th${i===0?' style="text-align:left"':""}>${h[0]}${h[1]?`<br><span class="note" style="font-weight:400">${h[1]}</span>`:""}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
   $("#boss-sum-sub").textContent="реклама, приложения и Telegram — снимки радара; поиск и публикации — последние 30 дней";
   const tgTxt=sm?(tg.total?`Telegram прочитан частично: ${tg.read} из ${tg.total} каналов`:"Telegram прочитан не полностью")+(cv.media_on?"":", сайты СМИ не подключены"):"данные упоминаний загружаются";
@@ -252,11 +253,19 @@ const EXTRA_B={papajohns:{name:"Papa Johns",color:"#c2410c"},dominos:{name:"Domi
 const MCTX=()=>({brands:Object.assign({},EXTRA_B,D.brands),apps:D.apps});
 function loadMn(){ if(!MNP){ const q="?"+Date.now(), g=u=>fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json() });
   const js=window.renderMentions?Promise.resolve():new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="mentions.js"+q; s.onload=ok; s.onerror=no; document.head.appendChild(s) });
-  MNP=Promise.all([g(RAWU+"mentions_data.json"+q).catch(()=>g("mentions_data.json"+q)),js]).then(([d])=>{ MN=d; mnEvents(); return d }).catch(()=>null) } return MNP }
+  MNP=Promise.all([g(RAWU+"mentions_data.json"+q).catch(()=>g("mentions_data.json"+q)),js]).then(([d])=>{ MN=d; mnEvents(); try{ freshStrip() }catch(e){} return d }).catch(()=>null) } return MNP }
 function renderMn(){ const p=document.getElementById("p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>';
   loadMn().then(d=>{ if(!d) throw 0; window.renderMentions(p,d,MCTX()); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Не удалось загрузить данные упоминаний. <button id="retry" class="chip">Повторить</button></div>' }) }
 const R={mn:renderMn,boss:renderBoss,jr:renderJr,ov:renderOv,ads:renderAds,off:renderOff,app:renderApp,tg:renderTg,me:renderMe};
 
+
+function freshStrip(){ let el=$("#fresh"); if(!el){ el=document.createElement("div"); el.id="fresh"; el.className="note"; el.style.cssText="margin:8px 0 12px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center"; const t=$("#tabs"); t.parentElement.appendChild(el) }
+  const now=Date.now(), hrs=ms=>Math.round((now-ms)/36e5), fmtL=ms=>{ const d=new Date(ms+5*36e5); return d.toISOString().slice(8,10)+"."+d.toISOString().slice(5,7)+" "+d.toISOString().slice(11,16) };
+  const col=h=>h>54?"#d33":h>30?"#d98a00":"#2a9d5c";
+  const it=(label,ms,okH)=>{ if(ms==null||isNaN(ms)) return `<span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:5px"></i>${label}: нет данных</span>`; const h=hrs(ms); return `<span data-tip="${h>okH?"Данные не обновлялись дольше обычного, цифры могут отставать":"Данные свежие"}"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col(h)};margin-right:5px"></i>${label}: ${fmtL(ms)} (Ташкент)${h>okH?`, ${h} ч назад`:""}</span>` };
+  const rb=D&&D.info&&D.info.built?Date.parse(D.info.built.replace(" ","T")+"Z"):null;
+  const mb=MN&&MN.built?Date.parse(MN.built.replace(" ","T")+"+05:00"):null;
+  el.innerHTML=it("Радар (реклама, приложения, Telegram)",rb,30)+it("Упоминания",mb,14) }
 function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector(":scope > .covnote");
   const dd=Object.keys(D.daily||{}).sort(), aa=Object.keys(D.apps||{}).sort(), tt=Object.keys(D.tg_hist||{}).sort();
   const CN={
@@ -271,7 +280,7 @@ function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector("
   el.textContent=CN[t] }
 let thumbsP=null;
 function ensureThumbs(){ if(thumbsP) return; thumbsP=load("data/thumbs.json").then(x=>{ TH=x }).catch(()=>{ TH={} }).then(()=>{ thumbsLoaded=true; if(S.tab==="ov"||S.tab==="ads") rerender() }) }
-function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); if(D){ covNote(S.tab); if(S.tab==="ov"||S.tab==="ads") ensureThumbs() } R[S.tab](); rise($("#p-"+S.tab)) }
+function show(t){ S.tab=R[t]?t:"boss"; ls.set("cr.tab",S.tab); $$("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===S.tab)); $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab); if(D){ freshStrip(); covNote(S.tab); if(S.tab==="ov"||S.tab==="ads") ensureThumbs() } R[S.tab](); rise($("#p-"+S.tab)) }
 function rerender(){ R[S.tab]() }
 
 $("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.t) });
