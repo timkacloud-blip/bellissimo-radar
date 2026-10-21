@@ -48,6 +48,17 @@ def ios():
             g = lambda rx: (re.search(rx, p) or [None, None])[1]
             out['ios'][b] = [int(g(r'"totalNumberOfRatings":(\d+)') or 0), float(g(r'"ratingAverage":([\d.]+)') or 0), g(r'"ratingCounts":\[([^\]]*)\]'), None, g(r'Version ([\d.]+)')]
             break
+    # Apple lookup API: same numbers as the app page, used when the page failed to load or returned zeros
+    try:
+        lk = json.loads(get('https://itunes.apple.com/lookup?country=uz&id=' + ','.join(str(i) for i in IOS.values())))
+        by = {r.get('trackId'): r for r in lk.get('results', [])}
+        for b, i in IOS.items():
+            r = by.get(i)
+            if not r: continue
+            v = out['ios'].get(b)
+            if not v: out['ios'][b] = [r.get('userRatingCount') or 0, round(r.get('averageUserRating') or 0, 2), None, None, r.get('version')]
+            elif not v[0] and not v[1]: v[0], v[1] = r.get('userRatingCount') or 0, round(r.get('averageUserRating') or 0, 2); v[4] = v[4] or r.get('version')
+    except Exception as e: print('ios lookup fallback failed', str(e)[:80])
     if len(out['ios']) < 8 or len(out['ios_chart_ids']) < 10: raise RuntimeError(f"мало данных: {len(out['ios'])} прил., чарт {len(out['ios_chart_ids'])}")
     save('ios', out); return f"{len(out['ios'])} прил., чарт {len(out['ios_chart_ids'])}"
 

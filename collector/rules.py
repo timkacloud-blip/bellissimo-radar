@@ -4,7 +4,7 @@ import re
 
 TAGS = [
     ('1+1 / второй в подарок', r"1\s*\+\s*1|второй в подарок|ikkinchisi\s*(sovg|bepul)|ikkinchisini bepul|bittasi sizga|по цене одного|bir set narxiga|2 ta katta|два больших"),
-    ('Скидка %', r"\d{1,2}\s*%(?!\s*(gacha\s*)?(keshbek|кешб|cashback))|chegirma|скидк"),
+    ('Скидка', r"\d{1,2}\s*%(?!\s*(gacha\s*)?(keshbek|кешб|cashback))|chegirma|скидк"),
     ('Бесплатная доставка', r"бесплатн\w* доставк|доставляем .{0,40}бесплатно|yetkazib berish bepul|bepul yetkaz|БЕСПЛАТНО"),
     ('Промокод', r"промо-?код|promo-?kod|promokod|\b[A-Z]{3,}\d{2,}\b"),
     ('Новинка', r"новинк|yangi format|новом формате|endilikda|новый вкус|yangi ta.m|endi .{0,20}da|теперь в|встречайте|tez kunda|yangilik|уже здесь"),
@@ -12,21 +12,22 @@ TAGS = [
     ('Комбо / сет', r"комбо|kombo|combo|сет\b|set\b|набор"),
     ('Дешевле в приложении', r"дешевле|arzonroq|в приложении .{0,30}сум|ilovada \d"),
     ('Цена', r"\d[\d\s]{2,}\s*(so.?m|сум|sum)"),
+    ('Подарок к заказу', r"sovg.a\b|sovg.aga|sovg.a qil|в подарок|подарок|tekinga"),
     ('Дети / праздник', r"tug.ilgan kun|день рожден|farzand|детск|animator|аниматор|shou\b|шоу"),
     ('Гарантия времени', r"\d{2}\s*(daqiqa|минут)|kechiksa|опоздает|опоздани"),
     ('Кешбэк / клуб', r"keshbek|кешб[еэ]к|cashback|\bclub\b|(?<![а-яё])клуб(?![а-яё])|bonus|бонус"),
 ]
 TAGS = [(n, re.compile(p, re.I)) for n, p in TAGS]
 
-SPLIT = re.compile(r"-{3,}|—{3,}|_{3,}|={3,}")
+SPLIT = re.compile(r"-{3,}|—{3,}|_{3,}|={3,}|\*{3,}")
 BOILER = [  # standard lines that are not the offer itself
     re.compile(r"\d{2}\s*(daqiqa\w*|минут\w*)[^.!?\n]{0,40}?(bepul|бесплатн\w*)", re.I),   # "35 daqiqada bepul yetkazib" = delivery promise
     re.compile(r"(bepul|бесплатн\w*)\s+(yetkaz\w*|доставк\w*)[^.!?\n]{0,25}?\d{2}\s*(daqiqa\w*|минут\w*)", re.I),  # "с бесплатной доставкой за 35 минут"
     re.compile(r"[^.!?\n]{0,60}(kechiks\w*|опозда\w*)[^.!?\n]{0,80}", re.I),              # late -> promo-code guarantee
 ]
 COMBO_EXTRA = re.compile(r"ichimlik|напит\w*|\bkola\b|колой|\bfri\b|\bфри\b|uchta|3 ta |три пицц|ikki kishilik|на двоих|2 ta |два больш|комбо|kombo|combo|сет\b|set\b|набор", re.I)
-PRIMARY = ['1+1 / второй в подарок', 'Кешбэк / клуб', 'Скидка %', 'Промокод', 'Бесплатная доставка', 'Комбо / сет', 'Дешевле в приложении',
-           'Новинка', 'Открытие филиала', 'Дети / праздник', 'Цена']
+PRIMARY = ['1+1 / второй в подарок', 'Кешбэк / клуб', 'Скидка', 'Промокод', 'Бесплатная доставка', 'Комбо / сет', 'Дешевле в приложении',
+           'Подарок к заказу', 'Новинка', 'Открытие филиала', 'Дети / праздник', 'Цена']
 
 CODE = re.compile(r"\b[A-Z]{3,}\d{2,}\b")
 CODE_AFTER_WORD = re.compile(r"(?:промо-?код\w*|promo-?kod\w*|promokod\w*)\W{1,4}[«\"“]?([A-Za-z][A-Za-z0-9]{3,14})\b", re.I)
@@ -38,9 +39,17 @@ def headline(text):
     return SPLIT.split(text or '')[0][:220]
 
 
+CODE_IN_LIST = re.compile(r"(?<![A-Za-z0-9])([A-Z][A-Z0-9]{2,11})\s*[—–-]\s*\d")
+NOT_LIST_CODE = {'KFC', 'EVOS', 'SAFIA', 'UZUM', 'DODO', 'MAKRO', 'PIZZA', 'SET', 'COMBO', 'XL', 'XXL', 'TOP', 'NEW', 'HIT', 'SALE', 'VIP', 'MINI'}
+PROMO_WORD = re.compile(r"промо|promo|kod\b|код", re.I)
+
+
 def codes(text):
-    out = set(CODE.findall(text or ''))
-    for m in CODE_AFTER_WORD.finditer(text or ''):
+    text = text or ''
+    out = set(CODE.findall(text))
+    if PROMO_WORD.search(text):
+        out |= {c for c in CODE_IN_LIST.findall(text) if c not in NOT_LIST_CODE}
+    for m in CODE_AFTER_WORD.finditer(text):
         c = m.group(1)
         if c.lower() not in NOT_CODE and (any(ch.isdigit() for ch in c) or c.isupper()):
             out.add(c.upper())
@@ -109,7 +118,8 @@ def price_items(text, hire=False):
         if not (CUR_AFTER.search(after) or (re.search(r"[\s.]", raw) and PRICE_CUE_BEFORE.search(before[-12:])) or re.search(r"pizza|pitsa|пицц", before[-15:], re.I)): continue
         if NOT_PRICE_BEFORE.search(before): continue
         if NOT_PRICE_AFTER.search(after): continue
-        if re.search(r"(−|(?<!\s)-|\s-(?=$))\s?$", before): continue   # "−30 000 сум" / "-20 000" is a discount, not a price
+        if re.search(r"(−|(?<!\s)-|\s-(?=$))\s?$", before): continue   # "−30 000 сум" is a discount, not a price
+        if re.match(r"\s?\d{2}\b", after): continue   # phone number like "78 113 40 40"
         if v in seen: continue
         seen.add(v)
         a, b = max(0, m.start() - 60), min(len(text), m.end() + 40)
@@ -138,6 +148,15 @@ def plural(n, one, few, many):
 def gist(text, price=None):
     """Short Russian description of an offer: main mechanics + price, e.g. «1+1 / второй в подарок · 88 000 сум»."""
     tg = [t for t in tags(text) if t not in ('Цена', 'Гарантия времени')]
+    if '1+1 / второй в подарок' in tg and 'Подарок к заказу' in tg: tg.remove('Подарок к заказу')
     parts = tg[:2]
     if price: parts.append(f"{price:,} сум".replace(',', ' '))
     return ' · '.join(parts) or 'Акция, механика не распознана — см. текст'
+
+
+def ru_part(text):
+    """Russian segment of a bilingual text (parts split by --- or a blank-line repeat); '' if there is none."""
+    for seg in SPLIT.split(text or ''):
+        seg = seg.strip()
+        if len(seg) > 25 and lang(seg) == 'RU': return seg
+    return ''

@@ -5,15 +5,20 @@
     <div class="ctrls"><button class="helpbtn" id="help" data-t="me" aria-label="Как читать дашборд">? <span>Как читать</span></button></div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
-    <button data-t="boss">Сводка</button><button data-t="ads">Реклама</button><button data-t="off">Офферы и цены</button>
-    <button data-t="app">Приложения</button><button data-t="tg">Telegram</button><button data-t="mn">Упоминания</button><button data-t="jr">Журнал</button>
+    <button data-t="boss">Сводка</button><button data-t="ads">Реклама</button><button data-t="off">Офферы и Telegram</button>
+    <button data-t="app">Приложения</button><button data-t="mn">Упоминания</button><button data-t="jr">Журнал</button>
   </nav>
   <div id="fresh" class="fresh note">Загружаю данные…</div>
 </header>
 
 <section class="panel" id="p-boss" hidden>
+  <div class="card key">
+    <div class="chd"><h2>Главное за неделю</h2><span class="hint" data-tip="Собирается автоматически из данных радара: самое заметное в рекламе, приложениях и офферах. Только факты, без прогнозов.">?</span><span class="sub" id="boss-key-sub"></span></div>
+    <ol class="keys" id="boss-key"></ol>
+  </div>
   <div class="card">
     <div class="chd"><h2>Сводка по брендам</h2><span class="hint" data-tip="Реклама, приложения и Telegram сравниваются со снимком 7+ дней назад. Поиск — доля интереса в Google Trends за 30 дней.">?</span><span class="sub" id="boss-sum-sub"></span></div>
+    <p class="note only-m">Таблицу можно листать вбок →</p>
     <div class="tbl scroll" id="boss-sum"></div>
     <p class="note" id="boss-sum-n"></p>
   </div>
@@ -25,11 +30,6 @@
   <div class="card c5">
     <div class="chd"><h2>У нас</h2><span class="sub">за 7 дней и за 30 дней</span></div>
     <div class="ins" id="boss-us"></div>
-  </div>
-  <div class="card">
-    <div class="chd"><h2>Прирост оценок в приложениях</h2><span class="hint" data-tip="Сколько новых оценок появилось в Google Play и App Store за период. Косвенный признак установок: больше оценок — больше людей скачивает и заказывает.">?</span><span class="sub" id="boss-gr-sub"></span></div>
-    <div id="boss-gr"></div>
-    <p class="note" id="boss-gr-n"></p>
   </div>
   <div class="card">
     <div class="chd"><h2>Офферы за 14 дней: мы и конкуренты</h2><span class="sub">механика и цена из рекламы и Telegram, одинаковые тексты склеены</span></div>
@@ -46,22 +46,21 @@
     <span class="note">Язык рекламы</span><div class="seg lang"><button data-v="all">Все</button><button data-v="UZ">UZ</button><button data-v="RU">RU</button></div>
     <span class="note" id="lang-n"></span>
   </div>
-  <div class="tiles" id="ov-tiles"></div>
-  <div class="card c7">
-    <div class="chd"><h2>Наблюдения</h2><span class="hint" data-tip="Считаются правилами, без догадок. Цвет — с нашей стороны: красный — угроза для нас, жёлтый — присмотреться, зелёный — в нашу пользу.">?</span><span class="sub">новые сообщения, механики, движение в App Store за неделю</span></div>
+  <div class="card">
+    <div class="chd"><h2>Кто сколько рекламируется</h2><span class="hint" data-tip="Объявления — счётчик Meta: каждая копия, размер и язык считаются отдельно. Сообщения — разные тексты, без найма. Больше объявлений не значит больше денег: бюджеты Meta не раскрывает.">?</span><span class="sub" id="ov-sov-sub"></span></div>
+    <div class="tbl scroll" id="ov-sov"></div>
+  </div>
+  <div class="card c6">
+    <div class="chd"><h2>Наблюдения</h2><span class="hint" data-tip="Считаются правилами, без догадок. Цвет — с нашей стороны: красный — угроза для нас, жёлтый — присмотреться, зелёный — в нашу пользу.">?</span><span class="sub">новые сообщения и механики</span></div>
     <div class="ins" id="ov-ins"></div>
   </div>
-  <div class="card c5">
-    <div class="chd"><h2>Доля рекламы</h2><span class="hint" data-tip="Доля бренда во всех активных объявлениях Meta у брендов радара. Больше объявлений не значит больше денег: бюджеты Meta не раскрывает.">?</span><span class="sub" id="ov-sov-sub"></span></div>
-    <div class="bars" id="ov-sov"></div>
-  </div>
-  <div class="card c7">
-    <div class="chd"><h2>Активные объявления по дням</h2><span class="hint" data-tip="Высота столбика — сколько активных объявлений было у брендов в этот день. Серые пустые дни — снимка не было, данные не достраиваем.">?</span><span class="sub">все языки, только реальные снимки</span><div class="right legend" id="ov-cad-leg"></div></div>
-    <div id="ov-cad"></div>
-  </div>
-  <div class="card c5">
+  <div class="card c6">
     <div class="chd"><h2>Куда ведёт реклама</h2><span class="hint" data-tip="Цель определяется по ссылке объявления: магазин приложений — «Приложение», карты — «Филиал», формы найма — «Найм». Считаем сообщения.">?</span><span class="sub">в сообщениях</span></div>
     <div class="bars" id="ov-goal"></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Активные объявления по дням</h2><span class="hint" data-tip="Высота столбика — сколько активных объявлений было у брендов в этот день. Серые пустые дни — снимка не было, данные не достраиваем.">?</span><span class="sub">все языки, только реальные снимки</span><div class="right legend" id="ov-cad-leg"></div></div>
+    <div id="ov-cad"></div>
   </div>
   <div class="card" id="ads-card">
     <div class="chd"><h2>Галерея объявлений</h2><span class="sub" id="ads-sub"></span></div>
@@ -107,9 +106,20 @@
     <div class="chd"><h2>Офферы дословно</h2><span class="sub">уникальные тексты без найма, свежие сверху</span></div>
     <div class="tbl scroll" id="off-list"></div>
   </div>
+  <div class="card">
+    <div class="chd"><h2>Telegram-каналы брендов</h2><span class="hint" data-tip="Официальные публичные каналы. Подписчиков Telegram показывает с точностью до 100. Разговоры в чужих каналах — во вкладке «Упоминания».">?</span><span class="sub" id="tg-sub"></span>
+      <div class="right"><select id="tg-b" aria-label="Канал"><option value="">Все каналы</option></select></div></div>
+    <div class="tgch" id="tg-tiles"></div>
+    <div id="tg-posts"></div>
+    <div class="more"><button class="btn ghost" id="tg-more" hidden>Показать ещё</button></div>
+  </div>
 </section>
 
 <section class="panel" id="p-app" hidden>
+  <div class="card">
+    <div class="chd"><h2>Наблюдения</h2><span class="hint" data-tip="Место в App Store скачет каждый день, поэтому сравниваем среднее место за 7 дней. Цвет — с нашей стороны.">?</span><span class="sub">среднее место в App Store за неделю</span></div>
+    <div class="ins" id="app-ins"></div>
+  </div>
   <div class="card c8">
     <div class="chd"><h2>App Store, Узбекистан</h2><span class="hint" data-tip="Место в чарте «Еда и напитки». Чарт считает свежие скачивания, а не все за всё время. Изменения — к снимку из заголовка таблицы.">?</span><span class="sub" id="app-ios-sub"></span></div>
     <div class="tbl scroll" id="app-ios"></div>
@@ -123,17 +133,13 @@
     <div class="chd"><h2>Google Play</h2><span class="sub" id="app-play-sub"></span></div>
     <div class="tbl scroll" id="app-play"></div>
   </div>
-</section>
-
-<section class="panel" id="p-tg" hidden>
-  <div class="tiles" id="tg-tiles"></div>
   <div class="card">
-    <div class="chd"><h2>Последние посты</h2><span class="sub">просмотры — охват поста</span>
-      <div class="right"><select id="tg-b" aria-label="Канал"><option value="">Все каналы</option></select></div></div>
-    <div id="tg-posts"></div>
-    <div class="more"><button class="btn ghost" id="tg-more" hidden>Показать ещё</button></div>
+    <div class="chd"><h2>Новые оценки в приложениях</h2><span class="hint" data-tip="Сколько новых оценок появилось в Google Play и App Store. Это не установки: число оценок зависит от того, просит ли приложение оценку. Сравнивайте бренд с самим собой во времени, а не бренды между собой.">?</span><span class="sub" id="boss-gr-sub"></span></div>
+    <div id="boss-gr"></div>
+    <p class="note" id="boss-gr-n"></p>
   </div>
 </section>
+
 
 <section class="panel" id="p-mn" hidden></section>
 
@@ -158,7 +164,7 @@
     <div class="chd"><h2>С чего начать</h2><span class="sub">вопрос → вкладка</span></div>
     <dl class="gloss">
       <dt>Что изменилось за неделю?</dt><dd>«Сводка» — таблица по всем брендам и главные события. «Журнал» — все события с датами и фильтрами.</dd>
-      <dt>Что сейчас делают конкуренты в рекламе?</dt><dd>«Реклама» — доля, динамика и галерея объявлений с фильтрами. «Офферы и цены» — механики, цены по категориям и промокоды.</dd>
+      <dt>Что сейчас делают конкуренты в рекламе?</dt><dd>«Реклама» — доля, динамика и галерея объявлений с фильтрами. «Офферы и Telegram» — механики, цены по категориям, промокоды и посты официальных каналов.</dd>
       <dt>Кто растёт в приложениях?</dt><dd>«Приложения» — место в App Store, рейтинг и прирост оценок.</dd>
       <dt>Что говорят о нас и о конкурентах?</dt><dd>«Упоминания» — интерес в Google, публикации в Telegram и СМИ, отзывы в магазинах, комментарии под нашими постами и рекламой.</dd>
       <dt>Как поделиться видом</dt><dd>Вкладка и фильтры сохраняются в адресе страницы. Скопируйте ссылку — коллега откроет то же самое.</dd>
@@ -174,8 +180,8 @@
     <div class="chd"><h2>Два слова, которые важно различать</h2></div>
     <dl class="gloss">
       <dt>Объявления</dt><dd>Как считает Meta. Одна и та же картинка на двух языках, в разных размерах или в разных группах — несколько объявлений. Показывает, насколько широко бренд раскатил рекламу. <span id="me-ex"></span></dd>
-      <dt>Сообщения</dt><dd>Разные по тексту объявления: копии с одинаковым текстом склеены в одно. Показывает, сколько разных идей бренд крутит. Галерея, офферы и механики считаются в сообщениях.</dd>
-      <dt>Почему в галерее меньше</dt><dd>Ad Library отдаёт не все объявления крупных брендов. Число объявлений берём из счётчика Meta, а тексты и картинки — из того, что удалось собрать. Сколько собрано, написано над галереей.</dd>
+      <dt>Сообщения</dt><dd>Разные по тексту объявления: копии с одинаковым текстом склеены в одно. Показывает, сколько разных идей бренд крутит. Галерея, офферы и механики считаются в сообщениях. Найм в сообщения не входит — он показан отдельно.</dd>
+      <dt>Почему в галерее меньше</dt><dd>Facebook ограничивает подгрузку без входа в аккаунт, поэтому у крупных брендов собирается не всё. Число объявлений берём из счётчика Meta, а тексты и картинки — из того, что удалось собрать. Сколько собрано, написано над галереей.</dd>
       <dt>Фильтр языка</dt><dd>Есть во вкладках «Реклама» и «Офферы». Объявления без текста (только картинка или видео) показываются при любом языке: язык у них не определить. При выборе UZ или RU число объявлений — оценка по собранным, со знаком ≈.</dd>
     </dl>
   </div>
@@ -185,7 +191,7 @@
       <dt>База сравнения</dt><dd>Везде одна: ближайший снимок 7 и больше дней назад. Если такого ещё нет, берётся самый ранний, и рядом стоит ⚠ с числом дней. Даты всегда в заголовке колонки.</dd>
       <dt>Проценты</dt><dd>Показываем, только если было 10 объявлений и больше. На малой базе (4 → 2) пишем разницу в штуках: +100% от двух объявлений ничего не значит.</dd>
       <dt>Telegram</dt><dd>Telegram показывает подписчиков с точностью до 100, поэтому изменения меньше ±200 не показываем — это округление.</dd>
-      <dt>Места в App Store</dt><dd>В наблюдениях — только движение на 3+ места за неделю. Дневные скачки в чарте почти всегда шум.</dd>
+      <dt>Места в App Store</dt><dd>Чарт сильно скачет день ото дня, поэтому сравниваем среднее место за 7 дней со средним за предыдущие 7 дней. Пока второй недели нет, вывод помечен как предварительный.</dd>
       <dt>Цвета</dt><dd>Всегда с нашей стороны. Конкурент поднялся в App Store — красный или жёлтый, опустился — зелёный.</dd>
       <dt>п.п.</dt><dd>Процентные пункты: было 20%, стало 23% — это +3 п.п.</dd>
     </dl>
@@ -197,8 +203,8 @@
       <dt>Долгожители</dt><dd>Объявления, которые крутятся 30+ дней. Картинки без текста склеены по бренду и дате старта.</dd>
       <dt>Главный оффер и цель</dt><dd>Оффер — по первым строкам текста. Цель — по ссылке: магазин приложений → «Приложение», карты → «Филиал», формы найма → «Найм».</dd>
       <dt>Цены</dt><dd>Только цены офферов. Категория (пицца, комбо, лаваш…) — по ближайшему к цене слову в тексте.</dd>
-      <dt>Прирост оценок</dt><dd>Число оценок сейчас минус число в базовом снимке. Dodo и Yandex не считаем: у них общее приложение на весь мир.</dd>
-      <dt>Поиск Google</dt><dd>Доля бренда в сумме индексов Google Trends всех 14 брендов. Это не число запросов.</dd>
+      <dt>Новые оценки</dt><dd>Число оценок сейчас минус число в базовом снимке. Это не установки: зависит от того, просит ли приложение оценку. У EVOS число оценок в App Store не меняется неделями — так отдаёт сам Apple. Dodo и Yandex не считаем: у них общее приложение на весь мир.</dd>
+      <dt>Интерес в Google</dt><dd>Доля бренда в сумме индексов Google Trends всех 14 брендов. Это не число запросов и только ориентир: короткие названия (KFC, Safia, Uzum) ищут и в другом смысле, поэтому их доля может быть завышена.</dd>
       <dt>Тональность</dt><dd>По словарю и по звёздам отзыва. Ошибается на сарказме и коротких текстах.</dd>
     </dl>
   </div>

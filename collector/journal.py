@@ -4,7 +4,7 @@ plus manual entries from DATA/journal_manual.json. Writes SITE/data/journal.json
 Usage: python3 journal.py DATA_DIR SITE_DIR"""
 import json, os, re, sys, glob, datetime as dt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rules import gist, plural, prices as offer_prices  # noqa: E402
+from rules import gist, plural, ru_part, prices as offer_prices  # noqa: E402
 DATA, SITE = sys.argv[1], sys.argv[2]; RAW = os.path.join(DATA, 'raw')
 NAMES = {'bellissimo': 'Bellissimo', 'kfc': 'KFC', 'evos': 'EVOS', 'oqtepa': 'Oqtepa', 'dodo': 'Dodo Pizza', 'maxway': 'MaxWay', 'uzum': 'Uzum Tezkor',
          'yandex': 'Yandex Eats', 'sariqbola': 'Sariq Bola', 'hardees': "Hardee's", 'safia': 'Safia'}
@@ -24,7 +24,7 @@ def snaps(kind):
         d = re.search(r'(\d{4}-\d\d-\d\d)', f).group(1); x = L(f)
         if x: out[d] = x
     return out
-def head(a): return re.split(r'-{3,}|—{3,}|_{3,}', (a.get('body') or a.get('title') or ''))[0].strip()
+def head(a): return re.split(r'-{3,}|—{3,}|_{3,}|\*{3,}', (a.get('body') or a.get('title') or ''))[0].strip()
 def key(t): return re.sub(r'[^\w]+', ' ', t.lower())[:70].strip()
 def tsd(x):
     try: return dt.datetime.fromtimestamp(int(x) + 5 * 3600, dt.timezone.utc).date().isoformat()
@@ -57,7 +57,7 @@ for i, d in enumerate(days):
                 p = prices(h); typ = 'open' if OPEN.search(h) else 'hire' if HIRE.search(h) else 'offer'
                 ev(tsd(a.get('start')) if tsd(a.get('start')) > prev else d, b, typ,
                    ('Оффер: ' + gist(h, p[0] if p else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм'}[typ],
-                   h, 'Реклама Meta', f"https://www.facebook.com/ads/library/?id={a.get('id')}", 'high' if typ in ('offer', 'open') else 'mid', a.get('id', ''))
+                   ru_part(a.get('body') or '') or h, 'Реклама Meta', f"https://www.facebook.com/ads/library/?id={a.get('id')}", 'high' if typ in ('offer', 'open') else 'mid', a.get('id', ''))
 
 # ---- App Store
 ios = snaps('ios'); dd = sorted(ios)
@@ -94,7 +94,7 @@ for d in sorted(tg):
             if not typ: continue
             pr = prices(t)
             ev(pd, b, typ, ('Оффер: ' + gist(t, pr[0] if pr else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм'}[typ],
-               t[:240], 'Telegram', 'https://t.me/' + p['id'], 'high' if typ in ('offer', 'open') else 'mid')
+               (ru_part(t) or t)[:240], 'Telegram', 'https://t.me/' + p['id'], 'high' if typ in ('offer', 'open') else 'mid')
 
 # ---- manual
 for m in (L(os.path.join(DATA, 'journal_manual.json')) or []):

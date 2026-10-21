@@ -105,3 +105,19 @@ tr.me td{background:var(--acc-soft)}
 }
 #boss-sum tr.me td:first-child{background:color-mix(in srgb,var(--acc) 12%,var(--card-solid))}
 @media (max-width:600px){.gal{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ad .bd{padding:8px;font-size:12px}.ad .meta{font-size:10.5px}}
+/* summary: key findings for management */
+.card.key{background:color-mix(in srgb,var(--acc) 6%,var(--card))}
+.keys{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:k}
+.keys li{counter-increment:k;display:grid;grid-template-columns:28px minmax(0,1fr);gap:2px 10px;align-items:start;font-size:14px}
+.keys li::before{content:counter(k);grid-row:span 2;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--bg2);color:var(--fg2)}
+.keys li.k-bad::before{background:var(--bad-bg);color:var(--bad)} .keys li.k-warn::before{background:var(--warn-bg);color:var(--warn)}
+.keys li.k-good::before{background:var(--good-bg);color:var(--good)} .keys li.k-acc::before{background:var(--acc-soft);color:var(--acc)}
+.keys li .m{grid-column:2;font-size:12.5px;color:var(--fg2)}
+/* share bar inside a table cell */
+.sbarw{display:flex;align-items:center;gap:8px;min-width:150px}.sbarw span{font-size:12px;font-weight:600;min-width:30px}
+.sbar{position:relative;flex:1;height:14px;border-radius:5px;background:var(--bg2);overflow:hidden}
+.sbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
+/* telegram channels line */
+.tgch{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 10px;font-size:13px}
+.tgc b{margin-left:2px}
+.only-m{display:none;margin:0 0 6px}@media (max-width:600px){.only-m{display:block}}

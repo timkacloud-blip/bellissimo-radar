@@ -61,7 +61,7 @@ def goal(a):
     return 'Сайт'
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rules import tags, primary, prices, price_items, codes, lang, plural  # noqa: E402
+from rules import tags, primary, prices, price_items, codes, lang, plural, ru_part  # noqa: E402
 
 # ---------- Ad Library snapshots ----------
 files = sorted(glob.glob(os.path.join(RAW, 'comp_adlib_*.json')))
@@ -91,7 +91,7 @@ json.dump(store, open(STORE, 'w'))
 last = dates[-1] if dates else None
 for r in ads.values():
     text = (r['body'] + ' ' + r['title'])
-    r['goal'] = goal(r); r['tags'] = tags(text); r['offer'] = 'Найм' if r['goal'] == 'Найм' else ('Каталог товаров' if r['catalog'] and not r['tags'] else 'Только видео/картинка' if not (r['body'] or r['title']) else primary(r['tags'])); r['pitems'] = price_items(text, r['goal'] == 'Найм'); r['prices'] = [x['p'] for x in r['pitems']]; r['codes'] = codes(text); r['lang'] = lang(text)
+    r['goal'] = goal(r); r['tags'] = tags(text); r['offer'] = 'Найм' if r['goal'] == 'Найм' else ('Каталог товаров' if r['catalog'] and not r['tags'] else 'Только видео/картинка' if not (r['body'] or r['title']) else primary(r['tags'])); r['pitems'] = price_items(text, r['goal'] == 'Найм'); r['prices'] = [x['p'] for x in r['pitems']]; r['codes'] = codes(text); r['lang'] = lang(text); r['ru'] = ru_part(r['body']) if r['lang'] == 'UZ' else ''
     r['active'] = 1 if r['last'] == last else 0
     end = r['last'] if r['active'] else r['last']
     r['days'] = (dt.date.fromisoformat(end) - dt.date.fromisoformat(r['start'])).days + 1 if r['start'] else None
@@ -120,6 +120,26 @@ for d in apps.values():
         if v[2]: v[2] = ','.join(str(round(float(x))) for x in str(v[2]).split(','))
         if v[4] and '.' not in str(v[4]): v[4] = None   # regex sometimes catches a build number instead of a version
 
+# ---------- App Store place: weekly average (one day in the chart is noise) ----------
+def week_rank(apps):
+    ds = sorted(d for d in apps if apps[d].get('ios_chart_ids'))
+    if not ds: return {}
+    last = dt.date.fromisoformat(ds[-1]); age = lambda d: (last - dt.date.fromisoformat(d)).days
+    cur = [d for d in ds if age(d) < 7]; prev = [d for d in ds if 7 <= age(d) < 14]
+    if not prev: prev = [d for d in ds if d not in cur][:3]
+    approx = len(prev) < 3   # fewer than 3 snapshots is not yet a weekly average
+    def avg(days, b):
+        v = [int(apps[d]['ios'][b][3]) for d in days if (apps[d].get('ios') or {}).get(b) and apps[d]['ios'][b][3]]
+        return (round(sum(v) / len(v), 1), len(v)) if v else (None, 0)
+    out = {'cur': [cur[0], cur[-1]] if cur else None, 'prev': [prev[0], prev[-1]] if prev else None, 'approx': approx, 'b': {}}
+    for b in BRANDS:
+        a, n = avg(cur, b); pa, pn = avg(prev, b)
+        today = (apps[ds[-1]].get('ios') or {}).get(b)
+        out['b'][b] = {'avg': a, 'n': n, 'of': len(cur), 'prev': pa, 'today': int(today[3]) if today and today[3] else None}
+    return out
+RANK = week_rank(apps)
+fp = lambda v: f"{v:g}".replace('.', ',')
+
 # ---------- Telegram ----------
 tg = {}
 for f in sorted(glob.glob(os.path.join(RAW, 'comp_tg_*.json'))):
@@ -129,7 +149,7 @@ for D, ch in tg.items():
     for b, c in ch.items():
         for p in c.get('posts', []):
             if p.get('id'):
-                q = dict(p); q['b'] = b; q['tags'] = tags(p.get('txt', '')); q['prices'] = prices(p.get('txt', '')); q['codes'] = codes(p.get('txt', ''))
+                q = dict(p); q['b'] = b; q['tags'] = tags(p.get('txt', '')); q['prices'] = prices(p.get('txt', '')); q['codes'] = codes(p.get('txt', '')); q['ru'] = ru_part(p.get('txt', ''))
                 tg_posts[p['id']] = q
 tg_last = tg[max(tg)] if tg else {}
 
@@ -150,52 +170,44 @@ if last:
     for b in BRANDS:
         A = [r for r in ads.values() if r['b'] == b and r['active']]
         if not A: continue
-        new7 = [r for r in A if r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7]
+        new7 = [r for r in A if r['goal'] != 'Найм' and r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7]
         _seen = set(); new7 = [r for r in new7 if not (msgkey(r) in _seen or _seen.add(msgkey(r)))]
-        n_msg = len({msgkey(r) for r in A})
+        n_msg = len({msgkey(r) for r in A if r['goal'] != 'Найм'})
         nm = BRANDS[b]['name']; own = BRANDS[b].get('own')
         if new7 and not own:
             g = collections.Counter(r['goal'] for r in new7).most_common(2)
-            ins.append({'b': b, 'lvl': 'acc', 't': f"{nm}: {len(new7)} {plural(len(new7), 'новое сообщение', 'новых сообщения', 'новых сообщений')} в рекламе за 7 дней",
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'acc', 't': f"{nm}: {len(new7)} {plural(len(new7), 'новое сообщение', 'новых сообщения', 'новых сообщений')} в рекламе за 7 дней",
                         'm': 'Куда ведут: ' + ', '.join(f"{k} — {v}" for k, v in g)})
         offers = collections.Counter(r['offer'] for r in A if r['offer'] not in ('Найм', 'Без оффера', 'Цена', 'Каталог товаров', 'Только видео/картинка'))
         if offers and not own:
-            ins.append({'b': b, 'lvl': 'mute', 't': f"{nm}: чаще всего — " + ', '.join(k for k, _ in offers.most_common(3)),
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: чаще всего — " + ', '.join(k for k, _ in offers.most_common(3)),
                         'm': f"среди {n_msg} {plural(n_msg, 'активного сообщения', 'активных сообщений', 'активных сообщений')}"})
         hire = len({msgkey(r) for r in A if r['goal'] == 'Найм'})
-        if hire >= 3 and hire / max(n_msg, 1) > .3 and not own:
-            ins.append({'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} из {n_msg} сообщений в рекламе — найм",
-                        'm': 'Ищут курьеров и персонал'})
+        if hire >= 3 and hire / max(n_msg + hire, 1) > .3 and not own:
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} {plural(hire, 'сообщение', 'сообщения', 'сообщений')} о найме в рекламе (и {n_msg} о продажах)",
+                        'm': 'Ищут курьеров и персонал. В счёт сообщений найм не входит.'})
     if apps:
-        ds = sorted(apps); a = apps[ds[-1]]
-        ch = a.get('ios_chart', [])
-        pos = {b: (int(v[3]) if v and v[3] else None) for b, v in a.get('ios', {}).items()}
-        me = pos.get('bellissimo')
+        a = apps[max(apps)]; ch = a.get('ios_chart', []); R = RANK.get('b', {})
+        me = (R.get('bellissimo') or {}).get('avg')
+        span = (f"{RANK['prev'][0][8:]}.{RANK['prev'][0][5:7]}" + (f"–{RANK['prev'][1][8:]}.{RANK['prev'][1][5:7]}" if RANK['prev'][1] != RANK['prev'][0] else '') if RANK.get('prev') else '')
         if me:
-            above = sorted((p, b) for b, p in pos.items() if p and b != 'bellissimo' and p < me)
+            above = sorted((x['avg'], b) for b, x in R.items() if x['avg'] and b != 'bellissimo' and x['avg'] < me)
             if above:
-                ins.append({'b': above[0][1], 'lvl': 'bad', 't': f"Выше нас в App Store «Еда и напитки» (мы #{me}): " + ', '.join(f"{BRANDS[b]['name']} #{p}" for p, b in above),
-                            'm': 'Чарт считает свежие скачивания, а не все за всё время.'})
-        # week-over-week chart moves only (day-to-day jumps are noise); base = nearest snapshot 7+ days back, else the earliest
-        if len(ds) >= 2:
-            now = dt.date.fromisoformat(ds[-1])
-            base = next((d for d in reversed(ds[:-1]) if (now - dt.date.fromisoformat(d)).days >= 7), ds[0])
-            span = (now - dt.date.fromisoformat(base)).days
-            p0 = apps[base].get('ios', {}); p1 = a.get('ios', {})
-            fmtd = lambda d: d[8:10] + '.' + d[5:7]
-            for b in p1:
-                if not (p0.get(b) and p1[b] and p1[b][3] and p0[b][3]): continue
-                was, now_p = int(p0[b][3]), int(p1[b][3]); up = was - now_p
-                if abs(up) < 3: continue
-                if b == 'bellissimo': lvl = 'good' if up > 0 else 'bad'
-                elif up > 0: lvl = 'bad' if me and now_p < me <= was else 'warn'
-                else: lvl = 'good'
-                ins.append({'b': b, 'lvl': lvl, 't': f"{BRANDS[b]['name']}: App Store #{was} → #{now_p}",
-                            'm': f"{'поднялся' if up > 0 else 'опустился'} на {abs(up)} за {span} {plural(span, 'день', 'дня', 'дней')} ({fmtd(base)} → {fmtd(ds[-1])})"})
+                ins.append({'sec': 'app', 'b': above[0][1], 'lvl': 'bad', 't': f"В среднем выше нас в App Store (мы #{fp(me)}): " + ', '.join(f"{BRANDS[b]['name']} #{fp(p)}" for p, b in above),
+                            'm': 'Среднее место в чарте «Еда и напитки» за последние 7 дней.'})
+        for b, x in R.items():
+            if not (x['avg'] and x['prev']): continue
+            up = x['prev'] - x['avg']
+            if abs(up) < 3: continue
+            if b == 'bellissimo': lvl = 'good' if up > 0 else 'bad'
+            elif up > 0: lvl = 'bad' if me and x['avg'] < me <= x['prev'] else 'warn'
+            else: lvl = 'good'
+            ins.append({'sec': 'app', 'b': b, 'lvl': lvl, 't': f"{BRANDS[b]['name']}: в среднем #{fp(x['prev'])} → #{fp(x['avg'])} в App Store",
+                        'm': f"{'поднялся' if up > 0 else 'опустился'} на {fp(round(abs(up), 1))} — среднее за 7 дней против " + (f"снимка {span} (предыдущая неделя ещё не накопилась, вывод предварительный)" if RANK.get('approx') else 'среднего за предыдущие 7 дней')})
         known = ('kfc', 'bellissimo', 'evos', 'oqtepa', 'dodo', 'maxway', 'uzum', 'yandex', 'sariq', 'hardee', 'safia')
         newcomers = [n for n in ch[:10] if not any(k in n.lower() for k in known)]
         if newcomers:
-            ins.append({'b': None, 'lvl': 'mute', 't': 'Не в списке конкурентов, но в топ-10 App Store: ' + ', '.join(newcomers), 'm': 'Стоит решить, добавлять ли их в радар'})
+            ins.append({'sec': 'app', 'b': None, 'lvl': 'mute', 't': 'Не в списке конкурентов, но в топ-10 App Store: ' + ', '.join(newcomers), 'm': 'Стоит решить, добавлять ли их в радар'})
 ORDER_LVL = {'bad': 0, 'warn': 1, 'acc': 2, 'good': 3, 'mute': 4}
 ins.sort(key=lambda i: ORDER_LVL.get(i['lvl'], 9))
 
@@ -209,6 +221,7 @@ out = {
     'tg_hist': {D: {b: num((c.get('cnt') or {}).get('subscribers')) for b, c in ch.items()} for D, ch in tg.items()},
     'tg_posts': sorted(tg_posts.values(), key=lambda p: p.get('t') or '', reverse=True),
     'insights': ins,
+    'rank': RANK,
 }
 out = clean(out)
 json.dump(out, open(os.path.join(SITE, 'data', 'comp.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
