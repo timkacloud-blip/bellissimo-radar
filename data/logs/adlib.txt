@@ -1,11 +1,21 @@
+kfc scrolled + 0
 kfc true
+evos scrolled + 0
 evos true
+oqtepa scrolled + 0
 oqtepa true
+dodo scrolled + 0
 dodo true
+maxway scrolled + 0
 maxway true
+uzum scrolled + 0
 uzum true
+bellissimo scrolled + 0
 bellissimo true
+sariqbola scrolled + 0
 sariqbola true
+hardees scrolled + 0
 hardees true
+safia scrolled + 0
 safia true
-adlib OK уже есть более полный файл за сегодня (146 объявл.)
+adlib OK kfc:139/10 evos:11/9 oqtepa:112/15 dodo:71/26 maxway:6/6 uzum:72/28 bellissimo:76/22 sariqbola:18/9 hardees:4/4 safia:24/17
