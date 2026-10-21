@@ -115,6 +115,7 @@ for d in apps.values():
     pos = {IDS[i]: str(k + 1) for k, i in enumerate(d.get('ios_chart_ids', [])) if i in IDS}
     for b, v in d.get('ios', {}).items():
         if not v: continue
+        if not v[0] and not v[1]: v[0] = v[1] = v[2] = None   # page did not load: 0 ratings / 0.0 is a failed read, not real data
         if d.get('ios_chart_ids'): v[3] = pos.get(b)
         if v[2]: v[2] = ','.join(str(round(float(x))) for x in str(v[2]).split(','))
         if v[4] and '.' not in str(v[4]): v[4] = None   # regex sometimes catches a build number instead of a version

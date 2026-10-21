@@ -182,8 +182,8 @@ function renderApp(){
   // place arrows coloured from our side: we go up — green, a competitor goes up — red
   const mv=(b,now,was)=>{ if(!now||!was||now===was) return ""; const up=was-now, good=B(b).own?up>0:up<0; return ` <span class="${good?"up":"dn"}">${up>0?"↑":"↓"}${Math.abs(up)}</span>` };
   $("#app-ios").innerHTML=table("app-ios",[{h:"Приложение",l:1},{h:"Место"},{h:"Оценок"},{h:"+ за период"},{h:"Средняя"},{h:"Доля 1★",tip:"Какая часть всех оценок — одна звезда"},{h:"Версия"}],
-    ORDER.filter(b=>ios[b]).map(b=>{ const v=ios[b], h=(v[2]||"").split(",").map(Number), tot=h.reduce((s,x)=>s+(x||0),0), one=tot?100*(h[4]||0)/tot:null, pl=v[3]?+v[3]:null, plo=pio[b]&&pio[b][3]?+pio[b][3]:null, gr=pio[b]?v[0]-pio[b][0]:null;
-      return {cls:B(b).own?"me":"",s:[B(b).name,pl,v[0],gr,v[1]?+v[1]:null,one,v[4]||""],c:[bname(b),pl?`<b>#${pl}</b>${mv(b,pl,plo)}`:"—",fmt(v[0]),gr==null?"—":gr?(gr>0?"+":"−")+fmt(Math.abs(gr)):"0",v[1]?(+v[1]).toFixed(1):"—",one==null?"—":one.toFixed(0)+"%",esc(v[4]||"—")]} }).sort((x,y)=>(x.s[1]||999)-(y.s[1]||999)));
+    ORDER.filter(b=>ios[b]).map(b=>{ const v=ios[b], h=v[2]?String(v[2]).split(",").map(Number):[], tot=h.reduce((s,x)=>s+(x||0),0)||0, one=tot?100*(h[4]||0)/tot:null, pl=v[3]?+v[3]:null, plo=pio[b]&&pio[b][3]?+pio[b][3]:null, gr=pio[b]&&v[0]!=null&&pio[b][0]!=null?v[0]-pio[b][0]:null;
+      return {cls:B(b).own?"me":"",s:[B(b).name,pl,v[0]??null,gr,v[1]?+v[1]:null,one,v[4]||""],c:[bname(b),pl?`<b>#${pl}</b>${mv(b,pl,plo)}`:"—",v[0]==null?'<span class="note" data-tip="Страница приложения не загрузилась при сборе">нет данных</span>':fmt(v[0]),gr==null?"—":gr?(gr>0?"+":"−")+fmt(Math.abs(gr)):"0",v[1]?(+v[1]).toFixed(1):"—",one==null?"—":one.toFixed(0)+"%",esc(v[4]||"—")]} }).sort((x,y)=>(x.s[1]||999)-(y.s[1]||999)));
   $("#app-ch-sub").textContent="на "+dfmt(b0.now);
   const ch=a.ios_chart||[], ids=a.ios_chart_ids||[];
   $("#app-chart").innerHTML=ch.map((n,i)=>{ const b=IOS_IDS[ids[i]], mn=!b&&/papa|apex|domino/i.test(n); return `<span class="n">${i+1}</span><span class="${b?"hl":mn?"rk-mn":""}">${b?dot(b):""}${b==="bellissimo"?"★ ":""}${esc(n)}</span>` }).join("");
