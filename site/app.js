@@ -397,6 +397,7 @@ $("#jr-more").addEventListener("click",()=>{ LIM["jr"]=(LIM["jr"]||30)+30; reren
   try{ D=await load("data/comp.json") }catch(e){ $("#fresh").innerHTML=esc(e.message)+' <button id="retry" class="chip">Повторить</button>'; return }
   try{ J=await load("data/journal.json") }catch(e){}
   show(S.tab);
+  loadMn().then(()=>{ if(S.tab==="boss"||S.tab==="jr") rerender() });
 })();
 
 (()=>{ const tip=document.createElement("div"); tip.id="tip"; document.body.appendChild(tip);
