@@ -25,6 +25,7 @@ const INFO={
 const CSS=`#p-mn tr.me td{background:var(--acc-soft);font-weight:650}#p-mn .info{color:var(--fg3);cursor:help;font-size:13px}
 #p-mn .verdict{display:grid;gap:8px;font-size:14px;margin:0;padding:0;background:none}#p-mn .verdict p{margin:0}#p-mn details summary{cursor:pointer;color:var(--fg2);padding:4px 0}
 #p-mn details .post{margin-left:6px}#p-mn .post a{color:var(--acc)}#p-mn .alert{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+#p-mn .mnnav{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 4px}#p-mn .mnnav a{border:1px solid var(--line);background:var(--card-solid);border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--fg2);text-decoration:none}#p-mn .mnnav a:hover{color:var(--fg);border-color:var(--fg3)}
 #p-mn .seg{display:inline-flex;gap:2px;background:var(--bg2);border-radius:10px;padding:2px;flex-wrap:wrap}#p-mn .seg button{border:0;background:none;border-radius:8px;padding:5px 11px;cursor:pointer;color:var(--fg2);font-size:12px}
 #p-mn .seg button[aria-pressed="true"]{background:var(--card-solid);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 #p-mn input[type=date]{background:var(--card-solid);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font:inherit;font-size:12.5px}
@@ -179,7 +180,10 @@ function setPreset(k){M.preset=k;M.to=D.today;M.from=k==="all"?P.min:ad(D.today,
 function paint(root){root.querySelector("#mn-body").innerHTML=blocks();
  root.querySelectorAll("#mn-per button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===M.preset));
  root.querySelectorAll("#mn-chips .chip[data-b]").forEach(b=>{if(b.dataset.b!=="*")b.setAttribute("aria-pressed",sel(b.dataset.b))});
- {const R=range();root.querySelector("#mn-pnote").innerHTML=`Период: <b>${dm(R.a)}–${dm(R.b)}</b> (${R.L} дн.). Сравниваем с: <b>${dm(R.pa)}–${dm(R.pb)}</b> (предыдущие ${R.L} дн.).`}root.querySelector("#mn-from").value=M.from;root.querySelector("#mn-to").value=M.to}
+ {const R=range();root.querySelector("#mn-pnote").innerHTML=`Период: <b>${dm(R.a)}–${dm(R.b)}</b> (${R.L} дн.). Сравниваем с: <b>${dm(R.pa)}–${dm(R.pb)}</b> (предыдущие ${R.L} дн.).`}root.querySelector("#mn-from").value=M.from;root.querySelector("#mn-to").value=M.to
+ {const body=root.querySelector("#mn-body"),skip=/^(Как пользоваться|Служебное|Как читать)/,cards=[...body.querySelectorAll(":scope > .card")];const items=[];
+  cards.forEach((c,i)=>{const h=c.querySelector("h2");if(!h)return;c.id="mnc-"+i;if(!skip.test(h.textContent.trim()))items.push([c.id,h.textContent.trim()])});
+  if(items.length>3){const nav=document.createElement("div");nav.className="mnnav";nav.innerHTML='<span class="note">Перейти к:</span>'+items.map(x=>`<a href="#${x[0]}" data-go="${x[0]}">${E(x[1])}</a>`).join("");body.prepend(nav)}}}
 const EXTRA_COL={papajohns:"#c2410c",dominos:"#2b6cb0",apex:"#8d8d8d"};
 let CTX=null;
 function ratFromApps(apps){const rows=[];Object.keys(apps||{}).sort().forEach(d=>{const a=apps[d]||{};for(const b in a.play||{}){const v=a.play[b];if(v&&v[0]!=null)rows.push([d,b,"play",+v[0],v[1]])}for(const b in a.ios||{}){const v=a.ios[b];if(v&&v[0]!=null)rows.push([d,b,"appstore",+v[1],v[0]])}});return rows}
@@ -192,7 +196,7 @@ window.renderMentions=function(panel,data,ctx){D=data;applyCtx(ctx);
  setPreset("30");
  panel.innerHTML=barHtml()+'<div id="mn-body" style="display:contents"></div>';paint(panel);
  if(!panel.dataset.wired){panel.dataset.wired=1;
-  panel.addEventListener("click",e=>{
+  panel.addEventListener("click",e=>{const go=e.target.closest(".mnnav a[data-go]");if(go){e.preventDefault();const t=panel.querySelector("#"+go.dataset.go);if(t)t.scrollIntoView({behavior:"smooth",block:"start"});return}
    const p=e.target.closest("#mn-per button");if(p){setPreset(p.dataset.p);paint(panel);return}
    const g=e.target.closest("#mn-grp button");if(g){M.grp=g.dataset.g;paint(panel);return}
    const c=e.target.closest("#mn-chips .chip");if(c){if(c.dataset.b==="*"){Object.keys(D.names).forEach(b=>M.brands.add(b))}else if(M.brands.has(c.dataset.b))M.brands.delete(c.dataset.b);else M.brands.add(c.dataset.b);paint(panel)}});

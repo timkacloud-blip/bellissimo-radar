@@ -4,7 +4,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const fmt=n=>n==null||!isFinite(n)?"—":Math.round(n).toLocaleString("ru-RU");
 const kfmt=n=>n==null?"—":n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+" млн":n>=1e4?Math.round(n/1e3)+" тыс":fmt(n);
 const ls={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const S={tab:ls.get("cr.tab","boss"),lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,limit:60};
+const S={tab:ls.get("cr.tab","boss"),lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,limit:24};
 let D=null, TH={}, thumbsLoaded=false;
 
 async function load(u,tries=4){ for(let i=0;i<tries;i++){ try{ const r=await fetch(u,{cache:"no-cache"}); if(r.ok) return await r.json() }catch(e){} await new Promise(r=>setTimeout(r,600*(i+1))) } throw new Error("Не удалось загрузить "+u) }
@@ -32,7 +32,7 @@ function adCard(a){
       <div class="meta"><span>${a.prices.length?a.prices.map(p=>fmt(p)).join(" / ")+" сум":""}</span><a href="https://www.facebook.com/ads/library/?id=${a.id}" target="_blank" rel="noopener">в Ad Library ↗</a></div>
     </div></article>`;
 }
-document.addEventListener("click",e=>{ const t=e.target.closest(".ad .tx"); if(t) t.classList.toggle("open") });
+document.addEventListener("click",e=>{ if(e.target.closest("#retry")){ location.reload(); return } const t=e.target.closest(".ad .tx"); if(t) t.classList.toggle("open") });
 
 // ---------- tabs ----------
 function renderOv(){
@@ -254,7 +254,7 @@ function loadMn(){ if(!MNP){ const q="?"+Date.now(), g=u=>fetch(u).then(r=>{ if(
   const js=window.renderMentions?Promise.resolve():new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="mentions.js"+q; s.onload=ok; s.onerror=no; document.head.appendChild(s) });
   MNP=Promise.all([g(RAWU+"mentions_data.json"+q).catch(()=>g("mentions_data.json"+q)),js]).then(([d])=>{ MN=d; mnEvents(); return d }).catch(()=>null) } return MNP }
 function renderMn(){ const p=document.getElementById("p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>';
-  loadMn().then(d=>{ if(!d) throw 0; window.renderMentions(p,d,MCTX()); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Данные упоминаний пока не опубликованы.</div>' }) }
+  loadMn().then(d=>{ if(!d) throw 0; window.renderMentions(p,d,MCTX()); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Не удалось загрузить данные упоминаний. <button id="retry" class="chip">Повторить</button></div>' }) }
 const R={mn:renderMn,boss:renderBoss,jr:renderJr,ov:renderOv,ads:renderAds,off:renderOff,app:renderApp,tg:renderTg,me:renderMe};
 
 function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector(":scope > .covnote");
@@ -276,15 +276,15 @@ function rerender(){ R[S.tab]() }
 
 $("#tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.t) });
 $("#lang").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; S.lang=b.dataset.v; $$("#lang button").forEach(x=>x.setAttribute("aria-pressed",x===b)); $("#f-brand").innerHTML=""; rerender() });
-$("#f-brand").addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b) return; const k=b.dataset.b; S.brands.has(k)?S.brands.delete(k):S.brands.add(k); b.setAttribute("aria-pressed",S.brands.has(k)); S.limit=60; renderAds() });
-[["#f-goal","goal"],["#f-tag","tag"],["#f-fmt","fmt"],["#f-sort","sort"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.value; S.limit=60; renderAds() }));
+$("#f-brand").addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b) return; const k=b.dataset.b; S.brands.has(k)?S.brands.delete(k):S.brands.add(k); b.setAttribute("aria-pressed",S.brands.has(k)); S.limit=24; renderAds() });
+[["#f-goal","goal"],["#f-tag","tag"],["#f-fmt","fmt"],["#f-sort","sort"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.value; S.limit=24; renderAds() }));
 $("#f-raw").addEventListener("change",e=>{ S.raw=e.target.checked; renderAds() });
 $("#f-hire").addEventListener("change",e=>{ S.hire=e.target.checked; renderAds() });
-let qt; $("#f-q").addEventListener("input",e=>{ clearTimeout(qt); qt=setTimeout(()=>{ S.q=e.target.value; S.limit=60; renderAds() },200) });
-$("#ads-more").addEventListener("click",()=>{ S.limit+=60; renderAds() });
+let qt; $("#f-q").addEventListener("input",e=>{ clearTimeout(qt); qt=setTimeout(()=>{ S.q=e.target.value; S.limit=24; renderAds() },200) });
+$("#ads-more").addEventListener("click",()=>{ S.limit+=24; renderAds() });
 
 (async()=>{
-  try{ D=await load("data/comp.json") }catch(e){ $("#stamp").textContent=e.message; return }
+  try{ D=await load("data/comp.json") }catch(e){ $("#stamp").innerHTML=esc(e.message)+' <button id="retry" class="chip">Повторить</button>'; return }
   const ad_=D.info.date, ap_=Object.keys(D.apps||{}).sort().pop()||"—", f_=x=>x&&x.length>=10?x.slice(8,10)+"."+x.slice(5,7):x; $("#stamp").textContent=`Реклама на ${f_(ad_)} · приложения на ${f_(ap_)} · Telegram на ${f_(Object.keys(D.tg_hist||{}).sort().pop()||"—")} · обновлено ${f_(D.info.built.slice(0,10))} ${D.info.built.slice(11,16)} UTC`;
   try{ J=await load("data/journal.json") }catch(e){}
   $$("#lang button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v==="all"));
