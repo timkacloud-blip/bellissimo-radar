@@ -45,6 +45,8 @@ const ofmt=o=>o.v==null?"—":(o.est?"≈":"")+fmt(o.v);
 
 // ---------- generic table: sortable by click, "show more" ----------
 // change as a count and a percent together: "−2 (−60%)"; percent only when the base is big enough not to be noise
+const CTA_RU={"install now":"Установить приложение","download":"Установить приложение","install":"Установить приложение","order now":"Заказать","start order":"Заказать","shop now":"Заказать","see menu":"Смотреть меню","apply now":"Откликнуться (найм)","learn more":"Узнать подробнее","see details":"Узнать подробнее","visit instagram profile":"Перейти в Instagram","call now":"Позвонить","":"Без кнопки"};
+const ctaRu=c=>CTA_RU[(c||"").toLowerCase()]||c;
 function fchg(n,o){ const d=n-o; if(!d) return "0"; const sg=d>0?"+":"−", pc=o>=5?` (${sg}${Math.abs(Math.round(100*d/o))}%)`:""; return sg+Math.abs(d)+pc }
 function table(id,cols,rows,o={}){
   const st=TS[id];
@@ -116,9 +118,10 @@ function renderAds(){
     return {cls:B(b).own?"me":"",s:[B(b).name].concat(v.map(x=>x??null)).concat([l!=null&&f!=null?l-f:null]),c:[bname(b)].concat(v.map(x=>x==null?'<span class="note">—</span>':String(x))).concat([l!=null&&f!=null?`<span class="chg">${fchg(l,f)}</span>`:""])} });
   $("#ov-cad").innerHTML=`<div class="tbl scroll">${table("ov-cad",dcols,drows)}</div>`;
   // goals
-  const AU=dedupe(A), G={}; AU.forEach(a=>{ (G[a.goal]=G[a.goal]||{}); G[a.goal][a.b]=(G[a.goal][a.b]||0)+1 });
-  const gt=g=>Object.values(G[g]).reduce((s,v)=>s+v,0), goals=Object.keys(G), gm=Math.max(1,...goals.map(gt));
-  $("#ov-goal").innerHTML=goals.sort((x,y)=>gt(y)-gt(x)).map(g=>`<div class="brow"><span>${esc(g)}</span><div class="bbar">${ORDER.filter(b=>G[g][b]).map(b=>`<i data-tip="${esc(B(b).name)}: ${G[g][b]} ${plural(G[g][b],"сообщение","сообщения","сообщений")}" style="width:${100*G[g][b]/gm}%;background:${B(b).color}"></i>`).join("")}</div><span class="num">${gt(g)}</span></div>`).join("");
+  const bars=(el,keyf)=>{ const G={}; A.forEach(a=>{ const g=keyf(a); (G[g]=G[g]||{}); G[g][a.b]=(G[g][a.b]||0)+1 });
+    const gt=g=>Object.values(G[g]).reduce((s,v)=>s+v,0), gs=Object.keys(G), gm=Math.max(1,...gs.map(gt));
+    $(el).innerHTML=gs.sort((x,y)=>gt(y)-gt(x)).map(g=>`<div class="brow"><span>${esc(g)}</span><div class="bbar">${ORDER.filter(b=>G[g][b]).map(b=>`<i data-tip="${esc(B(b).name)}: ${G[g][b]} ${plural(G[g][b],"карточка","карточки","карточек")}" style="width:${100*G[g][b]/gm}%;background:${B(b).color}"></i>`).join("")}</div><span class="num">${gt(g)}</span></div>`).join("") };
+  bars("#ov-cta",a=>ctaRu(a.cta)); bars("#ov-goal",a=>"→ "+a.goal);
   renderGallery(A);
   // long-lived
   const LG=dedupe(A.filter(a=>(a.days||0)>=30&&a.goal!=="Найм"),true).sort((x,y)=>y.days-x.days);
@@ -149,6 +152,16 @@ function renderGallery(A0){
 // ---------- Офферы и цены ----------
 function renderOff(){
   syncLang();
+  const A0=active().filter(a=>a.goal!=="Найм"), tgc={}; (D.tg_posts||[]).forEach(p=>(p.codes||[]).forEach(c=>{ (tgc[p.b]=tgc[p.b]||new Set()).add(c) }));
+  const top=(arr,n)=>{ const m={}; arr.forEach(x=>{ if(x) m[x]=(m[x]||0)+1 }); return Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,n) };
+  const sb=ORDER.filter(b=>A0.some(a=>a.b===b));
+  $("#off-sum").innerHTML=table("off-sum",[{h:"Бренд",l:1},{h:"Карточек"},{h:"Главные механики",l:1,w:1},{h:"Цена от, сум",tip:"Минимальная цена, найденная в тексте рекламы. Категория по ближайшему слову, может ошибаться."},{h:"Промокоды",l:1,w:1},{h:"Кнопка",l:1,w:1},{h:"Куда ведёт",l:1,w:1}],
+    sb.map(b=>{ const x=A0.filter(a=>a.b===b), n=x.length, mech=top(x.flatMap(a=>a.tags.filter(t=>t!=="Цена"&&t!=="Гарантия времени")),3), pr=(pi=>pi.filter(i=>!/^(Напиток|Другое)$/.test(i.c))[0]||pi[0])(x.flatMap(a=>(a.pitems||[])).sort((p,q)=>p.p-q.p)),
+        codes=new Set(x.flatMap(a=>a.codes||[])); (tgc[b]||[]).forEach(c=>codes.add(c)); const cb=top(x.map(a=>ctaRu(a.cta)),2), gl=top(x.map(a=>a.goal),2), cv=cov(b), thin=cv&&cv.p<.7;
+      return {cls:B(b).own?"me":"",s:[B(b).name,n,mech.length?mech[0][1]:0,pr?pr.p:null,codes.size,cb.length?cb[0][1]:0,gl.length?gl[0][1]:0],
+        c:[bname(b)+(thin?' <span class="note" data-tip="Реклама бренда собрана не полностью">⚠</span>':""),`<b>${n}</b>`,mech.map(([t,v])=>`<span class="pill p-mute">${esc(t)} · ${v}</span>`).join(" ")||'<span class="note">нет</span>',
+          pr?`<b>${fmt(pr.p)}</b> <span class="note">${esc(pr.c)}</span>`:'<span class="note">нет цен в тексте</span>',[...codes].slice(0,4).map(c=>`<b>${esc(c)}</b>`).join(", ")+(codes.size>4?` <span class="note">+${codes.size-4}</span>`:"")||'<span class="note">нет</span>',
+          cb.map(([t,v])=>`${esc(t)} <span class="note">${v}</span>`).join("<br>")||"—",gl.map(([t,v])=>`${esc(t)} <span class="note">${v}</span>`).join("<br>")||"—"]} }).sort((x,y)=>y.s[1]-x.s[1]));
   const A=dedupe(active().filter(a=>a.goal!=="Найм")), brands=ORDER.filter(b=>A.some(a=>a.b===b));
   const tags=[...new Set(A.map(a=>a.offer))].filter(t=>t!=="Цена").sort((x,y)=>(x==="Без оффера"||x==="Каталог товаров"||x==="Только видео/картинка")-(y==="Без оффера"||y==="Каталог товаров"||y==="Только видео/картинка")||x.localeCompare(y));
   const cnt=(b,t)=>A.filter(a=>a.b===b&&a.offer===t).length, mx=Math.max(1,...brands.flatMap(b=>tags.map(t=>cnt(b,t))));

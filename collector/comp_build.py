@@ -42,6 +42,8 @@ def goal(a):
     l = (a.get('link') or '').lower(); t = (a.get('body') or '') + ' ' + (a.get('title') or '')
     if 'franchise' in l or re.search(r"франшиз|franshiza|shaxsiy biznes", t, re.I):
         return 'Франшиза'
+    if (a.get('cta') or '').lower() == 'apply now' and 'franchise' not in l:   # the "Apply now" button is the hiring button
+        return 'Найм'
     if 'paperform' in l or '-hr.' in l or 'hr_bot' in l or 'jbot' in l:
         return 'Найм'
     if 'play.google' in l or 'itunes.apple' in l or 'apps.apple' in l or 'onelink' in l or 'app.link' in l:

@@ -55,8 +55,8 @@
     <div class="ins" id="ov-ins"></div>
   </div>
   <div class="card c6">
-    <div class="chd"><h2>Куда ведёт реклама</h2><span class="hint" data-tip="Цель определяется по ссылке объявления: магазин приложений — «Приложение», карты — «Филиал», формы найма — «Найм». Считаем сообщения.">?</span><span class="sub">в сообщениях</span></div>
-    <div class="bars" id="ov-goal"></div>
+    <div class="chd"><h2>Что просит сделать и куда ведёт</h2><span class="hint" data-tip="Берётся из самого объявления в Meta: кнопка (Заказать, Установить, Подробнее, Откликнуться) и ссылка (магазин приложений, сайт, Telegram, Instagram, карта). Рекламная цель кампании в Ad Library не публикуется, кнопка и ссылка самое близкое к ней. Считаются карточки.">?</span></div>
+    <div class="bars" id="ov-cta"></div><div class="bars" id="ov-goal" style="margin-top:14px"></div>
   </div>
   <div class="card">
     <div class="chd"><h2>Объявления по дням, по брендам</h2><span class="hint" data-tip="Счётчик Meta на каждый день снимка. В скобках к последнему столбцу — изменение к первому дню таблицы. Пустые дни — снимка не было, данные не достраиваем. Рост часто настоящий (например, запуск новой кампании), но до 22.10 часть данных читалась неполно.">?</span><span class="sub">все языки, только реальные снимки</span></div></div>
@@ -90,22 +90,25 @@
     <span class="note">Язык рекламы</span><div class="seg lang"><button data-v="all">Все</button><button data-v="UZ">UZ</button><button data-v="RU">RU</button></div>
   </div>
   <div class="card">
-    <div class="chd"><h2>Главный оффер по брендам</h2><span class="hint" data-tip="У каждого сообщения один главный оффер — по первым строкам текста, без стандартной строки про доставку за 35 минут. В ячейке — число сообщений.">?</span><span class="sub">число сообщений с этой механикой, без найма</span></div>
+    <div class="chd"><h2>Офферы по брендам</h2><span class="hint" data-tip="Одна строка на бренд: что предлагают (механики по тексту), от какой цены, какие промокоды, что просит сделать кнопка и куда ведёт ссылка. Считаются карточки рекламы без найма. Цены и механики берутся из текста, поэтому предложения, написанные только на картинке, сюда не попадают.">?</span><span class="sub">карточки рекламы без найма</span></div>
+    <div class="tbl scroll" id="off-sum"></div>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Механики по брендам</h2><span class="hint" data-tip="У каждой карточки один главный оффер: по первым строкам текста, без стандартной строки про доставку за 35 минут. В ячейке число карточек.">?</span></div>
     <div class="tbl scroll" id="off-mx"></div>
   </div>
-  <div class="card">
-    <div class="chd"><h2>Цены в рекламе</h2><span class="hint" data-tip="Цены офферов. Скидки («−30 000»), старые цены, минимальная сумма заказа и зарплаты исключены. Категория — по ближайшему к цене слову в тексте, может ошибаться.">?</span><span class="sub">сгруппировано по категории товара, чтобы сравнивать похожее</span>
-      <div class="right"><select id="pr-cat" aria-label="Категория"><option value="">Все категории</option></select></div></div>
+  <details class="card"><summary><b>Подробнее: цены в рекламе</b></summary>
+    <div class="chd"><span class="sub">сгруппированы по категории, скидки, старые цены и суммы заказа исключены</span><div class="right"><select id="pr-cat" aria-label="Категория"><option value="">Все категории</option></select></div></div>
     <div class="tbl scroll" id="off-pr"></div>
-  </div>
-  <div class="card">
-    <div class="chd"><h2>Промокоды</h2><span class="sub">найдены в рекламе и Telegram</span></div>
+  </details>
+  <details class="card"><summary><b>Подробнее: промокоды</b></summary>
+    <div class="chd"><span class="sub">найдены в рекламе и Telegram</span></div>
     <div class="tbl scroll" id="off-codes"></div>
-  </div>
-  <div class="card">
-    <div class="chd"><h2>Офферы дословно</h2><span class="sub">уникальные тексты без найма, свежие сверху</span></div>
+  </details>
+  <details class="card"><summary><b>Подробнее: тексты объявлений дословно</b></summary>
+    <div class="chd"><span class="sub">свежие сверху; для проверки, как радар понял текст</span></div>
     <div class="tbl scroll" id="off-list"></div>
-  </div>
+  </details>
   <div class="card">
     <div class="chd"><h2>Telegram-каналы брендов</h2><span class="hint" data-tip="Официальные публичные каналы. Подписчиков Telegram показывает с точностью до 100. Разговоры в чужих каналах — во вкладке «Упоминания».">?</span><span class="sub" id="tg-sub"></span>
       <div class="right"><select id="tg-b" aria-label="Канал"><option value="">Все каналы</option></select></div></div>
