@@ -1,0 +1,41 @@
+name: mentions
+on:
+  schedule:
+    - cron: '23 */2 * * *'      # every 2 hours: news feeds keep only the latest entries
+  workflow_dispatch:
+  push:
+    paths: ['data/mentions_mac.json']
+concurrency: { group: mentions, cancel-in-progress: false }
+permissions: { contents: write }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: state, path: state }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q google-play-scraper pytrends
+      - name: Import what the Mac collected
+        run: python3 mentions/import_mac.py state/mentions_data.db data/mentions_mac.json
+      - name: Collect
+        env: { MENTIONS_DB: state/mentions_data.db }
+        run: |
+          H=$(date -u +%H)
+          SRC="media"
+          # once a day (morning, Tashkent): app reviews and Google Trends
+          if [ "$H" = "02" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="media play appstore trends"; fi
+          python3 mentions/collect.py $SRC 2>&1 | tee mentions.log
+      - name: Build data for the tab
+        run: python3 mentions/build.py state/mentions_data.db site/mentions_data.json
+      - name: Save DB (state branch, history is overwritten)
+        run: |
+          cd state && git config user.name Claude && git config user.email noreply@anthropic.com
+          git checkout -q --orphan s2 && git add -A && git commit -qm "state $(date -u +%F\ %H:%M)" && git push -q -f origin HEAD:state
+      - name: Publish data
+        run: |
+          git config user.name Claude && git config user.email noreply@anthropic.com
+          git add site/mentions_data.json && (git commit -qm "mentions $(date -u +%F\ %H:%M)" || echo nothing)
+          for i in 1 2 3; do git pull --rebase -X theirs -q && git push -q && break || sleep 5; done

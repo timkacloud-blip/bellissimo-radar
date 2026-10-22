@@ -1,0 +1,731 @@
+{
+ "ig_user": "17841401021949846",
+ "page": "1583758965232483",
+ "act": "act_2027757221401657",
+ "api": "v26.0",
+ "play_app": "uz.bellissimo.app",
+ "appstore_id": "1507547994",
+ "appstore_countries": [
+  "uz",
+  "ru"
+ ],
+ "ads_days": 60,
+ "ig_posts": 25,
+ "telegram_channels": {
+  "@kfcuzbekistanofficial": "kfc",
+  "@evosuzbekistan": "evos",
+  "@oqtepalavashuz": "oqtepa",
+  "@dodopizzatashkent": "dodo",
+  "@maxwayfooduz": "maxway",
+  "@Safiabakery": "safia",
+  "@UzumTezkor": "uzum",
+  "@yandexgo_uz": "yandex"
+ },
+ "telegram_days": 14,
+ "youtube_channels": {
+  "UCer-RH-0Mnmqa7g4q_keozA": "bellissimo",
+  "UCuBqmoPuL1pi4YUucMol0rw": "kfc",
+  "UC6Tz9DYtKytilLxLVHEtaKQ": "evos",
+  "UCJrIVuDoP0djk7kQ4aHKwXw": "oqtepa",
+  "UCxLtZsRmrlfDhOsM9wF2gwA": "uzum"
+ },
+ "brands": {
+  "bellissimo": {
+   "names": [
+    "Bellissimo Pizza",
+    "Bellissimo",
+    "Беллиссимо Пицца",
+    "Беллиссимо"
+   ],
+   "typos": [
+    "Belissimo",
+    "Belisimo",
+    "Bellisimo",
+    "Bellesimo",
+    "Belesimo",
+    "Bilissimo",
+    "Bilisimo",
+    "Belissimo pitsa",
+    "Белиссимо",
+    "Беллисимо",
+    "Белисимо",
+    "Белессимо",
+    "Белесимо",
+    "Билиссимо",
+    "Билисимо",
+    "Беллиссимо питса"
+   ],
+   "slang": [
+    "пицца 1174",
+    "Беллисстер",
+    "Bellisster",
+    "синнамончики",
+    "#bellissimopizza",
+    "#bellissimouz"
+   ],
+   "plus": [
+    "пицца",
+    "pizza",
+    "pitsa",
+    "1174",
+    "доставка",
+    "Ташкент"
+   ],
+   "minus": [
+    "одежда",
+    "forex",
+    "трейдинг",
+    "bellissimofx"
+   ],
+   "geo": [],
+   "require": ""
+  },
+  "kfc": {
+   "names": [
+    "KFC",
+    "KFC Uzbekistan",
+    "KFC Toshkent",
+    "КФС",
+    "КФС Узбекистан"
+   ],
+   "typos": [
+    "KFS",
+    "K.F.C",
+    "Kfc uz",
+    "Kfcinuzbekistan",
+    "Kfs uzbekistan",
+    "Keyefsi",
+    "Kieffsi",
+    "КФЦ",
+    "Кей Эф Си",
+    "Кейэфси",
+    "Киэфси",
+    "КэЭфСи",
+    "Кфс ташкент",
+    "Кфц ташкент"
+   ],
+   "slang": [
+    "Баскет КФС",
+    "Твистер КФС",
+    "Боксмастер",
+    "Шеф Пита",
+    "Сандерс",
+    "#kfcuzbekistan",
+    "#kfcinuzbekistan"
+   ],
+   "plus": [],
+   "minus": [
+    "Москва",
+    "Алматы",
+    "Минск",
+    "руб"
+   ],
+   "geo": [
+    "Ташкент",
+    "Toshkent",
+    "Узбекистан",
+    "Uzbekistan",
+    "сум",
+    "so'm"
+   ],
+   "require": "geo"
+  },
+  "evos": {
+   "names": [
+    "EVOS",
+    "Evos Uzbekistan",
+    "ЭВОС",
+    "Эвос Узбекистан"
+   ],
+   "typos": [
+    "Evas",
+    "Ewos",
+    "Evos uz",
+    "Evosuz",
+    "Ivos",
+    "Evos lavash",
+    "Evos dostavka",
+    "Евос",
+    "Эвас",
+    "Евас",
+    "Ивос",
+    "Эвос лаваш",
+    "Евос лаваш",
+    "Эвос ташкент"
+   ],
+   "slang": [
+    "Лаваш из Эвоса",
+    "Тринвич",
+    "Trindwich",
+    "Шаурма Эвос",
+    "#evos",
+    "#evosuzbekistan",
+    "#evosuz"
+   ],
+   "plus": [
+    "лаваш",
+    "lavash",
+    "бургер",
+    "доставка",
+    "фастфуд"
+   ],
+   "minus": [
+    "esports",
+    "legends",
+    "mlbb",
+    "ford"
+   ],
+   "geo": [],
+   "require": "plus"
+  },
+  "oqtepa": {
+   "names": [
+    "Oqtepa Lavash",
+    "Oqtepa",
+    "Oq-Tepa Lavash",
+    "Октепа Лаваш",
+    "Оқтепа Лаваш"
+   ],
+   "typos": [
+    "Oktepa",
+    "Ok tepa",
+    "Oq tepa",
+    "Aktepa",
+    "Ak-tepa",
+    "Oqtepalavash",
+    "Oktepalavash",
+    "Oqtepa lawash",
+    "Октепа",
+    "Ок-тепа",
+    "Оқ-тепа",
+    "Актепа",
+    "Ак-тепа",
+    "Актэпа",
+    "Октэпа",
+    "Актепа лаваш"
+   ],
+   "slang": [
+    "Октепашка",
+    "Лаваш Октепа",
+    "OqFest",
+    "Окфест",
+    "#oqtepalavash",
+    "#oqtepalavashuz",
+    "#oqtepa"
+   ],
+   "plus": [
+    "лаваш",
+    "lavash",
+    "бургер",
+    "доставка",
+    "промокод"
+   ],
+   "minus": [
+    "квартира",
+    "аренда",
+    "махалля",
+    "сохил",
+    "круг"
+   ],
+   "geo": [],
+   "require": ""
+  },
+  "dodo": {
+   "names": [
+    "Dodo Pizza",
+    "DoDo Pizza",
+    "Додо Пицца",
+    "Додо",
+    "Dodo Pizza Tashkent"
+   ],
+   "typos": [
+    "Do do pizza",
+    "Dodo pitsa",
+    "Dodo pica",
+    "Dodopizza",
+    "Dodo uz",
+    "Dodo tashkent",
+    "До-до пицца",
+    "До до пицца",
+    "Дадо пицца",
+    "Додо питса",
+    "Додопицца",
+    "Додо Ташкент"
+   ],
+   "slang": [
+    "Додошка",
+    "Додстер",
+    "Dodster",
+    "Додо коины",
+    "Dodo coins",
+    "#dodopizza",
+    "#dodopizzatashkent",
+    "#dodopizzauz"
+   ],
+   "plus": [],
+   "minus": [
+    "Москва",
+    "СПб",
+    "Алматы",
+    "руб"
+   ],
+   "geo": [
+    "Ташкент",
+    "Toshkent",
+    "Узбекистан",
+    "dodopizza.uz",
+    "1168",
+    "сум"
+   ],
+   "require": "geo"
+  },
+  "maxway": {
+   "names": [
+    "MaxWay",
+    "Max Way",
+    "МаксВей",
+    "Макс Вей",
+    "Max Way Uzbekistan"
+   ],
+   "typos": [
+    "Max-Way",
+    "Max vey",
+    "Maks vey",
+    "Maksvay",
+    "Maksvey",
+    "Maxwey",
+    "Max way food",
+    "Макс Вэй",
+    "Максвэй",
+    "Макс вай",
+    "Максвай",
+    "Макс вей фуд",
+    "Максвей лаваш"
+   ],
+   "slang": [
+    "Клаб-сэндвич Максвей",
+    "Трендвич",
+    "Trendwich",
+    "Макси Бокс",
+    "Maxi Box",
+    "#maxway",
+    "#maxwayuz",
+    "#maxwayfooduz"
+   ],
+   "plus": [
+    "лаваш",
+    "бургер",
+    "сэндвич",
+    "сендвич",
+    "донар",
+    "Ташкент"
+   ],
+   "minus": [
+    "britax",
+    "автокресло",
+    "car seat",
+    "tours"
+   ],
+   "geo": [],
+   "require": "plus"
+  },
+  "sariqbola": {
+   "names": [
+    "Sariq Bola Pizza",
+    "Sariq Bola",
+    "Сариқ Бола Пицца",
+    "Сарик Бола Пицца"
+   ],
+   "typos": [
+    "Sariqbola",
+    "Sarik bola",
+    "Sarikbola",
+    "Sariq bola pitsa",
+    "Sariq bola pica",
+    "SBPizza",
+    "Sb pizza",
+    "Сарык бола",
+    "Сарыкбола",
+    "Сарикбола",
+    "Сариқ бола",
+    "Сарык бола пицца",
+    "Сарик бола питса"
+   ],
+   "slang": [
+    "Желтый мальчик пицца",
+    "Пицца от Сарик Бола",
+    "Пицца Жахонгира",
+    "#sariqbolapizza",
+    "#sariqbolapizzauz",
+    "#sbpizza"
+   ],
+   "plus": [
+    "пицца",
+    "pizza",
+    "pitsa",
+    "доставка",
+    "филиал",
+    "sbpizza"
+   ],
+   "minus": [
+    "пранк",
+    "скетч"
+   ],
+   "geo": [],
+   "require": "plus"
+  },
+  "hardees": {
+   "names": [
+    "Hardee's",
+    "Hardee's Uzbekistan",
+    "Hardee's Tashkent",
+    "Хардис",
+    "Хардис Узбекистан"
+   ],
+   "typos": [
+    "Hardees",
+    "Hardis",
+    "Hardiz",
+    "Hardes",
+    "Hardys",
+    "Hardi's",
+    "Hardees uz",
+    "Hardees tashkent",
+    "Хардиз",
+    "Хардес",
+    "Хардис бургер",
+    "Хардиз Ташкент",
+    "Хардис Ташкент"
+   ],
+   "slang": [
+    "Бургеры Хардис",
+    "Famous Star",
+    "Super Star",
+    "Angus Burger Hardee's",
+    "#hardeesuz",
+    "#hardeesuzbekistan"
+   ],
+   "plus": [],
+   "minus": [
+    "Алматы",
+    "Астана",
+    "Дубай"
+   ],
+   "geo": [
+    "Ташкент",
+    "Toshkent",
+    "Узбекистан",
+    "Uzbekistan",
+    "Караташ",
+    "Qoratosh",
+    "Chimgan Mall"
+   ],
+   "require": "geo"
+  },
+  "safia": {
+   "names": [
+    "Safia",
+    "Safia Cafe & Bakery",
+    "Safia Bakery",
+    "Safia Qandolat",
+    "Сафия"
+   ],
+   "typos": [
+    "Safiya",
+    "Sofiya",
+    "Sofia bakery",
+    "Safia uz",
+    "Safiabakery",
+    "Safiya tort",
+    "Safia cafe",
+    "Сафиа",
+    "София кондитерская",
+    "Сафия торт",
+    "Сафия выпечка",
+    "Сафия кафе",
+    "Сафия кандолат"
+   ],
+   "slang": [
+    "Торт из Сафии",
+    "Кондитерская Сафия",
+    "Макаронс Сафия",
+    "#safiabakery",
+    "#safiauz",
+    "#safia_uz"
+   ],
+   "plus": [
+    "торт",
+    "tort",
+    "выпечка",
+    "кондитерская",
+    "bakery",
+    "qandolat",
+    "пирожное",
+    "круассан",
+    "десерт",
+    "кафе"
+   ],
+   "minus": [],
+   "geo": [],
+   "require": "plus"
+  },
+  "uzum": {
+   "names": [
+    "Uzum Tezkor",
+    "Узум Тезкор"
+   ],
+   "typos": [
+    "Uzumtezkor",
+    "Uzum teskor",
+    "Uzum tezcor",
+    "Uzum taskor",
+    "Tezkor uzum",
+    "Узумтезкор",
+    "Узум тескор",
+    "Узум тэзкор",
+    "Узум доставка еды"
+   ],
+   "slang": [
+    "Доставка Узум",
+    "Тезкор промокод",
+    "Курьер Тезкор",
+    "#uzumtezkor",
+    "#узумтезкор"
+   ],
+   "plus": [],
+   "minus": [
+    "маркетплейс",
+    "пвз",
+    "пункт выдачи",
+    "nasiya",
+    "насия",
+    "рассрочка",
+    "карта"
+   ],
+   "geo": [],
+   "require": ""
+  },
+  "yandex": {
+   "names": [
+    "Yandex Eats",
+    "Яндекс Еда",
+    "Yandex Go Еда",
+    "Yandex Go Ovqat",
+    "Yandex Eats Uzbekistan"
+   ],
+   "typos": [
+    "Yandeks eats",
+    "Yandex eda",
+    "Yandeks eda",
+    "Yandex eat",
+    "Yandex food",
+    "Yandex go eats",
+    "Яндекс Итс",
+    "Яндэкс Еда",
+    "Яндекс Го Еда",
+    "Яндекс Гоу Еда",
+    "Яндекс овкат",
+    "Яндекс доставка еды"
+   ],
+   "slang": [
+    "Я.Еда",
+    "ЯЕда",
+    "Еда в Яндекс Го",
+    "Yandex Yetkazish",
+    "#yandexeats",
+    "#yandexeatsuz",
+    "#яндекседаташкент"
+   ],
+   "plus": [],
+   "minus": [
+    "такси",
+    "таксопарк",
+    "тариф",
+    "Москва",
+    "руб"
+   ],
+   "geo": [
+    "Ташкент",
+    "Toshkent",
+    "Узбекистан",
+    "Uzbekistan",
+    "сум",
+    "so'm"
+   ],
+   "require": "geo"
+  },
+  "papajohns": {
+   "names": [
+    "Papa Johns",
+    "Papa John's",
+    "Папа Джонс",
+    "Папа Джонс Ташкент"
+   ],
+   "typos": [
+    "Papa Jons",
+    "Papajohns",
+    "Papajons",
+    "Папа Джонс пицца",
+    "Папа Джон"
+   ],
+   "slang": [],
+   "plus": [],
+   "minus": [
+    "Москва",
+    "Алматы",
+    "руб"
+   ],
+   "geo": [
+    "Ташкент",
+    "Toshkent",
+    "Узбекистан",
+    "Uzbekistan",
+    "сум",
+    "so'm"
+   ],
+   "require": "geo"
+  },
+  "dominos": {
+   "names": [
+    "Domino's Pizza",
+    "Dominos Pizza",
+    "Домино's",
+    "Доминос",
+    "Домино пицца"
+   ],
+   "typos": [
+    "Domino pizza",
+    "Dominos uz",
+    "Доминос пицца",
+    "Домино питса"
+   ],
+   "slang": [],
+   "plus": [],
+   "minus": [
+    "Москва",
+    "Алматы",
+    "руб"
+   ],
+   "geo": [
+    "Ташкент",
+    "Toshkent",
+    "Узбекистан",
+    "Uzbekistan",
+    "сум",
+    "so'm"
+   ],
+   "require": "geo"
+  },
+  "apex": {
+   "names": [
+    "Apex Pizza",
+    "Apexpizza",
+    "APEX",
+    "Апекс пицца",
+    "Апекс"
+   ],
+   "typos": [
+    "Apex pitsa",
+    "Apekspizza",
+    "Апекс питса",
+    "Апекспицца"
+   ],
+   "slang": [
+    "#apexpizza",
+    "#apexpizzauz"
+   ],
+   "plus": [
+    "пицца",
+    "pizza",
+    "pitsa",
+    "доставка",
+    "Ташкент"
+   ],
+   "minus": [],
+   "geo": [],
+   "require": "plus"
+  }
+ },
+ "play_apps": {
+  "bellissimo": "uz.bellissimo.app",
+  "kfc": "com.uz.kfc",
+  "evos": "uz.makfood.service.evos",
+  "oqtepa": "com.foodpicasso.oqte",
+  "maxway": "uz.udevs.maxway_client_mobile",
+  "hardees": "uz.delever.hardees_client_mobile",
+  "safia": "com.safiabakerycafe.app",
+  "uzum": "uz.uzum.tezkor",
+  "papajohns": "com.loyaltyplant.partner.papajohnsuz",
+  "apex": "com.apexorder",
+  "sariqbola": "com.sariqbola.pizza"
+ },
+ "play_global_apps_excluded": {
+  "dodo": "ru.dodopizza.app",
+  "yandex": "ru.foodfox.client"
+ },
+ "play_days": 28,
+ "instagram_competitors": {
+  "evos": "evosuzbekistan",
+  "papajohns": "papajohnsuzbekistan",
+  "apex": "apexpizza.uz",
+  "dodo": "dodopizzauzb",
+  "oqtepa": "oqtepalavashuz",
+  "maxway": "maxwayuz",
+  "hardees": "hardees.uz",
+  "safia": "safia_uz"
+ },
+ "trends_terms": {
+  "bellissimo": "Bellissimo + Беллиссимо + Bellissimo pizza",
+  "kfc": "KFC + КФС",
+  "evos": "Evos lavash + Эвос лаваш + Evos Uzbekistan + Эвос",
+  "oqtepa": "Oqtepa + Октепа + Oqtepa lavash",
+  "dodo": "Dodo pizza + Додо пицца + Dodo pitsa",
+  "maxway": "Maxway + Max way + Макс вей",
+  "sariqbola": "Sariq bola pizza + Sariqbola pizza + Сарик бола пицца",
+  "hardees": "Hardees + Hardee's + Хардис",
+  "safia": "Safia bakery + Safia cafe + Сафия торт",
+  "uzum": "Uzum tezkor + Узум тезкор",
+  "yandex": "Yandex eats + Яндекс Еда + Yandex eda",
+  "papajohns": "Papa Johns + Папа Джонс",
+  "apex": "Apex pizza + Apexpizza + Апекс пицца",
+  "dominos": "Dominos pizza + Домино пицца + Доминос"
+ },
+ "trends_anchor": "bellissimo",
+ "yt_cap": 50,
+ "tg_pages": 5,
+ "appstore_apps": {
+  "kfc": 6733229176,
+  "evos": 1595897228,
+  "oqtepa": 6744400909,
+  "maxway": 1565502018,
+  "uzum": 1665523197,
+  "sariqbola": 6471396712,
+  "hardees": 6754248343,
+  "safia": 1554545839
+ },
+ "appstore_global_excluded": {
+  "dodo": 894649641,
+  "yandex": 1078986931
+ },
+ "media_feeds": {
+  "https://kun.uz/news/rss": "Kun.uz (uz)",
+  "https://daryo.uz/rss": "Daryo",
+  "https://www.gazeta.uz/ru/rss": "Gazeta.uz",
+  "https://uza.uz/uz/rss": "UzA",
+  "https://nuz.uz/feed/": "Nuz.uz",
+  "https://tashkenttimes.uz/?format=feed&type=atom": "Tashkent Times",
+  "https://uzreport.news/feed/rss/ru": "UzReport",
+  "https://kruz.uz/uz/news/rss": "Kruz.uz",
+  "https://podrobno.uz/rss/": "Podrobno.uz",
+  "https://www.xabar.uz/rss": "Xabar.uz",
+  "https://www.uzdaily.uz/en/rss": "UzDaily",
+  "https://uz.sputniknews.ru/export/rss2/archive/index.xml": "Sputnik UZ",
+  "https://spot.uz/ru/rss/": "Spot.uz",
+  "https://kapital.uz/feed/": "Kapital.uz",
+  "https://nova24.uz/feed/": "Nova24",
+  "https://review.uz/rss": "Review.uz",
+  "https://www.gazeta.uz/uz/rss": "Gazeta.uz (uz)",
+  "https://daryo.uz/ru/rss": "Daryo (ru)",
+  "https://www.uzdaily.uz/ru/rss": "UzDaily (ru)"
+ }
+}
