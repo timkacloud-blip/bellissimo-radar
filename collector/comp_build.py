@@ -73,7 +73,9 @@ for f in files:
     d = clean(json.load(open(f))); D = re.search(r'(\d{4}-\d\d-\d\d)', os.path.basename(f)).group(1); dates.append(D)   # file name is the Tashkent date; the date inside can be UTC
     for b, B in d.get('brands', {}).items():
         if 'ads' not in B: continue
-        cov = sum(a.get('n') or 1 for a in B['ads'])
+        g = B['ads']
+        if g and all(len(a.get('ids') or []) >= min(a.get('n') or 1, 200) for a in g): cov = len({i for a in g for i in a['ids']})   # every copy listed: exact
+        else: cov = sum(a.get('n') or 1 for a in g)
         if B.get('total') is not None: cov = min(cov, B['total'])   # copies behind the creatives we hold vs Meta's own counter
         daily[D][b] = {'total': B.get('total'), 'groups': len(B['ads']), 'covered': cov}
         for a in B['ads']:
