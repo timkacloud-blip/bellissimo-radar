@@ -7,7 +7,7 @@ TAGS = [
     ('Скидка', r"\d{1,2}\s*%(?!\s*(gacha\s*)?(keshbek|кешб|cashback))|chegirma|скидк"),
     ('Бесплатная доставка', r"бесплатн\w* доставк|доставляем .{0,40}бесплатно|yetkazib berish bepul|bepul yetkaz|БЕСПЛАТНО"),
     ('Промокод', r"промо-?код|promo-?kod|promokod|\b[A-Z]{3,}\d{2,}\b"),
-    ('Новинка', r"новинк|yangi format|новом формате|endilikda|новый вкус|yangi ta.m|endi .{0,20}da|теперь в|встречайте|tez kunda|yangilik|уже здесь"),
+    ('Новинка', r"tanishing|tatib ko.?ring|новинк|yangi format|новом формате|endilikda|новый вкус|yangi ta.m|endi .{0,20}da|теперь в|встречайте|tez kunda|yangilik|уже здесь"),
     ('Открытие филиала', r"yangi .{0,25}filial|filial\w* ochil|ochilishi|ochildi|открыл\w*|новый филиал|нового филиала|kutib oling"),
     ('Комбо / сет', r"комбо|kombo|combo|сет\b|set\b|набор"),
     ('Дешевле в приложении', r"дешевле|arzonroq|в приложении .{0,30}сум|ilovada \d"),

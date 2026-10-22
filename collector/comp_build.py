@@ -124,7 +124,7 @@ for d in apps.values():
         if not v[0] and not v[1]: v[0] = v[1] = v[2] = None   # page did not load: 0 ratings / 0.0 is a failed read, not real data
         if d.get('ios_chart_ids'): v[3] = pos.get(b)
         if v[2]: v[2] = ','.join(str(round(float(x))) for x in str(v[2]).split(','))
-        if v[4] and '.' not in str(v[4]): v[4] = None   # regex sometimes catches a build number instead of a version
+        # versions are used as Apple reports them (KFC's is a plain number)
 
 # ---------- App Store place: weekly average (one day in the chart is noise) ----------
 def week_rank(apps):

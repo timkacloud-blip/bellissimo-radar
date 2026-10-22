@@ -27,7 +27,7 @@ function jget(h,key){ const k=h.indexOf(key); if(k<0) return null; let i=h.index
   for(;j<h.length;j++){const c=h[j]; if(s){ if(e) e=false; else if(c==='\\') e=true; else if(c==='"') s=false; continue } if(c==='"') s=true; else if(c==='{') d++; else if(c==='}'){ d--; if(!d) break } }
   try{ return JSON.parse(h.slice(i,j+1)) }catch(e){ return null } }
 function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(sn.images||[])[0]||{}, vd=(sn.videos||[])[0]||{};
-  return {id:a.ad_archive_id, ids:L.map(x=>x.ad_archive_id).filter(Boolean).slice(0,200), start:a.start_date, end:a.end_date, n:a.collation_count||L.length||1, fmt:sn.display_format||'', plat:(a.publisher_platform||[]).join('|'),
+  return {id:a.ad_archive_id, start:a.start_date, end:a.end_date, n:a.collation_count||L.length||1, fmt:sn.display_format||'', plat:(a.publisher_platform||[]).join('|'),
     cta:sn.cta_text||cd.cta_text||'', link:(sn.link_url||cd.link_url||'').slice(0,200), title:(sn.title||cd.title||'').slice(0,200),
     body:((sn.body&&sn.body.text)||cd.body||'').replace(/\s+/g,' ').slice(0,600), cards:(sn.cards||[]).length,
     src:im.resized_image_url||im.original_image_url||vd.video_preview_image_url||cd.resized_image_url||cd.video_preview_image_url||'', likes:sn.page_like_count, page:sn.page_name} }
@@ -49,8 +49,8 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
     p.off('response',on);
     const r=doc&&jget(doc,'"search_results_connection":'); if(!r) return null;
     return {count:r.count, groups:(r.edges||[]).filter(ed=>ed.node&&ed.node.collated_results&&ed.node.collated_results.length).map(ed=>row(ed.node.collated_results))} };
-  // copies we hold: exact when Facebook lists every copy of a group (union of ids), otherwise the sum of group sizes
-  const held=(b,ids)=>{ const g=ids.map(id=>store[b][id]||{}); if(g.length&&g.every(a=>a.ids&&a.ids.length>=Math.min(a.n||1,200))){ const u=new Set(); g.forEach(a=>a.ids.forEach(i=>u.add(i))); return u.size } return g.reduce((s,a)=>s+(a.n||1),0) };
+  // copies we hold: sum of group sizes (Facebook lists only some copies of a group by id, so an exact count by id is not possible); capped at Meta's counter
+  const held=(b,ids)=>ids.reduce((s,id)=>s+((store[b][id]||{}).n||1),0);
   const covered=b=>Math.min(totals[b]||0,held(b,[...seen[b]]));
   const done=b=>totals[b]!=null && covered(b)>=totals[b];
 
@@ -67,7 +67,6 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
       let neu=0; for(const a of r.groups){ const was=store[b][a.id]; if(!seen[b].has(a.id)) neu++;
         store[b][a.id]=Object.assign({},was||{},a,{n:Math.max(a.n||1,(was||{}).n||1),first:(was||{}).first||D,last:D}); seen[b].add(a.id) }
       stale[b]=neu?0:stale[b]+1;
-      if(vi===0&&b==='kfc') console.log('ids check', r.groups.map(g=>(g.ids||[]).length+'/'+g.n).join(' '));
       console.log(b,V[vi][0],'count='+r.count,'groups='+r.groups.length,'new='+neu,'covered='+covered(b)+'/'+totals[b]);
       await sleep(4000);
     } }

@@ -236,11 +236,11 @@ function renderTg(){
 // ---------- Как читать ----------
 function renderMe(){
   const L=REF(), day=D.daily[L]||{}, dd=Object.keys(D.daily).sort(), aa=Object.keys(D.apps).sort(), tt=Object.keys(D.tg_hist||{}).sort(), AA=D.ads.filter(a=>a.active);
-  $("#me-br").innerHTML=table("me-br",[{h:"Бренд",l:1},{h:"Объявлений в Meta"},{h:"Собрано в галерею"},{h:"Сообщений"},{h:"Подписчиков страницы"}],
-    ORDER.filter(b=>D.brands[b]).map(b=>{ const got=AA.filter(a=>a.b===b).reduce((s,a)=>s+(a.n||1),0), m=msgs(b,AA), t=day[b]?day[b].total:null;
-      return {s:[B(b).name,t,got,m,B(b).likes??null],c:[bname(b),fmt(t),fmt(got),fmt(m),fmt(B(b).likes)]} }));
-  const ex=ORDER.filter(b=>day[b]&&day[b].total>20).map(b=>({b,t:day[b].total,m:msgs(b,AA)})).sort((x,y)=>y.t/Math.max(1,y.m)-x.t/Math.max(1,x.m))[0];
-  $("#me-ex").textContent=ex?`Пример: у ${B(ex.b).name} ${ex.t} ${plural(ex.t,"объявление","объявления","объявлений")}, но всего ${ex.m} ${plural(ex.m,"сообщение","сообщения","сообщений")}.`:"";
+  $("#me-br").innerHTML=table("me-br",[{h:"Бренд",l:1},{h:"Объявлений в Meta"},{h:"Карточек в галерее"},{h:"Охват",tip:"Какую часть объявлений Meta мы видим с текстом и картинкой"},{h:"Подписчиков страницы"}],
+    ORDER.filter(b=>D.brands[b]).map(b=>{ const cards=AA.filter(a=>a.b===b).length, t=day[b]?day[b].total:null, cv=cov(b);
+      return {s:[B(b).name,t,cards,cv?cv.p:0,B(b).likes??null],c:[bname(b),fmt(t),fmt(cards),covPill(b),fmt(B(b).likes)]} }));
+  const ex=ORDER.filter(b=>day[b]&&day[b].total>20).map(b=>({b,t:day[b].total,m:AA.filter(a=>a.b===b&&a.goal!=="Найм").length})).sort((x,y)=>y.t/Math.max(1,y.m)-x.t/Math.max(1,x.m))[0];
+  $("#me-ex").textContent=ex?`Пример: у ${B(ex.b).name} ${ex.t} ${plural(ex.t,"объявление","объявления","объявлений")}, но всего ${ex.m} ${plural(ex.m,"карточка","карточки","карточек")} без найма.`:"";
   const c=(MN&&MN.cov)||null, f=x=>x?dfmt(x)+(x.slice(0,4)!==REF().slice(0,4)?"."+x.slice(2,4):""):"—", tg=(c&&c.tgw)||{};
   const R1=[["Реклама Meta (Ad Library)",f(dd[0]),"каждое утро","Все активные объявления страниц брендов в Узбекистане. Бюджетов и охвата нет."],
     ["App Store: чарт, оценки",f(aa[0]),"каждое утро","Место в «Еда и напитки», число и средняя оценок, версия."],
