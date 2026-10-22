@@ -5,7 +5,7 @@ const fmt=n=>n==null||!isFinite(n)?"—":Math.round(n).toLocaleString("ru-RU");
 const kfmt=n=>n==null?"—":n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+" млн":n>=1e4?Math.round(n/1e3)+" тыс":fmt(n);
 const plural=(n,a,b,c)=>{ n=Math.abs(n)%100; const m=n%10; return n>10&&n<20?c:m===1?a:m>=2&&m<=4?b:c };
 const ls={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const S={tab:"boss",lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:true,nw:false,limit:24,prc:"",tgb:"",jr:{per:"30",b:"",t:"",hi:false,own:true}};
+const S={tab:"boss",lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:true,nw:false,limit:24,prc:"",tgb:"",jr:{per:"30",b:"",t:"",hi:false,own:false}};
 let D=null, TH={}, thumbsLoaded=false, J={events:[],coverage:{}}, MN=null, MNP=null;
 const LIM={}, TS={};   // "show more" limits and table sort state, by table id
 
@@ -44,6 +44,8 @@ function objCount(b){ // Meta's own counter for "all languages"; with a language
 const ofmt=o=>o.v==null?"—":(o.est?"≈":"")+fmt(o.v);
 
 // ---------- generic table: sortable by click, "show more" ----------
+// change as a count and a percent together: "−2 (−60%)"; percent only when the base is big enough not to be noise
+function fchg(n,o){ const d=n-o; if(!d) return "0"; const sg=d>0?"+":"−", pc=o>=5?` (${sg}${Math.abs(Math.round(100*d/o))}%)`:""; return sg+Math.abs(d)+pc }
 function table(id,cols,rows,o={}){
   const st=TS[id];
   if(st) rows=rows.slice().sort((x,y)=>{ const a=x.s[st.c], b=y.s[st.c]; if(a==null&&b==null) return 0; if(a==null) return 1; if(b==null) return -1;
@@ -107,17 +109,12 @@ function renderAds(){
         `<div class="sbarw"><div class="sbar"><i style="width:${100*(oc[b].v||0)/mx}%;background:${B(b).color}"></i></div><span>${sh.toFixed(0)}%</span></div>`,`<b>${ofmt(oc[b])}</b>`,m,n7?`<span class="pill p-acc">+${n7}</span>`:'<span class="note">0</span>',hr||'<span class="note">0</span>',covPill(b)]} }).sort((x,y)=>(y.s[2]||0)-(x.s[2]||0)));
   // ad insights only; App Store lives in its own tab
   $("#ov-ins").innerHTML=insRows("ov-ins",D.insights.filter(i=>i.sec!=="app"&&!(i.b&&B(i.b).own&&i.lvl==="mute")),6);
-  // ads by day: a slot for every calendar day, empty slots where there was no snapshot
-  const ks=Object.keys(D.daily).sort(), days=[]; if(ks.length){ let d=new Date(ks[0]); const end=new Date(ks[ks.length-1]); while(d<=end){ days.push(d.toISOString().slice(0,10)); d=new Date(+d+864e5) } }
-  const dd=days.slice(-30), sum=d=>ORDER.reduce((s,b)=>s+(((D.daily[d]||{})[b]||{}).total||0),0), mxd=Math.max(1,...dd.map(sum));
-  const W=Math.max(340,Math.min(1200,($("#ov-cad").clientWidth||640))),H=190,bw=W/Math.max(dd.length,7);
-  let svg=`<svg class="cad" viewBox="0 0 ${W} ${H+22}" role="img" aria-label="Активные объявления по дням">`;
-  dd.forEach((d,i)=>{ const x=i*bw+5, w=bw-10, lab=`<text x="${i*bw+bw/2}" y="${H+15}" text-anchor="middle">${dfmt(d)}</text>`;
-    if(!D.daily[d]){ svg+=`<rect class="gap" x="${x}" y="14" width="${w}" height="${H-14}" rx="3" data-tip="${dfmt(d)}: снимка не было"></rect>${lab}`; return }
-    let y=H; ORDER.forEach(b=>{ const v=((D.daily[d][b]||{}).total)||0; if(!v) return; const h=v/mxd*(H-14); y-=h; svg+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${B(b).color}" data-tip="${esc(B(b).name)}: ${v} объявл. (${dfmt(d)})"></rect>` });
-    svg+=`<text x="${i*bw+bw/2}" y="${y-3}" text-anchor="middle">${sum(d)}</text>${lab}` });
-  $("#ov-cad").innerHTML=svg+"</svg>";
-  $("#ov-cad-leg").innerHTML=ORDER.filter(b=>(D.daily[L]||{})[b]).map(b=>`<span><i style="background:${B(b).color}"></i>${esc(B(b).name)}</span>`).join("");
+  // ads by day: one row per brand, one column per real snapshot
+  const dk=Object.keys(D.daily).sort().slice(-10);
+  const dcols=[{h:"Бренд",l:1}].concat(dk.map(d=>({h:dfmt(d)}))).concat([{h:`К ${dfmt(dk[0])}`,tip:"Изменение последнего значения к первому дню таблицы"}]);
+  const drows=ORDER.filter(b=>D.brands[b]&&dk.some(d=>((D.daily[d]||{})[b]||{}).total!=null)).map(b=>{ const v=dk.map(d=>((D.daily[d]||{})[b]||{}).total), f=v.find(x=>x!=null), l=v[v.length-1];
+    return {cls:B(b).own?"me":"",s:[B(b).name].concat(v.map(x=>x??null)).concat([l!=null&&f!=null?l-f:null]),c:[bname(b)].concat(v.map(x=>x==null?'<span class="note">—</span>':String(x))).concat([l!=null&&f!=null?`<span class="chg">${fchg(l,f)}</span>`:""])} });
+  $("#ov-cad").innerHTML=`<div class="tbl scroll">${table("ov-cad",dcols,drows)}</div>`;
   // goals
   const AU=dedupe(A), G={}; AU.forEach(a=>{ (G[a.goal]=G[a.goal]||{}); G[a.goal][a.b]=(G[a.goal][a.b]||0)+1 });
   const gt=g=>Object.values(G[g]).reduce((s,v)=>s+v,0), goals=Object.keys(G), gm=Math.max(1,...goals.map(gt));
@@ -274,8 +271,8 @@ function keyFindings(bD,sm){
                         :{lvl:"good",h:`В App Store мы в среднем выше всех конкурентов: #${me.toLocaleString("ru-RU")}.`,m:`Среднее место за ${per}.`+go("app","приложения")}) }
   // 3. the biggest change in competitors' Meta ads over the comparison window
   if(bD.span>0){ const ch=ORDER.filter(b=>D.brands[b]&&!B(b).own).map(b=>{ const n=((D.daily[bD.now]||{})[b]||{}).total, o=((D.daily[bD.wk]||{})[b]||{}).total; return {b,n,o,d:n!=null&&o?(n-o)/o:null} }).filter(x=>x.d!=null&&x.o>=10&&Math.abs(x.d)>=.3).sort((x,y)=>Math.abs(y.d)-Math.abs(x.d));
-    if(ch.length){ const x=ch[0], more=ch.slice(1,3).map(y=>`${nm(y.b)} ${y.d>0?"+":"−"}${Math.abs(Math.round(100*y.d))}%`).join(", ");
-      K.push({lvl:"warn",h:`${nm(x.b)} ${x.d>0?"нарастил":"сократил"} рекламу в Meta: ${x.o} → ${x.n} объявлений (${x.d>0?"+":"−"}${Math.abs(Math.round(100*x.d))}%).`,m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)}.${more?" Также: "+more+".":""} Объявления ≠ бюджет: Meta его не раскрывает.`+go("ads","реклама")}) }
+    if(ch.length){ const x=ch[0], more=ch.slice(1,3).map(y=>`${nm(y.b)} ${fchg(y.n,y.o)}`).join(", ");
+      K.push({lvl:"warn",h:`${nm(x.b)} ${x.d>0?"нарастил":"сократил"} рекламу в Meta: ${x.o} → ${x.n} объявлений (${fchg(x.n,x.o)}).`,m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)}.${more?" Также: "+more+".":""} Объявления ≠ бюджет: Meta его не раскрывает.`+go("ads","реклама")}) }
     else K.push({lvl:"mute",h:"У конкурентов нет резких изменений в рекламе Meta.",m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)} ни у кого объём не изменился на 30% и больше.`+go("ads","реклама")}) }
   // 4. new competitor offers this week, grouped by mechanic
   const thin=new Set(lowCov().map(o=>o.b));   // ad texts of these brands are a sample: no conclusions from them
@@ -307,7 +304,7 @@ function renderBoss(){
   const rows=ORDER.filter(b=>D.brands[b]).map(b=>{ const own=B(b).own;
     const n=((D.daily[bD.now]||{})[b]||{}).total, o=((D.daily[bD.wk]||{})[b]||{}).total;
     const series=dd.map(d=>`${dfmt(d)}: ${((D.daily[d]||{})[b]||{}).total??"—"}`).join(" · ");
-    let ac=""; if(n!=null&&o!=null&&bD.span>0){ const d=n-o; ac=!d?' <span class="chg">0</span>':` <span class="${own?(d>0?"up":"dn"):"chg"}">${d>0?"+":"−"}${o>=10?Math.abs(Math.round(100*d/o))+"%":Math.abs(d)+" шт."}</span>` }
+    let ac=""; if(n!=null&&o!=null&&bD.span>0){ const d=n-o; ac=!d?' <span class="chg">0</span>':` <span class="${own?(d>0?"up":"dn"):"chg"}">${fchg(n,o)}</span>` }
     const r=RK[b]||{}, up=r.avg&&r.prev?r.prev-r.avg:0, good=own?up>0:up<0;
     const pp=pa[b], world=WORLD.includes(b), tb=tr(b);
     return {cls:own?"me":"",s:[nm(b),n??null,r.avg??null,pp?+pp[0]:null,tb&&tb.d!=null?tb.d:null],c:[
@@ -366,7 +363,14 @@ function loadMn(){ if(!MNP){ const q="?"+Date.now(), g=u=>fetch(u).then(r=>{ if(
 function renderMn(){ const p=$("#p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>';
   loadMn().then(d=>{ if(!d) throw 0; window.renderMentions(p,d,MCTX()); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Не удалось загрузить данные упоминаний. <button id="retry" class="chip">Повторить</button></div>' }) }
 
-const R={mn:renderMn,boss:renderBoss,jr:renderJr,ads:renderAds,off:renderOff,app:renderApp,me:renderMe};
+function renderSt(){
+  const H=D.health, ic={ok:"p-good",warn:"p-warn",fail:"p-bad"}, tx={ok:"работает",warn:"замечание",fail:"сбой"};
+  $("#st-sub").textContent=H?`проверено ${H.at} (Ташкент): ${H.n.ok} из ${H.checks.length}`:"";
+  $("#st-checks").innerHTML=H?H.checks.map(c=>`<div class="srow"><span class="pill ${ic[c.st]}">${tx[c.st]}</span><div><div class="t"><b>${esc(c.name)}</b></div><div class="m">${esc(c.msg)}</div></div></div>`).join(""):'<div class="empty">Проверки появятся после ближайшего сбора</div>';
+  const lab={igc:"Instagram конкурентов",trends:"Google Trends",tgw:"Telegram: список каналов",media:"Сайты СМИ",tg:"Telegram: поиск и наши каналы",ig:"Instagram (наш)",ads:"Под рекламой",play:"Google Play (отзывы)",appstore:"App Store (отзывы)",yt:"YouTube"};
+  loadMn().then(d=>{ if(!d||!d.status) throw 0; $("#st-src").innerHTML=table("st-src",[{h:"Источник",l:1},{h:"Статус",l:1},{h:"Последний запуск",l:1},{h:"Заметка",l:1}],
+    d.status.map(x=>{ const ok=x.ok===1&&!x.note; return {s:[lab[x.s]||x.s,ok?0:x.ok===0?2:1,x.at,x.note||""],c:[esc(lab[x.s]||x.s),`<span class="pill ${ok?"p-good":x.ok===0?"p-bad":"p-warn"}">${ok?"работает":x.ok===0?"ошибка":x.ok===1?"замечание":"нет ключа"}</span>`,esc(x.at||""),`<span class="note" style="white-space:normal;display:block;min-width:240px;max-width:520px">${esc((x.note||"").slice(0,220))}</span>`]} })) }).catch(()=>{ $("#st-src").innerHTML='<div class="empty">Не удалось загрузить состояние сбора упоминаний</div>' }) }
+const R={mn:renderMn,boss:renderBoss,jr:renderJr,ads:renderAds,off:renderOff,app:renderApp,me:renderMe,st:renderSt};
 
 // ---------- header: one place for freshness, in Tashkent time ----------
 function freshStrip(){ const el=$("#fresh"); if(!D) return;

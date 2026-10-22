@@ -177,21 +177,20 @@ if last:
         cv = (daily.get(last) or {}).get(b) or {}
         sample = f" По {cv['covered']} из {cv['total']} объявлений (остальные Facebook не отдал)." if cv.get('total') and cv.get('covered', 0) < cv['total'] else ''
         new7 = [r for r in A if r['goal'] != 'Найм' and r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7]
-        _seen = set(); new7 = [r for r in new7 if not (msgkey(r) in _seen or _seen.add(msgkey(r)))]
-        n_msg = len({msgkey(r) for r in A if r['goal'] != 'Найм'})
+        n_msg = len([r for r in A if r['goal'] != 'Найм'])   # cards (creatives), not unique texts
         nm = BRANDS[b]['name']; own = BRANDS[b].get('own')
         if new7 and not own:
             g = collections.Counter(r['goal'] for r in new7).most_common(2)
-            ins.append({'sec': 'ads', 'b': b, 'lvl': 'acc', 't': f"{nm}: {len(new7)} {plural(len(new7), 'новое сообщение', 'новых сообщения', 'новых сообщений')} в рекламе за 7 дней",
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'acc', 't': f"{nm}: запустил {len(new7)} {plural(len(new7), 'новую карточку', 'новые карточки', 'новых карточек')} рекламы за 7 дней",
                         'm': 'Куда ведут: ' + ', '.join(f"{k} — {v}" for k, v in g) + '.' + sample})
         offers = collections.Counter(r['offer'] for r in A if r['offer'] not in ('Найм', 'Без оффера', 'Цена', 'Каталог товаров', 'Только видео/картинка'))
         if offers and not own:
             ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: чаще всего — " + ', '.join(k for k, _ in offers.most_common(3)),
-                        'm': f"среди {n_msg} {plural(n_msg, 'активного сообщения', 'активных сообщений', 'активных сообщений')}." + sample})
-        hire = len({msgkey(r) for r in A if r['goal'] == 'Найм'})
+                        'm': f"среди {n_msg} {plural(n_msg, 'активной карточки', 'активных карточек', 'активных карточек')} без найма." + sample})
+        hire = len([r for r in A if r['goal'] == 'Найм'])
         if hire >= 3 and hire / max(n_msg + hire, 1) > .3 and not own:
-            ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} {plural(hire, 'сообщение', 'сообщения', 'сообщений')} о найме в рекламе (и {n_msg} о продажах)",
-                        'm': 'Ищут курьеров и персонал. В счёт сообщений найм не входит.'})
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} {plural(hire, 'карточка', 'карточки', 'карточек')} рекламы о найме (и {n_msg} о продажах)",
+                        'm': 'Ищут курьеров и персонал. В карточки о продажах найм не входит.'})
     if apps:
         a = apps[max(apps)]; ch = a.get('ios_chart', []); R = RANK.get('b', {})
         me = (R.get('bellissimo') or {}).get('avg')

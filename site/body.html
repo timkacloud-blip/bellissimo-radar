@@ -6,7 +6,7 @@
   </div>
   <nav class="tabs" role="tablist" id="tabs">
     <button data-t="boss">Сводка</button><button data-t="ads">Реклама</button><button data-t="off">Офферы и Telegram</button>
-    <button data-t="app">Приложения</button><button data-t="mn">Упоминания</button><button data-t="jr">Журнал</button>
+    <button data-t="app">Приложения</button><button data-t="mn">Упоминания</button><button data-t="jr">Журнал</button><button data-t="st">Состояние</button>
   </nav>
   <div id="fresh" class="fresh note">Загружаю данные…</div>
 </header>
@@ -51,7 +51,7 @@
     <div class="tbl scroll" id="ov-sov"></div>
   </div>
   <div class="card c6">
-    <div class="chd"><h2>Наблюдения</h2><span class="hint" data-tip="Считаются правилами, без догадок. Цвет — с нашей стороны: красный — угроза для нас, жёлтый — присмотреться, зелёный — в нашу пользу.">?</span><span class="sub">новые сообщения и механики</span></div>
+    <div class="chd"><h2>Что изменилось у конкурентов</h2><span class="hint" data-tip="Считаются правилами, без догадок. Цвет — с нашей стороны: красный — угроза для нас, жёлтый — присмотреться, зелёный — в нашу пользу.">?</span><span class="sub">новые сообщения и механики</span></div>
     <div class="ins" id="ov-ins"></div>
   </div>
   <div class="card c6">
@@ -59,7 +59,7 @@
     <div class="bars" id="ov-goal"></div>
   </div>
   <div class="card">
-    <div class="chd"><h2>Активные объявления по дням</h2><span class="hint" data-tip="Высота столбика — сколько активных объявлений было у брендов в этот день. Серые пустые дни — снимка не было, данные не достраиваем.">?</span><span class="sub">все языки, только реальные снимки</span><div class="right legend" id="ov-cad-leg"></div></div>
+    <div class="chd"><h2>Объявления по дням, по брендам</h2><span class="hint" data-tip="Счётчик Meta на каждый день снимка. В скобках к последнему столбцу — изменение к первому дню таблицы. Пустые дни — снимка не было, данные не достраиваем. Рост часто настоящий (например, запуск новой кампании), но до 22.10 часть данных читалась неполно.">?</span><span class="sub">все языки, только реальные снимки</span></div></div>
     <div id="ov-cad"></div>
   </div>
   <div class="card" id="ads-card">
@@ -151,11 +151,23 @@
       <select id="jr-b" aria-label="Бренд"><option value="">Все бренды</option></select>
       <select id="jr-t" aria-label="Тип события"><option value="">Все события</option></select>
       <label class="note chk"><input type="checkbox" id="jr-hi"> только важные</label>
-      <label class="note chk"><input type="checkbox" id="jr-own" checked> без Bellissimo</label>
+      <label class="note chk"><input type="checkbox" id="jr-own"> без Bellissimo</label>
     </div>
     <div id="jr-list"></div>
     <div class="more"><button class="btn ghost" id="jr-more" hidden>Показать ещё</button></div>
     <p class="note">Журнал собирается автоматически из ежедневных снимков: Meta Ad Library, App Store, Google Play и Telegram. Событие датируется днём, когда мы его увидели (для рекламы — датой старта объявления). Ручные записи (наружка, ТВ, блогеры) помечены «Вручную».</p>
+  </div>
+</section>
+
+<section class="panel" id="p-st" hidden>
+  <div class="card">
+    <div class="chd"><h2>Автопроверки радара</h2><span class="sub" id="st-sub"></span></div>
+    <div id="st-checks"></div>
+    <p class="note">Код проверяет эти пункты после каждого сбора. Что означает каждый пункт и что делать при сбое, написано в регламенте проверок (файл REGLAMENT.md в репозитории).</p>
+  </div>
+  <div class="card">
+    <div class="chd"><h2>Сбор упоминаний (Mac)</h2><span class="sub">отзывы, комментарии, Instagram, Telegram, СМИ</span></div>
+    <div class="tbl scroll" id="st-src"><div class="empty">Загружаю…</div></div>
   </div>
 </section>
 
