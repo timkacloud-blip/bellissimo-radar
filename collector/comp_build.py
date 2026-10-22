@@ -73,7 +73,9 @@ for f in files:
     d = clean(json.load(open(f))); D = re.search(r'(\d{4}-\d\d-\d\d)', os.path.basename(f)).group(1); dates.append(D)   # file name is the Tashkent date; the date inside can be UTC
     for b, B in d.get('brands', {}).items():
         if 'ads' not in B: continue
-        daily[D][b] = {'total': B.get('total'), 'groups': len(B['ads'])}
+        cov = sum(a.get('n') or 1 for a in B['ads'])
+        if B.get('total') is not None: cov = min(cov, B['total'])   # copies behind the creatives we hold vs Meta's own counter
+        daily[D][b] = {'total': B.get('total'), 'groups': len(B['ads']), 'covered': cov}
         for a in B['ads']:
             if a.get('thumb'): store[a['id']] = a['thumb']
             r = ads.get(a['id'])
@@ -170,6 +172,8 @@ if last:
     for b in BRANDS:
         A = [r for r in ads.values() if r['b'] == b and r['active']]
         if not A: continue
+        cv = (daily.get(last) or {}).get(b) or {}
+        sample = f" По {cv['covered']} из {cv['total']} объявлений (остальные Facebook не отдал)." if cv.get('total') and cv.get('covered', 0) < cv['total'] else ''
         new7 = [r for r in A if r['goal'] != 'Найм' and r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7]
         _seen = set(); new7 = [r for r in new7 if not (msgkey(r) in _seen or _seen.add(msgkey(r)))]
         n_msg = len({msgkey(r) for r in A if r['goal'] != 'Найм'})
@@ -177,11 +181,11 @@ if last:
         if new7 and not own:
             g = collections.Counter(r['goal'] for r in new7).most_common(2)
             ins.append({'sec': 'ads', 'b': b, 'lvl': 'acc', 't': f"{nm}: {len(new7)} {plural(len(new7), 'новое сообщение', 'новых сообщения', 'новых сообщений')} в рекламе за 7 дней",
-                        'm': 'Куда ведут: ' + ', '.join(f"{k} — {v}" for k, v in g)})
+                        'm': 'Куда ведут: ' + ', '.join(f"{k} — {v}" for k, v in g) + '.' + sample})
         offers = collections.Counter(r['offer'] for r in A if r['offer'] not in ('Найм', 'Без оффера', 'Цена', 'Каталог товаров', 'Только видео/картинка'))
         if offers and not own:
             ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: чаще всего — " + ', '.join(k for k, _ in offers.most_common(3)),
-                        'm': f"среди {n_msg} {plural(n_msg, 'активного сообщения', 'активных сообщений', 'активных сообщений')}"})
+                        'm': f"среди {n_msg} {plural(n_msg, 'активного сообщения', 'активных сообщений', 'активных сообщений')}." + sample})
         hire = len({msgkey(r) for r in A if r['goal'] == 'Найм'})
         if hire >= 3 and hire / max(n_msg + hire, 1) > .3 and not own:
             ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} {plural(hire, 'сообщение', 'сообщения', 'сообщений')} о найме в рекламе (и {n_msg} о продажах)",
@@ -222,6 +226,7 @@ out = {
     'tg_posts': sorted(tg_posts.values(), key=lambda p: p.get('t') or '', reverse=True),
     'insights': ins,
     'rank': RANK,
+    'cover': {b: v for b, v in (daily.get(last) or {}).items()},
 }
 out = clean(out)
 json.dump(out, open(os.path.join(SITE, 'data', 'comp.json'), 'w'), ensure_ascii=False, separators=(',', ':'))

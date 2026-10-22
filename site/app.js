@@ -88,6 +88,11 @@ function adCard(a){
 function insRows(id,I,step){ const lim=LIM[id]||step; return (I.slice(0,lim).map(i=>`<div class="srow"><span class="pill ${LV[i.lvl]}">${LT[i.lvl]}</span><div><div class="t">${i.b?dot(i.b):""}<b>${esc(i.t)}</b></div><div class="m">${esc(i.m)}</div></div></div>`).join("")||'<div class="empty">Пока нечего сказать</div>')+(I.length>lim?`<div class="more"><button class="btn ghost" data-more="${id}" data-step="${step}">Показать ещё ${I.length-lim}</button></div>`:"") }
 const LV={bad:"p-bad",warn:"p-warn",good:"p-good",acc:"p-acc",mute:"p-mute"}, LT={bad:"угроза",warn:"присмотреться",good:"в нашу пользу",acc:"новое",mute:"факт"};
 function syncLang(){ $$(".seg.lang button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===S.lang)) }
+// how much of Meta's own ad counter we actually hold (copies behind the collected creatives)
+function cov(b){ const c=((D.cover||D.daily[REF()]||{})[b])||{}; return c.total?{t:c.total,c:Math.min(c.covered||0,c.total),p:Math.min(c.covered||0,c.total)/c.total}:null }
+function lowCov(th){ return ORDER.filter(b=>D.brands[b]).map(b=>({b,x:cov(b)})).filter(o=>o.x&&o.x.p<(th||.7)) }
+function covPill(b){ const x=cov(b); if(!x) return '<span class="note">—</span>'; const c=x.p>=.95?"p-good":x.p>=.7?"p-warn":"p-bad";
+  return `<span class="pill ${c}" data-tip="Мы видим тексты и картинки ${x.c} из ${x.t} объявлений Meta">${Math.round(100*x.p)}%</span>` }
 function renderAds(){
   syncLang();
   const A=active(), L=REF(), bs=ORDER.filter(b=>D.brands[b]&&((D.daily[L]||{})[b]||D.ads.some(a=>a.b===b)));
@@ -96,10 +101,10 @@ function renderAds(){
   // who advertises how much: one table instead of ten tiles
   const oc=Object.fromEntries(bs.map(b=>[b,objCount(b)])), tot=bs.reduce((s,b)=>s+(oc[b].v||0),0), mx=Math.max(1,...bs.map(b=>oc[b].v||0));
   $("#ov-sov-sub").textContent=S.lang==="all"?`активные объявления Meta на ${dfmt(L)}`:`≈ по собранным объявлениям, язык ${S.lang}`;
-  $("#ov-sov").innerHTML=table("ov-sov",[{h:"Бренд",l:1},{h:"Доля",l:1},{h:"Объявлений"},{h:"Сообщений",tip:"Разные тексты, без найма"},{h:"Новых за 7 дней"},{h:"Найм",tip:"Сообщения о найме курьеров и персонала"}],
+  $("#ov-sov").innerHTML=table("ov-sov",[{h:"Бренд",l:1},{h:"Доля",l:1},{h:"Объявлений"},{h:"Сообщений",tip:"Разные тексты, без найма"},{h:"Новых за 7 дней"},{h:"Найм",tip:"Сообщения о найме курьеров и персонала"},{h:"Охват текстов",tip:"Какую часть объявлений Meta мы видим с текстом. Ниже 70% — цифры по офферам, ценам и сообщениям этого бренда занижены"}],
     bs.map(b=>{ const x=A.filter(a=>a.b===b), m=msgs(b,A), n7=dedupe(sales(x).filter(a=>a.start&&dDiff(a.start,L)<7)).length, hr=dedupe(x.filter(a=>a.goal==="Найм")).length, sh=tot?100*(oc[b].v||0)/tot:0;
-      return {cls:B(b).own?"me":"",s:[B(b).name,sh,oc[b].v,m,n7,hr],c:[bname(b)+(B(b).own?'<span class="note" data-tip="Вся страница бренда: франшиза, найм, филиалы"> *</span>':""),
-        `<div class="sbarw"><div class="sbar"><i style="width:${100*(oc[b].v||0)/mx}%;background:${B(b).color}"></i></div><span>${sh.toFixed(0)}%</span></div>`,`<b>${ofmt(oc[b])}</b>`,m,n7?`<span class="pill p-acc">+${n7}</span>`:'<span class="note">0</span>',hr||'<span class="note">0</span>']} }).sort((x,y)=>(y.s[2]||0)-(x.s[2]||0)));
+      return {cls:B(b).own?"me":"",s:[B(b).name,sh,oc[b].v,m,n7,hr,(cov(b)||{}).p||0],c:[bname(b)+(B(b).own?'<span class="note" data-tip="Вся страница бренда: франшиза, найм, филиалы"> *</span>':""),
+        `<div class="sbarw"><div class="sbar"><i style="width:${100*(oc[b].v||0)/mx}%;background:${B(b).color}"></i></div><span>${sh.toFixed(0)}%</span></div>`,`<b>${ofmt(oc[b])}</b>`,m,n7?`<span class="pill p-acc">+${n7}</span>`:'<span class="note">0</span>',hr||'<span class="note">0</span>',covPill(b)]} }).sort((x,y)=>(y.s[2]||0)-(x.s[2]||0)));
   // ad insights only; App Store lives in its own tab
   $("#ov-ins").innerHTML=insRows("ov-ins",D.insights.filter(i=>i.sec!=="app"&&!(i.b&&B(i.b).own&&i.lvl==="mute")),6);
   // ads by day: a slot for every calendar day, empty slots where there was no snapshot
@@ -273,15 +278,16 @@ function keyFindings(bD,sm){
       K.push({lvl:"warn",h:`${nm(x.b)} ${x.d>0?"нарастил":"сократил"} рекламу в Meta: ${x.o} → ${x.n} объявлений (${x.d>0?"+":"−"}${Math.abs(Math.round(100*x.d))}%).`,m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)}.${more?" Также: "+more+".":""} Объявления ≠ бюджет: Meta его не раскрывает.`+go("ads","реклама")}) }
     else K.push({lvl:"mute",h:"У конкурентов нет резких изменений в рекламе Meta.",m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)} ни у кого объём не изменился на 30% и больше.`+go("ads","реклама")}) }
   // 4. new competitor offers this week, grouped by mechanic
-  const off=topEvents(J.events.filter(e=>e.type==="offer"&&e.b!=="bellissimo"&&within(e.date,7)),3,40);
+  const thin=new Set(lowCov().map(o=>o.b));   // ad texts of these brands are a sample: no conclusions from them
+  const off=topEvents(J.events.filter(e=>e.type==="offer"&&e.b!=="bellissimo"&&within(e.date,7)&&!(e.src==="Реклама Meta"&&thin.has(e.b))),3,40);
   if(off.length){ const by={}; off.forEach(e=>e.title.replace(/^Оффер:\s*/,"").split(" · ").map(m=>m.trim()).forEach(m=>{ if(!m||/^\d/.test(m)||/не распознана/.test(m)) return; (by[m]=by[m]||new Set()).add(nm(e.b)) }));
     const top=Object.entries(by).filter(x=>x[1].size>=2).sort((x,y)=>y[1].size-x[1].size)[0], brands=[...new Set(off.map(e=>nm(e.b)))];
-    K.push({lvl:"acc",h:`${off.length} ${plural(off.length,"новый оффер","новых оффера","новых офферов")} у конкурентов за неделю${top?`, чаще всего — «${top[0]}» (${[...top[1]].join(", ")})`:""}.`,m:`Бренды: ${brands.join(", ")}.`+go("off","офферы")}) }
+    K.push({lvl:"acc",h:`${off.length} ${plural(off.length,"новый оффер","новых оффера","новых офферов")} у конкурентов за неделю${top?`, чаще всего — «${top[0]}» (${[...top[1]].join(", ")})`:""}.`,m:`Бренды: ${brands.join(", ")}.`+(thin.size?` Реклама ${[...thin].map(nm).join(", ")} собрана не полностью и сюда не входит (Telegram учтён).`:"")+go("off","офферы")}) }
   // 5. pizza prices in ads: ours vs competitors (the category where we compete directly)
-  const P={}; D.ads.filter(a=>a.active&&a.goal!=="Найм").forEach(a=>(a.pitems||[]).forEach(x=>{ if(x.c==="Пицца"&&(P[a.b]==null||x.p<P[a.b])) P[a.b]=x.p }));
-  if(P.bellissimo&&Object.keys(P).length>1){ const L2=Object.entries(P).sort((x,y)=>x[1]-y[1]), cheaper=L2.filter(([b,p])=>b!=="bellissimo"&&p<P.bellissimo);
+  const P={}; D.ads.filter(a=>a.active&&a.goal!=="Найм"&&!thin.has(a.b)).forEach(a=>(a.pitems||[]).forEach(x=>{ if(x.c==="Пицца"&&(P[a.b]==null||x.p<P[a.b])) P[a.b]=x.p }));
+  if(P.bellissimo&&Object.keys(P).length>1&&!thin.has("bellissimo")){ const L2=Object.entries(P).sort((x,y)=>x[1]-y[1]), cheaper=L2.filter(([b,p])=>b!=="bellissimo"&&p<P.bellissimo);
     K.push({lvl:cheaper.length?"warn":"mute",h:cheaper.length?`В рекламе пиццу дешевле нашей предлагает ${cheaper.map(([b])=>nm(b)).join(", ")}.`:`Наша цена на пиццу в рекламе — самая низкая среди конкурентов.`,
-      m:"Минимальная цена в рекламе: "+L2.map(([b,p])=>`${nm(b)} — от ${fmt(p)}`).join(", ")+" сум. Это цены офферов, наборы могут отличаться."+go("off","цены")}) }
+      m:"Минимальная цена в рекламе: "+L2.map(([b,p])=>`${nm(b)} — от ${fmt(p)}`).join(", ")+" сум. Это цены офферов, наборы могут отличаться."+(thin.size?` Не учтены (реклама собрана не полностью): ${[...thin].map(nm).join(", ")}.`:"")+go("off","цены")}) }
   return K.slice(0,4);
 }
 function renderBoss(){
@@ -375,6 +381,7 @@ function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector("
     off:`Данные об офферах с ${dfmt(dd[0])}: только активные объявления и публичные Telegram-каналы. Выключенные акции не видны.`,
     app:`Снимки с ${dfmt(aa[0])}. Рейтинг App Store округлён до 0,1. У Dodo и Yandex в Google Play общий мировой рейтинг.`,
     jr:`События с ${dfmt(dd[0])}: до первого снимка радар ничего не знает. Всплески негатива о нас берутся из «Упоминаний».`};
+  const lc=lowCov(); if(lc.length&&(t==="ads"||t==="off")) CN[t]+=` Тексты собраны не полностью (Facebook не отдаёт часть объявлений): ${lc.map(o=>`${B(o.b).name} ${Math.round(100*o.x.p)}%`).join(", ")}. По этим брендам офферы, цены и число сообщений занижены.`;
   if(!CN[t]){ if(el) el.remove(); return }
   if(!el){ el=document.createElement("p"); el.className="note covnote"; p.prepend(el) }
   el.textContent="⚠ "+CN[t] }

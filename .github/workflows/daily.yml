@@ -15,7 +15,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     environment:
       name: github-pages
     steps:
@@ -30,7 +30,7 @@ jobs:
       - name: Collect apps and Telegram
         run: python3 collector/collect.py all 2>&1 | tee data/logs/collect.txt
       - name: Collect Ad Library
-        run: node collector/adlib_headless.js collector/collect.js data/raw data/thumbs_store.json 2>&1 | tail -40 | tee data/logs/adlib.txt
+        run: node collector/adlib_headless.js data/raw data/thumbs_store.json 2>&1 | tee data/logs/adlib.txt
       - name: Build site
         run: set -o pipefail; bash build.sh 2>&1 | tee data/logs/build.txt
       - name: Save history
