@@ -1,0 +1,32 @@
+name: site
+# Rebuilds and publishes the site from the data already collected, when code or page files change (no new collection).
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'collector/*.py', 'build.sh']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: daily
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pillow
+      - name: Build site
+        run: set -o pipefail; bash build.sh 2>&1 | tail -5
+      - name: Self-check
+        run: python3 collector/checks.py data _site 2>&1 | tail -20
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - uses: actions/deploy-pages@v4
