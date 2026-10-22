@@ -94,8 +94,12 @@ CATS = [
 CATS = [(n, re.compile(p, re.I)) for n, p in CATS]
 
 
+SLICE = re.compile(r"bo.?lak|кусоч|кусок|slice|ломтик|порци", re.I)
+
+
 def price_cat(text, start, end):
     """Category of the product nearest to the price (looks at the same sentence first)."""
+    if SLICE.search(text[max(0, start - 60):end + 40]): return 'Кусочки / порции'   # a slice is not a pizza: prices are not comparable
     best = None
     for n, p in CATS:
         for m in p.finditer(text):

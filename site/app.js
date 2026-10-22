@@ -156,7 +156,7 @@ function renderOff(){
   const top=(arr,n)=>{ const m={}; arr.forEach(x=>{ if(x) m[x]=(m[x]||0)+1 }); return Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,n) };
   const sb=ORDER.filter(b=>A0.some(a=>a.b===b));
   $("#off-sum").innerHTML=table("off-sum",[{h:"Бренд",l:1},{h:"Карточек"},{h:"Главные механики",l:1,w:1},{h:"Цена от, сум",tip:"Минимальная цена, найденная в тексте рекламы. Категория по ближайшему слову, может ошибаться."},{h:"Промокоды",l:1,w:1},{h:"Кнопка",l:1,w:1},{h:"Куда ведёт",l:1,w:1}],
-    sb.map(b=>{ const x=A0.filter(a=>a.b===b), n=x.length, mech=top(x.flatMap(a=>a.tags.filter(t=>t!=="Цена"&&t!=="Гарантия времени")),3), pr=(pi=>pi.filter(i=>!/^(Напиток|Другое)$/.test(i.c))[0]||pi[0])(x.flatMap(a=>(a.pitems||[])).sort((p,q)=>p.p-q.p)),
+    sb.map(b=>{ const x=A0.filter(a=>a.b===b), n=x.length, mech=top(x.flatMap(a=>a.tags.filter(t=>t!=="Цена"&&t!=="Гарантия времени")),3), pr=(pi=>pi.filter(i=>!/^(Напиток|Другое|Кусочки \/ порции)$/.test(i.c))[0]||pi[0])(x.flatMap(a=>(a.pitems||[])).sort((p,q)=>p.p-q.p)),
         codes=new Set(x.flatMap(a=>a.codes||[])); (tgc[b]||[]).forEach(c=>codes.add(c)); const cb=top(x.map(a=>ctaRu(a.cta)),2), gl=top(x.map(a=>a.goal),2), cv=cov(b), thin=cv&&cv.p<.7;
       return {cls:B(b).own?"me":"",s:[B(b).name,n,mech.length?mech[0][1]:0,pr?pr.p:null,codes.size,cb.length?cb[0][1]:0,gl.length?gl[0][1]:0],
         c:[bname(b)+(thin?' <span class="note" data-tip="Реклама бренда собрана не полностью">⚠</span>':""),`<b>${n}</b>`,mech.map(([t,v])=>`<span class="pill p-mute">${esc(t)} · ${v}</span>`).join(" ")||'<span class="note">нет</span>',
