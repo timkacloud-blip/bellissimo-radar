@@ -1,21 +1,26 @@
-kfc scrolled + 0
-kfc true
-evos scrolled + 0
-evos true
-oqtepa scrolled + 0
-oqtepa true
-dodo scrolled + 0
-dodo true
-maxway scrolled + 0
-maxway true
-uzum scrolled + 0
-uzum true
-bellissimo scrolled + 0
-bellissimo true
-sariqbola scrolled + 0
-sariqbola true
-hardees scrolled + 0
-hardees true
-safia scrolled + 0
-safia true
-adlib OK уже есть более полный файл за сегодня (146 объявл.)
+kfc base count=138 groups=10 new=0 covered=113/138
+evos base count=11 groups=9 new=0 covered=11/11
+oqtepa base count=112 groups=16 new=1 covered=55/112
+dodo base count=71 groups=26 new=1 covered=38/71
+maxway base count=6 groups=6 new=0 covered=6/6
+uzum base count=72 groups=28 new=0 covered=33/72
+bellissimo base count=100 groups=23 new=3 covered=44/100
+sariqbola base count=18 groups=9 new=0 covered=18/18
+hardees base count=4 groups=4 new=0 covered=4/4
+safia base count=24 groups=17 new=0 covered=24/24
+bellissimo asc count=100 groups=11 new=9 covered=75/100
+uzum asc count=72 groups=22 new=17 covered=59/72
+oqtepa asc count=112 groups=20 new=20 covered=112/112
+dodo asc count=71 groups=24 new=17 covered=60/71
+kfc asc count=138 groups=14 new=11 covered=138/138
+bellissimo video count=46 groups=19 new=11 covered=100/100
+uzum video count=31 groups=27 new=2 covered=61/72
+dodo video count=3 groups=3 new=0 covered=60/71
+dodo image count=0 groups=0 new=0 covered=60/71
+uzum image count=1 groups=1 new=0 covered=61/72
+dodo instagram count=71 groups=26 new=0 covered=60/71
+uzum instagram count=72 groups=28 new=0 covered=61/72
+dodo facebook count=70 groups=26 new=0 covered=60/71
+uzum facebook count=72 groups=28 new=0 covered=61/72
+uzum video-asc count=31 groups=27 new=0 covered=61/72
+adlib OK kfc:138/138 evos:11/11 oqtepa:112/112 dodo:71/60 maxway:6/6 uzum:72/61 bellissimo:100/100 sariqbola:18/18 hardees:4/4 safia:24/24
