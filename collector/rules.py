@@ -121,6 +121,7 @@ def price_items(text, hire=False):
         before, after = text[max(0, m.start() - 30):m.start()], text[m.end():m.end() + 25]
         if not (CUR_AFTER.search(after) or (re.search(r"[\s.]", raw) and PRICE_CUE_BEFORE.search(before[-12:])) or re.search(r"pizza|pitsa|пицц", before[-15:], re.I)): continue
         if NOT_PRICE_BEFORE.search(before): continue
+        if re.search(r"(eski|avvalgi|oldingi|старая|прежняя)\s*(narx|цена|narxi)?\W{0,3}$", before, re.I): continue   # "(eski narx 56 000)" is the crossed-out price
         if NOT_PRICE_AFTER.search(after): continue
         if re.search(r"(−|(?<!\s)-|\s-(?=$))\s?$", before): continue   # "−30 000 сум" is a discount, not a price
         if re.match(r"\s?\d{2}\b", after): continue   # phone number like "78 113 40 40"
