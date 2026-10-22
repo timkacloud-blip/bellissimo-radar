@@ -113,7 +113,7 @@ function renderAds(){
   $("#ov-ins").innerHTML=insRows("ov-ins",D.insights.filter(i=>i.sec!=="app"&&!(i.b&&B(i.b).own&&i.lvl==="mute")),6);
   // ads by day: one row per brand, one column per real snapshot
   const dk=Object.keys(D.daily).sort().slice(-10);
-  const dcols=[{h:"Бренд",l:1}].concat(dk.map(d=>({h:dfmt(d)}))).concat([{h:`К ${dfmt(dk[0])}`,tip:"Изменение последнего значения к первому дню таблицы"}]);
+  const dcols=[{h:"Бренд",l:1}].concat(dk.map((d,i)=>{ const g=i?dDiff(dk[i-1],d):0; return {h:dfmt(d)+(g>1?`<br><span class="note" data-tip="Между снимками нет данных за ${g-1} ${plural(g-1,"день","дня","дней")}: разница включает несколько дней">+${g} дн.</span>`:"")} })).concat([{h:`К ${dfmt(dk[0])}`,tip:"Изменение последнего значения к первому дню таблицы"}]);
   const drows=ORDER.filter(b=>D.brands[b]&&dk.some(d=>((D.daily[d]||{})[b]||{}).total!=null)).map(b=>{ const v=dk.map(d=>((D.daily[d]||{})[b]||{}).total), f=v.find(x=>x!=null), l=v[v.length-1];
     return {cls:B(b).own?"me":"",s:[B(b).name].concat(v.map(x=>x??null)).concat([l!=null&&f!=null?l-f:null]),c:[bname(b)].concat(v.map(x=>x==null?'<span class="note">—</span>':String(x))).concat([l!=null&&f!=null?`<span class="chg">${fchg(l,f)}</span>`:""])} });
   $("#ov-cad").innerHTML=`<div class="tbl scroll">${table("ov-cad",dcols,drows)}</div>`;
@@ -391,8 +391,10 @@ function freshStrip(){ const el=$("#fresh"); if(!D) return;
   const ad=D.info.date, ap=Object.keys(D.apps||{}).sort().pop(), tg=Object.keys(D.tg_hist||{}).sort().pop();
   const same=ad===ap&&ap===tg, dts=same?`данные на ${dfmt(ad)}`:`реклама ${dfmt(ad)}, приложения ${dfmt(ap)}, Telegram ${dfmt(tg)}`;
   const mb=MN&&MN.built?Date.parse(MN.built.replace(" ","T")+"+05:00"):null;
-  const H=D.health, hc=H?`<span data-tip="${esc((H.checks||[]).filter(c=>c.st!=="ok").map(c=>c.name+": "+c.msg).join(" • ")||"Все автопроверки пройдены")} (проверено ${esc(H.at)}, Ташкент)"><i class="fd" style="background:var(--${H.overall==="ok"?"good":H.overall==="warn"?"warn":"bad"})"></i>Проверки: ${H.n.ok} из ${H.checks.length}${H.n.fail?` <b class="cw">${H.n.fail} сбой</b>`:H.n.warn?` <b class="cw">${H.n.warn} замеч.</b>`:""}</span>`:"";
-  el.innerHTML=it("Радар",builtMs(),30,"Реклама, приложения, Telegram — "+dts)+it("Упоминания",mb,14)+hc+`<span class="note hide-m">время — Ташкент</span>` }
+  const H=D.health, hc=H?`<span data-tip="${esc((H.checks||[]).filter(c=>c.st!=="ok").map(c=>c.name+": "+c.msg).join(" • ")||"Все автопроверки пройдены")} (проверено ${esc(H.at)}, Ташкент)"><i class="fd" style="background:var(--${H.overall==="ok"?"good":H.overall==="warn"?"warn":"bad"})"></i>Проверки: ${H.n.ok} из ${H.checks.length}${H.n.fail?` <b class="cw">${H.n.fail} сбой</b>`:H.n.warn?` <b class="cw">${H.n.warn} замеч.</b>`:""}</span>`:""
+  const mbad=((typeof MN!=="undefined"&&MN&&MN.status)||[]).filter(x=>x.ok!==1||(x.note&&String(x.note).trim()));
+  const hc2=hc+(mbad.length?` <span data-tip="${esc(mbad.map(x=>x.s+": "+(x.note||"ошибка")).join(" • ").slice(0,600))}"><i class="fd" style="background:var(--warn)"></i>Сбор упоминаний: <b class="cw">${mbad.length} с замечаниями</b></span>`:"");
+  el.innerHTML=it("Радар",builtMs(),30,"Реклама, приложения, Telegram — "+dts)+it("Упоминания",mb,14)+hc2+`<span class="note hide-m">время — Ташкент</span>` }
 function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector(":scope > .covnote");
   const dd=Object.keys(D.daily||{}).sort(), aa=Object.keys(D.apps||{}).sort(), tt=Object.keys(D.tg_hist||{}).sort();
   const CN={ads:`Снимки рекламы с ${dfmt(dd[0])} (${dd.length} ${plural(dd.length,"снимок","снимка","снимков")}). Объявления, выключенные до первого снимка, не видны. Bellissimo — вся страница бренда, включая франшизу и найм.`,
