@@ -245,7 +245,7 @@ function renderMe(){
   const rows=[...R1.map(r=>["Радар",...r]),...R2.map(r=>["Упоминания",...r])];
   $("#me-src").innerHTML=table("me-src",[{h:"Источник",l:1,w:1},{h:"Данные с"},{h:"Обновление"},{h:"Что и ограничения",l:1,w:1}],rows.map(r=>({s:[r[1],r[2],r[3],r[4]],c:[`${esc(r[1])} <span class="note">· ${r[0]}</span>`,esc(r[2]),esc(r[3]),esc(r[4])]})));
   const bm=builtMs();
-  $("#me-upd").textContent=`Снимков рекламы: ${dd.length} (${dfmt(dd[0])} — ${dfmt(dd[dd.length-1])}). Радар обновляется каждое утро около 09:10 по Ташкенту${bm?`, последний раз — ${tashkent(bm)}`:""}. Упоминания обновляются на рабочем Mac: отзывы, Instagram, реклама и поиск в 09:30 и 18:30, СМИ и Telegram-каналы каждые 2 часа.`;
+  $("#me-upd").textContent=`Снимков рекламы: ${dd.length} (${dfmt(dd[0])} — ${dfmt(dd[dd.length-1])}). Радар обновляется каждое утро до начала рабочего дня${bm?`, последний раз — ${tashkent(bm)}`:""}. Упоминания обновляются на рабочем Mac: отзывы, Instagram, реклама и поиск в 09:30 и 18:30, СМИ и Telegram-каналы каждые 2 часа.`;
   if(!MN) loadMn().then(()=>{ if(S.tab==="me") renderMe() });
 }
 

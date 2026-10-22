@@ -1,7 +1,9 @@
 name: daily
 on:
   schedule:
-    - cron: '10 4 * * *'   # 09:10 Tashkent
+    # GitHub starts scheduled runs late (up to ~5 h in practice), so start early and keep a backup run.
+    - cron: '17 0 * * *'   # 05:17 Tashkent
+    - cron: '47 2 * * *'   # 07:47 Tashkent, backup if the first one is delayed or fails
   workflow_dispatch:
 permissions:
   contents: write
