@@ -1,19 +1,12 @@
+ids check 1/2 4/20 9/22 1/20 5/22 1/1 1/1 5/20 2/3 1/2
 kfc base count=138 groups=10 new=0 covered=138/138
 evos base count=11 groups=9 new=0 covered=11/11
 oqtepa base count=112 groups=16 new=0 covered=112/112
-dodo base count=71 groups=26 new=0 covered=60/71
+dodo base count=71 groups=26 new=0 covered=71/71
 maxway base count=6 groups=6 new=0 covered=6/6
-uzum base count=72 groups=28 new=0 covered=61/72
+uzum base count=72 groups=28 new=0 covered=72/72
 bellissimo base count=100 groups=23 new=0 covered=100/100
 sariqbola base count=18 groups=9 new=0 covered=18/18
 hardees base count=4 groups=4 new=0 covered=4/4
 safia base count=24 groups=17 new=0 covered=24/24
-dodo asc count=71 groups=24 new=0 covered=60/71
-uzum asc count=72 groups=22 new=0 covered=61/72
-dodo ru count=30 groups=24 new=6 covered=70/71
-uzum ru count=9 groups=9 new=0 covered=61/72
-uzum uz count=52 groups=25 new=6 covered=71/72
-dodo uz count=33 groups=23 new=1 covered=71/71
-uzum ru-asc count=9 groups=9 new=0 covered=71/72
-uzum uz-asc count=52 groups=21 new=1 covered=72/72
 adlib OK kfc:138/138 evos:11/11 oqtepa:112/112 dodo:71/71 maxway:6/6 uzum:72/72 bellissimo:100/100 sariqbola:18/18 hardees:4/4 safia:24/24
