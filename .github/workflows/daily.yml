@@ -33,6 +33,12 @@ jobs:
         run: node collector/adlib_headless.js data/raw data/thumbs_store.json 2>&1 | tee data/logs/adlib.txt
       - name: Build site
         run: set -o pipefail; bash build.sh 2>&1 | tee data/logs/build.txt
+      - name: Self-check
+        if: always()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python3 collector/checks.py data _site 2>&1 | tee data/logs/checks.txt
       - name: Save history
         if: always()
         run: |

@@ -300,23 +300,25 @@ function renderBoss(){
   $("#boss-key").innerHTML=K.map(k=>`<li class="k-${k.lvl}"><b>${esc(k.h)}</b><div class="m">${k.m}</div></li>`).join("")||'<div class="empty">Пока недостаточно данных</div>';
   $("#boss-key-sub").textContent=`на ${dfmt(REF())}, сравнение с ${dfmt(bD.wk)}`;
   // summary table: few columns, only what a manager needs
-  const rank=sh=>{ const o=Object.keys(sh).filter(k=>sh[k]!=null).sort((x,y)=>sh[y]-sh[x]); return b=>o.indexOf(b)+1 }, rk=sm?rank(sm.S.sh):null;
+  // Google Trends: only a brand's own dynamics (last 4 weeks vs the 4 before). Levels between brands depend on how the query is worded, so no share and no ranking.
+  const tr=b=>{ const v=((MN&&MN.trends)||[]).filter(r=>r[1]===b).sort((x,y)=>x[0].localeCompare(y[0])).map(r=>r[2]); if(v.length<8) return null;
+    const a=v.slice(-4).reduce((s,x)=>s+x,0)/4, p=v.slice(-8,-4).reduce((s,x)=>s+x,0)/4; return p>=3?{d:(a-p)/p,a,p}:{d:null,a,p} };
   const pa=(D.apps[bA.now]||{}).play||{};
   const rows=ORDER.filter(b=>D.brands[b]).map(b=>{ const own=B(b).own;
     const n=((D.daily[bD.now]||{})[b]||{}).total, o=((D.daily[bD.wk]||{})[b]||{}).total;
     const series=dd.map(d=>`${dfmt(d)}: ${((D.daily[d]||{})[b]||{}).total??"—"}`).join(" · ");
     let ac=""; if(n!=null&&o!=null&&bD.span>0){ const d=n-o; ac=!d?' <span class="chg">0</span>':` <span class="${own?(d>0?"up":"dn"):"chg"}">${d>0?"+":"−"}${o>=10?Math.abs(Math.round(100*d/o))+"%":Math.abs(d)+" шт."}</span>` }
     const r=RK[b]||{}, up=r.avg&&r.prev?r.prev-r.avg:0, good=own?up>0:up<0;
-    const pp=pa[b], world=WORLD.includes(b), sh=sm&&sm.S.sh[b]!=null?sm.S.sh[b]:null;
-    return {cls:own?"me":"",s:[nm(b),n??null,r.avg??null,pp?+pp[0]:null,sh],c:[
+    const pp=pa[b], world=WORLD.includes(b), tb=tr(b);
+    return {cls:own?"me":"",s:[nm(b),n??null,r.avg??null,pp?+pp[0]:null,tb&&tb.d!=null?tb.d:null],c:[
       bname(b),
       n!=null?`<b data-tip="${esc(series)}">${fmt(n)}</b>${own?'<span class="note" data-tip="Вся страница бренда: франшиза, найм, филиалы, а не только продажи"> *</span>':""}${ac}`:'<span class="note">нет в Meta</span>',
       r.avg?`<b>#${r.avg.toLocaleString("ru-RU")}</b>${Math.abs(up)>=1?` <span class="${good?"up":"dn"}">${up>0?"↑":"↓"}${Math.abs(Math.round(up))}</span>`:""}`:'<span class="note">вне топа</span>',
       pp?`★ ${(+pp[0]).toFixed(1)}${world?' <span class="note" data-tip="Общее приложение для всех стран">(мир)</span>':""}`:"—",
-      sm?(sh!=null?`${sh.toFixed(sh<10?1:0)}% <span class="note">#${rk(b)}</span>`:'<span class="note" data-tip="Google Trends не ответил по этому бренду">нет данных</span>'):"…"]} });
+      MN?(tb?(tb.d==null?'<span class="note" data-tip="Слишком мало поисковых запросов, процент был бы шумом">мало запросов</span>':`<span class="chg" data-tip="Индекс Google Trends: последние 4 недели ${Math.round(tb.a)} против ${Math.round(tb.p)} в предыдущие 4">${tb.d>0?"+":"−"}${Math.abs(Math.round(100*tb.d))}%</span>`):'<span class="note" data-tip="Google Trends не ответил по этому бренду">нет данных</span>'):"…"]} });
   const cols=[{h:"Бренд",l:1},{h:`Реклама Meta, объявлений<br><span class="note">${spanTxt(bD)}</span>`},
     {h:`App Store, среднее место<br><span class="note">${R0.cur?dfmt(R0.cur[0])+"–"+dfmt(R0.cur[1]):""}${R0.approx?' <span class="cw" data-tip="Предыдущей полной недели ещё нет — стрелки предварительные">⚠</span>':""}</span>`,tip:"Среднее место в чарте «Еда и напитки» за 7 дней. Стрелка — к предыдущей неделе."},
-    {h:`Google Play, рейтинг`},{h:`Интерес в Google<br><span class="note">${sm?`${dfmt(sm.a)}–${dfmt(sm.b)}, ориентир`:""}</span>`,tip:"Доля в Google Trends среди 14 брендов. Ориентир: короткие названия вроде KFC ищут и в другом смысле."}];
+    {h:`Google Play, рейтинг`},{h:`Интерес в Google, динамика<br><span class="note">4 недели к предыдущим 4</span>`,tip:"Как изменился поиск самого бренда в Google (Узбекистан). Бренды между собой не сравниваются: уровень зависит от написания запроса, в других словах короткие названия (KFC, Evos) ищут и в другом смысле."}];
   $("#boss-sum").innerHTML=table("boss-sum",cols,rows,{cls:"sum"});
   $("#boss-sum-sub").textContent=`данные на ${dfmt(REF())}`;
   $("#boss-sum-n").innerHTML=`Зелёный и красный — с нашей стороны (конкурент поднялся в App Store — красный). Серые изменения — просто факт. Проценты только при базе от 10 объявлений. * — вся страница Bellissimo, включая франшизу и найм. Наведите на число объявлений, чтобы увидеть все дни.`;
@@ -374,7 +376,8 @@ function freshStrip(){ const el=$("#fresh"); if(!D) return;
   const ad=D.info.date, ap=Object.keys(D.apps||{}).sort().pop(), tg=Object.keys(D.tg_hist||{}).sort().pop();
   const same=ad===ap&&ap===tg, dts=same?`данные на ${dfmt(ad)}`:`реклама ${dfmt(ad)}, приложения ${dfmt(ap)}, Telegram ${dfmt(tg)}`;
   const mb=MN&&MN.built?Date.parse(MN.built.replace(" ","T")+"+05:00"):null;
-  el.innerHTML=it("Радар",builtMs(),30,"Реклама, приложения, Telegram — "+dts)+it("Упоминания",mb,14)+`<span class="note hide-m">время — Ташкент</span>` }
+  const H=D.health, hc=H?`<span data-tip="${esc((H.checks||[]).filter(c=>c.st!=="ok").map(c=>c.name+": "+c.msg).join(" • ")||"Все автопроверки пройдены")} (проверено ${esc(H.at)}, Ташкент)"><i class="fd" style="background:var(--${H.overall==="ok"?"good":H.overall==="warn"?"warn":"bad"})"></i>Проверки: ${H.n.ok} из ${H.checks.length}${H.n.fail?` <b class="cw">${H.n.fail} сбой</b>`:H.n.warn?` <b class="cw">${H.n.warn} замеч.</b>`:""}</span>`:"";
+  el.innerHTML=it("Радар",builtMs(),30,"Реклама, приложения, Telegram — "+dts)+it("Упоминания",mb,14)+hc+`<span class="note hide-m">время — Ташкент</span>` }
 function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector(":scope > .covnote");
   const dd=Object.keys(D.daily||{}).sort(), aa=Object.keys(D.apps||{}).sort(), tt=Object.keys(D.tg_hist||{}).sort();
   const CN={ads:`Снимки рекламы с ${dfmt(dd[0])} (${dd.length} ${plural(dd.length,"снимок","снимка","снимков")}). Объявления, выключенные до первого снимка, не видны. Bellissimo — вся страница бренда, включая франшизу и найм.`,
@@ -440,6 +443,7 @@ $("#jr-more").addEventListener("click",()=>{ LIM["jr"]=(LIM["jr"]||30)+30; reren
   $$(".panel").forEach(p=>p.hidden=p.id!=="p-"+S.tab);
   try{ D=await load("data/comp.json") }catch(e){ $("#fresh").innerHTML=esc(e.message)+' <button id="retry" class="chip">Повторить</button>'; return }
   try{ J=await load("data/journal.json") }catch(e){}
+  try{ D.health=await load("data/health.json",1) }catch(e){}
   show(S.tab);
   loadMn().then(()=>{ if(S.tab==="boss"||S.tab==="jr") rerender() });
 })();
