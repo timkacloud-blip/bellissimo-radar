@@ -179,34 +179,32 @@ function renderOff(){
 function renderApp(){
   const ds=Object.keys(D.apps).sort(), b0=pickBase(ds), a=D.apps[b0.now]||{}, P=b0.span>0?D.apps[b0.wk]:null;
   $("#app-ins").innerHTML=insRows("app-ins",D.insights.filter(i=>i.sec==="app"),6);
-  renderGrowth(b0);
-  const ios=a.ios||{}, pio=(P&&P.ios)||{};
-  // place arrows coloured from our side: we go up — green, a competitor goes up — red
+  const ios=a.ios||{}, pio=(P&&P.ios)||{}, pl=a.play||{}, ppl=(P&&P.play)||{}, RK=(D.rank||{}).b||{};
+  // arrows on the weekly average place, coloured from our side: we go up — green, a competitor goes up — red
   const mv=(b,now,was)=>{ if(!now||!was||now===was) return ""; const up=was-now, good=B(b).own?up>0:up<0; return ` <span class="${good?"up":"dn"}">${up>0?"↑":"↓"}${Math.abs(up)}</span>` };
-  const RK=(D.rank||{}).b||{};
-  $("#app-ios").innerHTML=table("app-ios",[{h:"Приложение",l:1},{h:"Среднее место",tip:"Среднее место в чарте за последние 7 дней. Оно надёжнее, чем место за один день."},{h:"Сегодня"},{h:"Оценок"},{h:"+ за период"},{h:"Средняя"},{h:"Доля 1★",tip:"Какая часть всех оценок — одна звезда"},{h:"Версия"}],
-    ORDER.filter(b=>ios[b]).map(b=>{ const v=ios[b], h=v[2]?String(v[2]).split(",").map(Number):[], tot=h.reduce((s,x)=>s+(x||0),0)||0, one=tot?100*(h[4]||0)/tot:null, pl=v[3]?+v[3]:null, plo=pio[b]&&pio[b][3]?+pio[b][3]:null, gr=pio[b]&&v[0]!=null&&pio[b][0]!=null?v[0]-pio[b][0]:null;
-      const rk=RK[b]||{};
-      return {cls:B(b).own?"me":"",s:[B(b).name,rk.avg??null,pl,v[0]??null,gr,v[1]?+v[1]:null,one,v[4]||""],c:[bname(b),rk.avg?`<b>#${rk.avg.toLocaleString("ru-RU")}</b>${rk.prev&&Math.abs(rk.prev-rk.avg)>=1?mv(b,Math.round(rk.avg),Math.round(rk.prev)):""}`:"—",pl?`#${pl}`:"—",v[0]==null?'<span class="note" data-tip="Страница приложения не загрузилась при сборе">нет данных</span>':fmt(v[0]),gr==null?"—":gr?(gr>0?"+":"−")+fmt(Math.abs(gr)):"0",v[1]?(+v[1]).toFixed(1):"—",one==null?"—":one.toFixed(0)+"%",esc(v[4]||"—")]} }).sort((x,y)=>(x.s[1]||999)-(y.s[1]||999)));
-  const R0=D.rank||{}; $("#app-ios-sub").innerHTML=`среднее место за ${R0.cur?dfmt(R0.cur[0])+"–"+dfmt(R0.cur[1]):"неделю"}${R0.prev?`, стрелка — к ${R0.approx?"снимку "+dfmt(R0.prev[0])+' <span class="cw" data-tip="Предыдущей полной недели ещё нет, вывод предварительный">⚠</span>':"предыдущей неделе"}`:""} · оценки — за ${spanTxt(b0)}`;
-  $("#app-ch-sub").textContent="на "+dfmt(b0.now);
+  const gd=(n,o)=>n==null||o==null?"":n===o?"":` <span class="chg">${n>o?"+":"−"}${fmt(Math.abs(n-o))}</span>`;
+  const bs=ORDER.filter(b=>ios[b]||pl[b]);
+  $("#app-all").innerHTML=table("app-all",[{h:"Бренд",l:1},{h:"App Store: среднее место",tip:"Среднее место в чарте «Еда и напитки» за 7 дней. У Google Play публичного чарта категории нет, поэтому места там нет."},
+      {h:"App Store: рейтинг"},{h:"App Store: оценок",tip:"В скобках — прирост за период таблицы. Это число оценок, не установки."},{h:"Google Play: рейтинг"},{h:"Google Play: оценок",tip:"В скобках — прирост за период таблицы. Это число оценок, не установки."},{h:"Google Play: установок"},{h:"Версия и обновление"}],
+    bs.map(b=>{ const v=ios[b], p=pl[b], rk=RK[b]||{}, world=WORLD.includes(b), wn=world?' <span class="note" data-tip="Общее приложение для всех стран, цифры не про Узбекистан">(мир)</span>':"";
+      const ig=v&&v[0]!=null&&pio[b]&&pio[b][0]!=null?v[0]-pio[b][0]:null, pg=p&&ppl[b]&&!world?p[1]-ppl[b][1]:null;
+      return {cls:B(b).own?"me":"",s:[B(b).name,rk.avg??null,v&&v[1]?+v[1]:null,v?v[0]:null,p?+p[0]:null,p?p[1]:null,p?(parseInt(String(p[2]).replace(/\D/g,""))||null):null,""],c:[bname(b),
+        rk.avg?`<b>#${rk.avg.toLocaleString("ru-RU")}</b>${rk.prev&&Math.abs(rk.prev-rk.avg)>=1?mv(b,Math.round(rk.avg),Math.round(rk.prev)):""}`:'<span class="note">вне топа</span>',
+        v&&v[1]?(+v[1]).toFixed(1):"—", !v?"—":v[0]==null?'<span class="note" data-tip="Страница приложения не загрузилась при сборе">нет данных</span>':fmt(v[0])+gd(v[0],pio[b]&&pio[b][0]),
+        p?(+p[0]).toFixed(1)+wn:"—", p?fmt(p[1])+(pg==null?"":gd(p[1],ppl[b][1])):"—", p?esc(p[2]):"—",
+        `<span class="note">iOS</span> ${esc((v&&v[4])||"—")}<br><span class="note">Play</span> ${esc((p&&p[3])||"—")}`]} }).sort((x,y)=>(x.s[1]||999)-(y.s[1]||999)));
+  const R0=D.rank||{}; $("#app-all-sub").innerHTML=`место за ${R0.cur?dfmt(R0.cur[0])+"–"+dfmt(R0.cur[1]):"неделю"}${R0.prev?`, стрелка — к ${R0.approx?"снимку "+dfmt(R0.prev[0])+' <span class="cw" data-tip="Предыдущей полной недели ещё нет, вывод предварительный">⚠</span>':"предыдущей неделе"}`:""} · прирост оценок за ${spanTxt(b0)}`;
+  $("#app-ch-sub").textContent="App Store, на "+dfmt(b0.now);
   const ch=a.ios_chart||[], ids=a.ios_chart_ids||[];
   $("#app-chart").innerHTML=ch.map((n,i)=>{ const b=IOS_IDS[ids[i]], mn=!b&&/papa|apex|domino/i.test(n); return `<span class="n">${i+1}</span><span class="${b?"hl":mn?"rk-mn":""}">${b?dot(b):""}${b==="bellissimo"?"★ ":""}${esc(n)}</span>` }).join("");
-  const pl=a.play||{}, ppl=(P&&P.play)||{};
-  $("#app-play-sub").innerHTML=`рейтинг, отзывы, установки · изменения за ${spanTxt(b0)}`;
-  $("#app-play").innerHTML=table("app-play",[{h:"Приложение",l:1},{h:"Рейтинг"},{h:"Отзывов"},{h:"+ за период"},{h:"Установок"},{h:"Обновлено"}],
-    ORDER.filter(b=>pl[b]).map(b=>{ const v=pl[b], gr=ppl[b]&&!WORLD.includes(b)?v[1]-ppl[b][1]:null;
-      return {cls:B(b).own?"me":"",s:[B(b).name,+v[0],v[1],gr,parseInt(String(v[2]).replace(/\D/g,""))||null,v[3]||""],c:[bname(b)+(WORLD.includes(b)?' <span class="note" data-tip="Общее приложение для всех стран, цифры не про Узбекистан">(весь мир)</span>':""),(+v[0]).toFixed(2),fmt(v[1]),gr==null?"—":gr?(gr>0?"+":"−")+fmt(Math.abs(gr)):"0",esc(v[2]),esc(v[3]||"—")]} }).sort((x,y)=>y.s[2]-x.s[2]));
-}
-
-function renderGrowth(bA){
-  const v=(d,k,b,i)=>{ const x=((D.apps[d]||{})[k]||{})[b]; return x?x[i]:null };
-  const gr=ORDER.filter(b=>D.brands[b]&&!WORLD.includes(b)).map(b=>{ const p1=v(bA.now,"play",b,1),p0=v(bA.wk,"play",b,1),i1=v(bA.now,"ios",b,0),i0=v(bA.wk,"ios",b,0);
-    const pg=p1!=null&&p0!=null?p1-p0:null, ig=i1!=null&&i0!=null?i1-i0:null; return {b,pg,ig,t:(pg||0)+(ig||0)} }).sort((x,y)=>y.t-x.t);
-  const mx=Math.max(1,...gr.map(x=>x.t)), sg=x=>x==null?"—":(x>0?"+":x<0?"−":"")+fmt(Math.abs(x));
-  $("#boss-gr").innerHTML=`<div class="bars">${gr.map(x=>`<div class="brow"><span>${bname(x.b)}</span><div class="bbar"><i class="grow" data-tip="${esc(B(x.b).name)}: ${sg(x.pg)} в Google Play, ${sg(x.ig)} в App Store" style="width:${100*Math.max(0,x.t)/mx}%;background:${B(x.b).color}"></i></div><span class="num"><b>${sg(x.t)}</b> <span class="note">Play ${sg(x.pg)} · iOS ${sg(x.ig)}</span></span></div>`).join("")}</div>`;
-  $("#boss-gr-sub").innerHTML=`за ${spanTxt(bA)}`;
-  $("#boss-gr-n").textContent="Это не установки: число оценок зависит от того, просит ли приложение поставить оценку. Сравнивайте бренд с самим собой во времени. Dodo и Yandex не показаны — у них общее приложение на весь мир. У EVOS число оценок в App Store не меняется неделями: так отдаёт сам Apple.";
+  // reviews from the stores: new reviews and share of 1-2 star, same scheme for both stores
+  loadMn().then(d=>{ if(!d||!d.rev) throw 0; const per=30, from=new Date(Date.now()-per*864e5).toISOString().slice(0,10), c={};
+    d.rev.forEach(r=>{ if(r[0]<from) return; const k=r[1]; (c[k]=c[k]||{})[r[2]]=((c[k]||{})[r[2]]||[0,0]); c[k][r[2]][0]+=r[3]; c[k][r[2]][1]+=r[4] });
+    const cell=x=>x&&x[0]?`${fmt(x[0])} <span class="note">· негатив ${Math.round(100*x[1]/x[0])}%</span>`:'<span class="note">0</span>';
+    $("#app-rev").innerHTML=table("app-rev",[{h:"Бренд",l:1},{h:"App Store: новых отзывов"},{h:"Google Play: новых отзывов"}],
+      ORDER.filter(b=>c[b]).map(b=>({cls:B(b).own?"me":"",s:[B(b).name,(c[b].appstore||[0])[0],(c[b].play||[0])[0]],c:[bname(b),cell(c[b].appstore),cell(c[b].play)]})).sort((x,y)=>(y.s[1]+y.s[2])-(x.s[1]+x.s[2])));
+    $("#app-rev-sub").textContent=`за ${per} дней, негатив = оценки 1–2★`;
+  }).catch(()=>{ $("#app-rev").innerHTML='<div class="empty">Отзывы пока не загрузились</div>' });
 }
 
 // ---------- Telegram ----------
