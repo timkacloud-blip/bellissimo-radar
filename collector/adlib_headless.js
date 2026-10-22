@@ -18,10 +18,10 @@ function status(ok,msg){ const p=path.join(RAW,'status_'+D+'.json'); const s=loa
 const MEDIA={all:'media_type=all',image:'media_type=image',video:'media_type=video'};
 const ASC='&sort_data[direction]=asc&sort_data[mode]=relevancy_monthly_grouped';
 const PL=k=>'&publisher_platforms[0]='+k;
-const V=[['base',MEDIA.all],['asc',MEDIA.all+ASC],['video',MEDIA.video],['image',MEDIA.image],['instagram',MEDIA.all+PL('instagram')],['facebook',MEDIA.all+PL('facebook')],
-  ['video-asc',MEDIA.video+ASC],['image-asc',MEDIA.image+ASC],['instagram-asc',MEDIA.all+PL('instagram')+ASC],['facebook-asc',MEDIA.all+PL('facebook')+ASC],
-  ['ig-video',MEDIA.video+PL('instagram')],['ig-image',MEDIA.image+PL('instagram')],['fb-video',MEDIA.video+PL('facebook')],['fb-image',MEDIA.image+PL('facebook')],
-  ['ru',MEDIA.all+'&content_languages[0]=ru'],['uz',MEDIA.all+'&content_languages[0]=uz'],['ru-asc',MEDIA.all+'&content_languages[0]=ru'+ASC],['uz-asc',MEDIA.all+'&content_languages[0]=uz'+ASC]];
+const LG=k=>MEDIA.all+'&content_languages[0]='+k;
+const V=[['base',MEDIA.all],['asc',MEDIA.all+ASC],['ru',LG('ru')],['uz',LG('uz')],['ru-asc',LG('ru')+ASC],['uz-asc',LG('uz')+ASC],['en',LG('en')],['video',MEDIA.video],['image',MEDIA.image],
+  ['instagram',MEDIA.all+PL('instagram')],['facebook',MEDIA.all+PL('facebook')],['video-asc',MEDIA.video+ASC],['image-asc',MEDIA.image+ASC],
+  ['instagram-asc',MEDIA.all+PL('instagram')+ASC],['facebook-asc',MEDIA.all+PL('facebook')+ASC],['ig-video',MEDIA.video+PL('instagram')],['fb-video',MEDIA.video+PL('facebook')]];
 
 function jget(h,key){ const k=h.indexOf(key); if(k<0) return null; let i=h.indexOf('{',k),d=0,s=false,e=false,j=i;
   for(;j<h.length;j++){const c=h[j]; if(s){ if(e) e=false; else if(c==='\\') e=true; else if(c==='"') s=false; continue } if(c==='"') s=true; else if(c==='{') d++; else if(c==='}'){ d--; if(!d) break } }
@@ -54,7 +54,7 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
 
   let fails=0, abort=false;
   outer: for(let vi=0;vi<V.length;vi++){
-    const order=Object.keys(P).filter(b=>vi===0||(!done(b)&&stale[b]<4)).sort((a,b)=>(covered(a)/(totals[a]||1))-(covered(b)/(totals[b]||1)));
+    const order=Object.keys(P).filter(b=>vi===0||(!done(b)&&stale[b]<7)).sort((a,b)=>(covered(a)/(totals[a]||1))-(covered(b)/(totals[b]||1)));
     for(const b of order){
       if(Date.now()-T0>LIMIT){ console.log('time limit'); break outer }
       let r=await one(P[b],V[vi][1]);
