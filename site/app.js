@@ -5,7 +5,7 @@ const fmt=n=>n==null||!isFinite(n)?"—":Math.round(n).toLocaleString("ru-RU");
 const kfmt=n=>n==null?"—":n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+" млн":n>=1e4?Math.round(n/1e3)+" тыс":fmt(n);
 const plural=(n,a,b,c)=>{ n=Math.abs(n)%100; const m=n%10; return n>10&&n<20?c:m===1?a:m>=2&&m<=4?b:c };
 const ls={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const S={tab:"boss",lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:false,nw:false,limit:24,prc:"",tgb:"",jr:{per:"30",b:"",t:"",hi:false,own:true}};
+const S={tab:"boss",lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:true,nw:false,limit:24,prc:"",tgb:"",jr:{per:"30",b:"",t:"",hi:false,own:true}};
 let D=null, TH={}, thumbsLoaded=false, J={events:[],coverage:{}}, MN=null, MNP=null;
 const LIM={}, TS={};   // "show more" limits and table sort state, by table id
 
@@ -101,8 +101,8 @@ function renderAds(){
   // who advertises how much: one table instead of ten tiles
   const oc=Object.fromEntries(bs.map(b=>[b,objCount(b)])), tot=bs.reduce((s,b)=>s+(oc[b].v||0),0), mx=Math.max(1,...bs.map(b=>oc[b].v||0));
   $("#ov-sov-sub").textContent=S.lang==="all"?`активные объявления Meta на ${dfmt(L)}`:`≈ по собранным объявлениям, язык ${S.lang}`;
-  $("#ov-sov").innerHTML=table("ov-sov",[{h:"Бренд",l:1},{h:"Доля",l:1},{h:"Объявлений"},{h:"Сообщений",tip:"Разные тексты, без найма"},{h:"Новых за 7 дней"},{h:"Найм",tip:"Сообщения о найме курьеров и персонала"},{h:"Охват текстов",tip:"Какую часть объявлений Meta мы видим с текстом. Ниже 70% — цифры по офферам, ценам и сообщениям этого бренда занижены"}],
-    bs.map(b=>{ const x=A.filter(a=>a.b===b), m=msgs(b,A), n7=dedupe(sales(x).filter(a=>a.start&&dDiff(a.start,L)<7)).length, hr=dedupe(x.filter(a=>a.goal==="Найм")).length, sh=tot?100*(oc[b].v||0)/tot:0;
+  $("#ov-sov").innerHTML=table("ov-sov",[{h:"Бренд",l:1},{h:"Доля",l:1},{h:"Объявлений"},{h:"Креативов",tip:"Карточки в галерее без найма. Одинаковые копии объявления Facebook объединяет сам, поэтому креативов меньше, чем объявлений"},{h:"Новых за 7 дней"},{h:"Найм",tip:"Сообщения о найме курьеров и персонала"},{h:"Охват текстов",tip:"Какую часть объявлений Meta мы видим с текстом. Ниже 70% — цифры по офферам, ценам и сообщениям этого бренда занижены"}],
+    bs.map(b=>{ const x=A.filter(a=>a.b===b), m=x.filter(a=>a.goal!=="Найм").length, n7=sales(x).filter(a=>a.start&&dDiff(a.start,L)<7).length, hr=x.filter(a=>a.goal==="Найм").length, sh=tot?100*(oc[b].v||0)/tot:0;
       return {cls:B(b).own?"me":"",s:[B(b).name,sh,oc[b].v,m,n7,hr,(cov(b)||{}).p||0],c:[bname(b)+(B(b).own?'<span class="note" data-tip="Вся страница бренда: франшиза, найм, филиалы"> *</span>':""),
         `<div class="sbarw"><div class="sbar"><i style="width:${100*(oc[b].v||0)/mx}%;background:${B(b).color}"></i></div><span>${sh.toFixed(0)}%</span></div>`,`<b>${ofmt(oc[b])}</b>`,m,n7?`<span class="pill p-acc">+${n7}</span>`:'<span class="note">0</span>',hr||'<span class="note">0</span>',covPill(b)]} }).sort((x,y)=>(y.s[2]||0)-(x.s[2]||0)));
   // ad insights only; App Store lives in its own tab
@@ -142,11 +142,11 @@ function renderGallery(A0){
   A=S.raw?A.map(a=>Object.assign({},a,{sim:0,ntot:a.n||1})):dedupe(A); A.sort(so);
   const sel=S.brands.size?[...S.brands]:ORDER.filter(b=>D.brands[b]);
   const got=D.ads.filter(a=>a.active&&sel.includes(a.b)).reduce((s,a)=>s+(a.n||1),0), meta=sel.reduce((s,b)=>s+(((D.daily[REF()]||{})[b]||{}).total||0),0);
-  $("#ads-sub").innerHTML=`${A.length} ${S.raw?plural(A.length,"объявление","объявления","объявлений"):plural(A.length,"сообщение","сообщения","сообщений")}${S.hire?"":" · найм скрыт"}`+
+  $("#ads-sub").innerHTML=`${A.length} ${S.raw?plural(A.length,"карточка","карточки","карточек"):plural(A.length,"сообщение","сообщения","сообщений")}${S.hire?"":" · найм скрыт"}`+
     (meta>got?` · <span data-tip="Ad Library отдаёт не все объявления крупных брендов. Число объявлений — из счётчика Meta, тексты и картинки — из того, что удалось собрать.">собрано ${fmt(got)} из ${fmt(meta)} объявлений Meta ⓘ</span>`:"");
   $("#ads-gal").innerHTML=A.slice(0,S.limit).map(adCard).join("")||'<div class="empty">Ничего не найдено — ослабьте фильтры или нажмите «Сбросить фильтры»</div>';
   $("#ads-more").hidden=A.length<=S.limit; $("#ads-more").textContent=`Показать ещё (${Math.max(0,A.length-S.limit)})`;
-  $("#f-reset").hidden=!(S.brands.size||S.goal||S.tag||S.fmt||S.q||S.hire||S.raw||S.nw||S.sort!=="new");
+  $("#f-reset").hidden=!(S.brands.size||S.goal||S.tag||S.fmt||S.q||S.hire||!S.raw||S.nw||S.sort!=="new");
 }
 
 // ---------- Офферы и цены ----------
@@ -392,7 +392,7 @@ function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector("
 // ---------- state in the address bar, so a view can be shared by link ----------
 let urlLock=false;
 function writeURL(){ if(urlLock) return; const p=new URLSearchParams();
-  if(S.tab==="ads"){ if(S.brands.size) p.set("b",[...S.brands].join(",")); ["goal","tag","fmt","q"].forEach(k=>{ if(S[k]) p.set(k,S[k]) }); if(S.sort!=="new") p.set("sort",S.sort); if(S.hire) p.set("hire","1"); if(S.raw) p.set("raw","1"); if(S.nw) p.set("new","1") }
+  if(S.tab==="ads"){ if(S.brands.size) p.set("b",[...S.brands].join(",")); ["goal","tag","fmt","q"].forEach(k=>{ if(S[k]) p.set(k,S[k]) }); if(S.sort!=="new") p.set("sort",S.sort); if(S.hire) p.set("hire","1"); if(!S.raw) p.set("merge","1"); if(S.nw) p.set("new","1") }
   if((S.tab==="ads"||S.tab==="off")&&S.lang!=="all") p.set("lang",S.lang);
   if(S.tab==="off"&&S.prc) p.set("cat",S.prc);
   if(S.tab==="off"&&S.tgb) p.set("tg",S.tgb);
@@ -402,7 +402,7 @@ function readURL(){ const h=decodeURIComponent(location.hash.slice(1)); if(!h) r
   if(t==="tg"){ S.tab="off"; S.tgb=p.get("b")||""; return true }
   if(t==="ov"){ S.tab="ads"; return true }
   if(!R[t]) return false; S.tab=t;
-  if(t==="ads"){ S.brands=new Set((p.get("b")||"").split(",").filter(Boolean)); S.goal=p.get("goal")||""; S.tag=p.get("tag")||""; S.fmt=p.get("fmt")||""; S.q=p.get("q")||""; S.sort=p.get("sort")||"new"; S.hire=p.get("hire")==="1"; S.raw=p.get("raw")==="1"; S.nw=p.get("new")==="1" }
+  if(t==="ads"){ S.brands=new Set((p.get("b")||"").split(",").filter(Boolean)); S.goal=p.get("goal")||""; S.tag=p.get("tag")||""; S.fmt=p.get("fmt")||""; S.q=p.get("q")||""; S.sort=p.get("sort")||"new"; S.hire=p.get("hire")==="1"; S.raw=p.get("merge")!=="1"; S.nw=p.get("new")==="1" }
   if(t==="ads"||t==="off") S.lang=["UZ","RU"].includes(p.get("lang"))?p.get("lang"):"all";
   if(t==="off"){ S.prc=p.get("cat")||""; S.tgb=p.get("tg")||"" }
   if(t==="jr") S.jr={per:p.get("per")||"30",b:p.get("b")||"",t:p.get("t")||"",hi:p.get("hi")==="1",own:p.get("own")!=="0"};
@@ -426,7 +426,7 @@ $("#f-brand").addEventListener("click",e=>{ const b=e.target.closest(".chip"); i
 [["#f-goal","goal"],["#f-tag","tag"],["#f-fmt","fmt"],["#f-sort","sort"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.value; S.limit=24; rerender() }));
 [["#f-raw","raw"],["#f-hire","hire"],["#f-new","nw"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.checked; S.limit=24; rerender() }));
 let qt; $("#f-q").addEventListener("input",e=>{ clearTimeout(qt); qt=setTimeout(()=>{ S.q=e.target.value; S.limit=24; rerender() },200) });
-$("#f-reset").addEventListener("click",()=>{ Object.assign(S,{brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:false,nw:false,limit:24}); rerender() });
+$("#f-reset").addEventListener("click",()=>{ Object.assign(S,{brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:true,nw:false,limit:24}); rerender() });
 $("#ads-more").addEventListener("click",()=>{ S.limit+=24; rerender() });
 $("#pr-cat").addEventListener("change",e=>{ S.prc=e.target.value; LIM["off-pr"]=0; rerender() });
 $("#tg-b").addEventListener("change",e=>{ S.tgb=e.target.value; rerender() });
