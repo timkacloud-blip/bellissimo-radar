@@ -426,6 +426,49 @@ def run_tgw():
     if stopped: note.insert(0, stopped)
     return n, '; '.join(note[:12])
 
+def run_tgweb():
+    """Public Telegram channels through the web preview (t.me/s/...): posts only, no login, runs on GitHub. Comments need the Mac (run_tgw)."""
+    import html as _h
+    watch = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
+    have = {r[0] for r in db.execute("SELECT url FROM items WHERE source='tg' AND url IS NOT NULL")}
+    since = time.time() - 3 * 86400; n = 0; bad = []; ok = 0
+    for h, typ in watch.items():
+        try:
+            before = ''; got_ch = 0; seen_any = False
+            for page in range(6):
+                req = urllib.request.Request(f'https://t.me/s/{h}' + (f'?before={before}' if before else ''), headers={'User-Agent': 'Mozilla/5.0 (compatible; MentionsBot)'})
+                doc = urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'replace')
+                parts = doc.split('data-post="')[1:]
+                if not parts: break
+                seen_any = True; oldest = None; first_id = None
+                for blk in parts:
+                    ref = blk.split('"', 1)[0]
+                    try: pid = int(ref.rsplit('/', 1)[1])
+                    except Exception: continue
+                    first_id = pid if first_id is None else min(first_id, pid)
+                    m = re.search(r'<time[^>]*datetime="([^"]+)"', blk)
+                    if not m: continue
+                    try: ts = parse_iso(m.group(1))
+                    except Exception: continue
+                    oldest = ts if oldest is None else min(oldest, ts)
+                    if 'tgme_widget_message_forwarded_from' in blk: continue
+                    t = re.search(r'tgme_widget_message_text[^>]*>(.*?)</div>', blk, re.S)
+                    if not t: continue
+                    text = re.sub(r'\s+', ' ', _h.unescape(re.sub(r'<[^>]+>', '', re.sub(r'<br\s*/?>', ' ', t.group(1))))).strip()
+                    url = f'https://t.me/{ref}'
+                    if ts < since or not text or url in have: continue
+                    bl = match_brands(text)
+                    if bl: got_ch += save_multi(bl, 'tg', 'post', f'tgweb:{ref}', ts, text, 'earned', url=url, parent='w:' + typ)
+                if oldest is None or oldest < since or first_id is None: break
+                before = first_id
+                time.sleep(1)
+            if not seen_any: raise RuntimeError('нет публичной ленты')
+            n += got_ch; ok += 1; db.commit()
+        except Exception as ex:
+            bad.append(f'@{h}: {type(ex).__name__}')
+        time.sleep(0.7)
+    return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
+
 # ---------- СМИ и газеты: ленты RSS/Atom (заголовок и анонс; полный текст не читаем) ----------
 def run_media():
     import xml.etree.ElementTree as ET, html as _h, email.utils
@@ -542,7 +585,7 @@ def reanalyze():
             db.execute('UPDATE items SET text=?, sentiment=?, themes=? WHERE id=?', (t2, s2, th2, id_)); ch += 1
     db.commit(); return ch
 
-SOURCES = {'ig': run_ig, 'ads': run_ads, 'play': run_play, 'appstore': run_appstore, 'igc': run_igc, 'tgw': run_tgw, 'media': run_media, 'yt': run_yt, 'trends': run_trends}
+SOURCES = {'tgweb': run_tgweb, 'ig': run_ig, 'ads': run_ads, 'play': run_play, 'appstore': run_appstore, 'igc': run_igc, 'tgw': run_tgw, 'media': run_media, 'yt': run_yt, 'trends': run_trends}
 # старый сборщик 'tg' (личный аккаунт, глобальный поиск) отключён: читает только чужие каналы из telegram_watch.json через отдельный аккаунт
 GROUPS = {'fast': ['ig', 'ads', 'play', 'appstore', 'igc', 'yt', 'trends'], 'slow': ['media', 'tgw']}
 

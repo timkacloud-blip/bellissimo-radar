@@ -23,10 +23,11 @@ jobs:
       - name: Collect
         env: { MENTIONS_DB: state/mentions_data.db }
         run: |
-          H=$(date -u +%H)
-          SRC="media"
-          # once a day (morning, Tashkent): app reviews and Google Trends
-          if [ "$H" = "02" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="media play appstore trends"; fi
+          SRC="tgweb media"
+          # once per Tashkent day (first run after midnight): app reviews and Google Trends. GitHub may delay or skip scheduled runs, so we look at the DB, not the clock.
+          TODAY=$(TZ=Asia/Tashkent date +%F)
+          LAST=$(python3 -c "import sqlite3;r=sqlite3.connect('state/mentions_data.db').execute(\"select last_run from status where source='play'\").fetchone();print((r[0] if r else '')[:10])")
+          if [ "$LAST" != "$TODAY" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC play appstore trends"; fi
           python3 mentions/collect.py $SRC 2>&1 | tee mentions.log
       - name: Build data for the tab
         run: python3 mentions/build.py state/mentions_data.db site/mentions_data.json
