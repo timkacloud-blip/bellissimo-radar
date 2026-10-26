@@ -61,6 +61,9 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
       if(Date.now()-T0>LIMIT){ console.log('time limit'); break outer }
       let r=await one(P[b],V[vi][1]);
       if(!r){ await sleep(30000); r=await one(P[b],V[vi][1]) }
+      // Facebook sometimes answers with a counter but an empty list: ask again, and do not count it as a failed page
+      for(let k=0;r&&r.count>0&&!r.groups.length&&k<2;k++){ console.log(b,V[vi][0],'empty list, retry'); await sleep(20000); r=await one(P[b],V[vi][1])||r }
+      if(r&&r.count>0&&!r.groups.length){ stale[b]++; if(V[vi][0]==='base') totals[b]=r.count; console.log(b,V[vi][0],'still empty'); continue }
       if(!r){ fails++; log.push(b+' '+V[vi][0]+': no data'); console.log(b,V[vi][0],'NO DATA'); if(fails>=6){ abort=true; break outer } await sleep(60000*Math.min(fails,3)); continue }
       fails=0; tried[b]++;
       if(V[vi][0]==='base') totals[b]=r.count;
