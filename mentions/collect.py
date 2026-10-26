@@ -26,8 +26,11 @@ def need(mod, pipname=None):
         importlib.invalidate_caches()
         return __import__(mod)
 
+ENV_SECRET = {'meta_token.txt': 'META_TOKEN', 'youtube_key.txt': 'YOUTUBE_KEY'}   # on GitHub the keys come from repo secrets
 def secret(*paths):
     for p in paths:
+        v = os.environ.get(ENV_SECRET.get(os.path.basename(p), ''), '').strip()
+        if v: return v
         f = os.path.join(ROOT, p) if not os.path.isabs(p) else p
         if os.path.exists(f) and os.path.getsize(f) > 0: return open(f).read().strip()
     return None
@@ -185,6 +188,7 @@ def run_ads():
                  filtering=json.dumps([{'field': 'updated_time', 'operator': 'GREATER_THAN', 'value': int(cutoff)}]))
     igs = {a['creative']['effective_instagram_media_id'] for a in ads if (a.get('creative') or {}).get('effective_instagram_media_id')}
     sts = {a['creative']['effective_object_story_id'] for a in ads if (a.get('creative') or {}).get('effective_object_story_id')}
+    sts = {x for x in sts if x.split('_')[0] == CFG['page']}   # posts of other pages (not ours) cannot be read with our page token
     n = 0; err = 0; last = ''; fetched = 0
     try: igc = {k: v.get('comments_count', 0) for k, v in counts(igs, 'comments_count', TOKEN).items()}
     except RuntimeError as e: igc = {}; err += 1; last = str(e)

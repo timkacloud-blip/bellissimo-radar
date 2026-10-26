@@ -76,25 +76,30 @@ if tg:
     add('C8', 'Telegram: все каналы читаются, подписчики видны', 'ok' if not gone and not nosub and ch else 'warn', f'{len(ch)} каналов' + (f', пропали: {", ".join(gone)}' if gone else '') + (f', без подписчиков: {", ".join(nosub)}' if nosub else ''))
 
 # C9 mentions collected on the Mac: the time the Mac itself exported (mentions_data.json is rebuilt every 2 h on GitHub, so its time says nothing about the Mac)
-NAME9 = 'Упоминания: Mac выгружал данные за последние 30 ч'
+NAME9 = 'Упоминания: Mac (Telegram) выгружал данные за последние 30 ч'
 mac = L(os.path.join(DATA, 'mentions_mac.json'))
 if mac and mac.get('at'):
     try:
         h = (NOW - dt.datetime.fromisoformat(mac['at'].replace(' ', 'T')).replace(tzinfo=TZ)).total_seconds() / 3600
         add('C9', NAME9, 'ok' if h <= 30 else 'warn' if h <= 54 else 'fail', f'последняя выгрузка {round(h)} ч назад ({mac["at"]})')
     except Exception: add('C9', NAME9, 'warn', 'не удалось разобрать время выгрузки')
-    # C12 every Mac source ran recently (one source can stall while the others keep working)
-    SRC = {'ig': 'Instagram', 'ads': 'комментарии к рекламе', 'igc': 'комментарии Instagram', 'yt': 'YouTube', 'tg': 'Telegram-комментарии', 'tgw': 'Telegram-чаты'}
-    old, errs = [], []
-    for r in mac.get('status') or []:
-        try: hh = (NOW - dt.datetime.fromisoformat(str(r[1]).replace(' ', 'T')).replace(tzinfo=TZ)).total_seconds() / 3600
-        except Exception: continue
-        if hh > 72: old.append(f'{SRC.get(r[0], r[0])} {round(hh / 24)} дн.')
-        if re.search(r'ошибок: [1-9]', str(r[4] if len(r) > 4 else '')): errs.append(f'{SRC.get(r[0], r[0])}: {re.search(r"ошибок: \d+", str(r[4])).group(0)}')
-    add('C12', 'Упоминания: каждый источник Mac обновлялся за 3 дня, без ошибок доступа', 'ok' if not old and not errs else 'warn',
-        'все источники свежие' if not old and not errs else '; '.join((['давно не обновлялись: ' + ', '.join(old)] if old else []) + errs))
 else:
     add('C9', NAME9, 'fail', 'нет файла data/mentions_mac.json')
+
+# C12 every mentions source ran recently and without access errors (status of the shared DB, published with the Mentions tab)
+SRC = {'ig': 'Instagram', 'ads': 'комментарии к рекламе', 'igc': 'Instagram конкурентов', 'yt': 'YouTube', 'play': 'отзывы Google Play', 'appstore': 'отзывы App Store',
+       'trends': 'Google Trends', 'media': 'СМИ', 'tgweb': 'Telegram-каналы', 'tg': 'Telegram-комментарии (Mac)', 'tgw': 'Telegram-чаты (Mac)'}
+md = L(os.path.join(SITE, 'mentions_data.json')) or L(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'site', 'mentions_data.json')) or {}
+st = {r.get('s'): r for r in md.get('status') or []}; old, errs = [], []
+for k, name in SRC.items():
+    r = st.get(k)
+    if not r: old.append(f'{name}: ни разу'); continue
+    try: hh = (NOW - dt.datetime.fromisoformat(str(r['at']).replace(' ', 'T')).replace(tzinfo=TZ)).total_seconds() / 3600
+    except Exception: continue
+    if hh > 72: old.append(f'{name} {round(hh / 24)} дн.')
+    if not r.get('ok') or re.search(r'ошибок: [1-9]', str(r.get('note') or '')): errs.append(f'{name}: ' + (str(r.get('note') or 'ошибка')[:80]))
+add('C12', 'Упоминания: каждый источник обновлялся за 3 дня и без ошибок', 'ok' if not old and not errs else 'warn',
+    'все источники свежие' if not old and not errs else '; '.join((['давно не обновлялись: ' + ', '.join(old)] if old else []) + errs))
 
 # C10 the built site is consistent with the data
 c = L(os.path.join(SITE, 'data', 'comp.json')); j = L(os.path.join(SITE, 'data', 'journal.json'))

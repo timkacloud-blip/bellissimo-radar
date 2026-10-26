@@ -8,6 +8,9 @@ cols = x['cols']; ph = ','.join('?' * len(cols))
 n = 0
 for r in x['items']:
     db.execute(f'INSERT OR REPLACE INTO items({",".join(cols)}) VALUES({ph})', r); n += 1
-for r in x.get('status', []): db.execute('INSERT OR REPLACE INTO status VALUES (?,?,?,?,?)', r)
+MAC = ('tg', 'tgw')   # only Telegram is collected on the Mac; Instagram, ad comments and YouTube run on GitHub
+for r in x.get('status', []):
+    cur = db.execute('SELECT last_run FROM status WHERE source=?', (r[0],)).fetchone()
+    if r[0] in MAC and (not cur or str(cur[0]) <= str(r[1])): db.execute('INSERT OR REPLACE INTO status VALUES (?,?,?,?,?)', r)
 for r in x.get('snap', []): db.execute('INSERT OR REPLACE INTO snap VALUES (?,?,?,?)', r)
 db.commit(); print('imported from Mac:', n, 'items, exported', x.get('at'))

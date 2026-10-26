@@ -21,13 +21,20 @@ jobs:
       - name: Import what the Mac collected
         run: python3 mentions/import_mac.py state/mentions_data.db data/mentions_mac.json
       - name: Collect
-        env: { MENTIONS_DB: state/mentions_data.db }
+        env:
+          MENTIONS_DB: state/mentions_data.db
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+          YOUTUBE_KEY: ${{ secrets.YOUTUBE_KEY }}
         run: |
           SRC="tgweb media"
           # once per Tashkent day (first run after midnight): app reviews and Google Trends. GitHub may delay or skip scheduled runs, so we look at the DB, not the clock.
           TODAY=$(TZ=Asia/Tashkent date +%F)
           LAST=$(python3 -c "import sqlite3;r=sqlite3.connect('state/mentions_data.db').execute(\"select last_run from status where source='play'\").fetchone();print((r[0] if r else '')[:10])")
-          if [ "$LAST" != "$TODAY" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC play appstore trends"; fi
+          if [ "$LAST" != "$TODAY" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC play appstore trends yt"; fi
+          # Instagram and ad comments (moved from the Mac): when the last run is 10+ hours old, i.e. about twice a day
+          IGH=$(python3 -c "import sqlite3,datetime as d;r=sqlite3.connect('state/mentions_data.db').execute(\"select last_run from status where source='ig'\").fetchone();n=d.datetime.utcnow()+d.timedelta(hours=5);print(999 if not r else int((n-d.datetime.fromisoformat(r[0])).total_seconds()//3600))")
+          if [ "$IGH" -ge 10 ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC ig ads igc"; fi
+          echo "sources: $SRC" 
           python3 mentions/collect.py $SRC 2>&1 | tee mentions.log
       - name: Build data for the tab
         run: python3 mentions/build.py state/mentions_data.db site/mentions_data.json

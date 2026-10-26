@@ -93,6 +93,7 @@ for f in files:
                       'cards': a.get('cards', 0), 'catalog': 1 if '{{' in text else 0})
             if b in BRANDS and a.get('likes') is not None:
                 BRANDS[b]['likes'] = a['likes']
+store = {k: v for k, v in store.items() if k in ads}   # previews only for ads we still keep (the store used to grow forever)
 json.dump(store, open(STORE, 'w'))
 last = dates[-1] if dates else None
 for r in ads.values():
