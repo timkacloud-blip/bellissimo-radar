@@ -34,7 +34,7 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
 
 (async()=>{ try{
   const store=load(STORE,{});                       // {brand: {id: row + first/last seen}}
-  const seen={}, totals={}, tried={}, stale={}, log=[];
+  const seen={}, totals={}, tried={}, stale={}, empty={}, log=[];
   for(const b of Object.keys(P)){ store[b]=store[b]||{}; seen[b]=new Set(); tried[b]=0; stale[b]=0 }
   // a fuller file for today (e.g. a weekly export from Chrome) is merged in, never thrown away
   const old=load(path.join(RAW,'comp_adlib_'+D+'.json'),null);
@@ -63,7 +63,7 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
       if(!r){ await sleep(30000); r=await one(P[b],V[vi][1]) }
       // Facebook sometimes answers with a counter but an empty list: ask again, and do not count it as a failed page
       for(let k=0;r&&r.count>0&&!r.groups.length&&k<2;k++){ console.log(b,V[vi][0],'empty list, retry'); await sleep(20000); r=await one(P[b],V[vi][1])||r }
-      if(r&&r.count>0&&!r.groups.length){ stale[b]++; if(V[vi][0]==='base') totals[b]=r.count; console.log(b,V[vi][0],'still empty'); continue }
+      if(r&&r.count>0&&!r.groups.length){ stale[b]++; if(V[vi][0]==='base'){ totals[b]=r.count; empty[b]=true } console.log(b,V[vi][0],'still empty'); continue }
       if(!r){ fails++; log.push(b+' '+V[vi][0]+': no data'); console.log(b,V[vi][0],'NO DATA'); if(fails>=6){ abort=true; break outer } await sleep(60000*Math.min(fails,3)); continue }
       fails=0; tried[b]++;
       if(V[vi][0]==='base') totals[b]=r.count;
@@ -79,12 +79,13 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
   const known=load(THUMBS,{}); const out={date:D, ts:Date.now(), source:'server', brands:{}};
   let withData=0, Q=[];
   for(const b of Object.keys(P)){
-    const ads=Object.values(store[b]).filter(a=>seen[b].has(a.id)||(a.last>=cut&&!(a.end&&a.end<now)));
+    const keep=empty[b]&&!seen[b].size;   // Facebook gave a counter but no list: keep the last days' ads (end_date of a running ad is just its last delivery day)
+    const ads=Object.values(store[b]).filter(a=>seen[b].has(a.id)||(a.last>=cut&&(keep||!(a.end&&a.end<now))));
     for(const id of Object.keys(store[b])) if(!seen[b].has(id)&&store[b][id].last<cut) delete store[b][id];   // not seen for days: gone
     if(!tried[b]&&!ads.length){ out.brands[b]={err:'no data'}; continue }
     if(tried[b]) withData++;
     const cov=Math.min(totals[b]||0,held(b,ads.map(a=>a.id)));
-    out.brands[b]={total:totals[b]??null, ads:ads.map(a=>Object.assign({},a)), covered:cov, carried:ads.filter(a=>!seen[b].has(a.id)).length, variants:tried[b], pages:tried[b], complete:totals[b]!=null&&cov>=totals[b]};
+    out.brands[b]={total:totals[b]??null, ads:ads.map(a=>Object.assign({},a)), covered:cov, carried:ads.filter(a=>!seen[b].has(a.id)).length, list_empty:keep?1:0, variants:tried[b], pages:tried[b], complete:totals[b]!=null&&cov>=totals[b]};
     for(const a of out.brands[b].ads) if(a.src&&!known[a.id]&&Q.length<400) Q.push(a);
   }
   if(withData<7){ status(false,'Facebook не отдал страницы: '+withData+' из 10'+(abort?' (лимит запросов)':'')); fs.writeFileSync(STORE,JSON.stringify(store)); await br.close(); process.exit(0) }
