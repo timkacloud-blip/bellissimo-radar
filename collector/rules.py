@@ -75,7 +75,7 @@ def primary(tg):
     return next((t for t in PRIMARY if t in tg), 'Без оффера')
 
 
-NOT_PRICE_BEFORE = re.compile(r"(скидк\w*|chegirma|вместо|минимал\w*|сумм\w* заказа|заказ\w* от|доход\w*|оплата\w*|экономи\w*|daromad\w*|bonus\w*|kassada|на кассе|(?<![а-яёa-z])до(?![а-яё])|gacha)[^\d]{0,12}$", re.I)
+NOT_PRICE_BEFORE = re.compile(r"(скидк\w*|chegirma|вместо|минимал\w*|сумм\w* заказа|заказ\w* от|доставк\w* от|доставк\w*|доход\w*|оплата\w*|экономи\w*|daromad\w*|bonus\w*|kassada|на кассе|(?<![а-яёa-z])до(?![а-яё])|gacha)[^\d]{0,12}$", re.I)
 NOT_PRICE_AFTER = re.compile(r"^\W{0,3}(so.?m|сум\w*|sum)?\W{0,2}(o.rniga|chegirma|скидк|бонус|bonus|dan (yuqori|ortiq|boshlab berilgan)|gacha|daromad|в (день|месяц)|в час)", re.I)
 NUM = re.compile(r"\d{1,3}(?:[\s  .]\d{3})+(?![\d.,]\d)|\d{4,6}")
 CUR_AFTER = re.compile(r"^\s*(so.?m|сум|sum|dan\b|so.?mdan)", re.I)
