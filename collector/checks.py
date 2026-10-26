@@ -88,7 +88,7 @@ else:
 
 # C12 every mentions source ran recently and without access errors (status of the shared DB, published with the Mentions tab)
 SRC = {'ig': 'Instagram', 'ads': 'комментарии к рекламе', 'igc': 'Instagram конкурентов', 'yt': 'YouTube', 'play': 'отзывы Google Play', 'appstore': 'отзывы App Store',
-       'trends': 'Google Trends', 'media': 'СМИ', 'tgweb': 'Telegram-каналы', 'tg': 'Telegram-комментарии (Mac)', 'tgw': 'Telegram-чаты (Mac)'}
+       'trends': 'Google Trends', 'media': 'СМИ', 'tgweb': 'Telegram-каналы', 'tgw': 'Telegram (Mac)'}
 md = L(os.path.join(SITE, 'mentions_data.json')) or L(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'site', 'mentions_data.json')) or {}
 st = {r.get('s'): r for r in md.get('status') or []}; old, errs = [], []
 for k, name in SRC.items():
