@@ -26,4 +26,4 @@ maxway uz-asc empty list, retry
 maxway uz-asc empty list, retry
 maxway uz-asc still empty
 maxway en count=0 groups=0 new=0 covered=0/7
-adlib OK kfc:140/140 evos:8/8 oqtepa:112/112 dodo:69/69 maxway:7/0 uzum:72/72 bellissimo:89/89 sariqbola:18/18 hardees:4/4 safia:22/22
+adlib OK kfc:140/140 evos:8/8 oqtepa:112/112 dodo:69/69 maxway:7/6 uzum:72/72 bellissimo:89/89 sariqbola:18/18 hardees:4/4 safia:22/22

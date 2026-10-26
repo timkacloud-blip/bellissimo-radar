@@ -1,4 +1,4 @@
-  File "/home/runner/work/bellissimo-radar/bellissimo-radar/collector/checks.py", line 91
+  File "/home/runner/work/bellissimo-radar/bellissimo-radar/collector/checks.py", line 93
     if re.search(r'ошибок: [1-9]', str(r[4] if len(r) > 4 else '')): errs.append(f'{SRC.get(r[0], r[0])}: {re.search(r"ошибок: \d+", str(r[4])).group(0)}')
                                                                                                                                                           ^
 SyntaxError: f-string expression part cannot include a backslash
