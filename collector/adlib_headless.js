@@ -79,13 +79,14 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
   const known=load(THUMBS,{}); const out={date:D, ts:Date.now(), source:'server', brands:{}};
   let withData=0, Q=[];
   for(const b of Object.keys(P)){
-    const keep=empty[b]&&!seen[b].size;   // Facebook gave a counter but no list: keep the last days' ads (end_date of a running ad is just its last delivery day)
-    const ads=Object.values(store[b]).filter(a=>seen[b].has(a.id)||(a.last>=cut&&(keep||!(a.end&&a.end<now))));
+    // Facebook gives a counter but an empty list on every filter: checked by hand (MaxWay, 26.10) — the page really has no active ads, the counter is stale
+    const keep=false, noads=empty[b]&&!seen[b].size;
+    const ads=Object.values(store[b]).filter(a=>seen[b].has(a.id)||(a.last>=cut&&!noads&&!(a.end&&a.end<now)));
     for(const id of Object.keys(store[b])) if(!seen[b].has(id)&&store[b][id].last<cut) delete store[b][id];   // not seen for days: gone
     if(!tried[b]&&!ads.length){ out.brands[b]={err:'no data'}; continue }
     if(tried[b]) withData++;
     const cov=Math.min(totals[b]||0,held(b,ads.map(a=>a.id)));
-    out.brands[b]={total:totals[b]??null, ads:ads.map(a=>Object.assign({},a)), covered:cov, carried:ads.filter(a=>!seen[b].has(a.id)).length, list_empty:keep?1:0, variants:tried[b], pages:tried[b], complete:totals[b]!=null&&cov>=totals[b]};
+    out.brands[b]={total:totals[b]??null, ads:ads.map(a=>Object.assign({},a)), covered:cov, carried:ads.filter(a=>!seen[b].has(a.id)).length, list_empty:noads?1:0, variants:tried[b], pages:tried[b], complete:totals[b]!=null&&cov>=totals[b]};
     for(const a of out.brands[b].ads) if(a.src&&!known[a.id]&&Q.length<400) Q.push(a);
   }
   if(withData<7){ status(false,'Facebook не отдал страницы: '+withData+' из 10'+(abort?' (лимит запросов)':'')); fs.writeFileSync(STORE,JSON.stringify(store)); await br.close(); process.exit(0) }

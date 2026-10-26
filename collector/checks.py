@@ -45,12 +45,10 @@ if ad:
     # C3 coverage in ADS (copies behind collected creatives vs Meta counter)
     low = []
     for b, x in B.items():
-        if x.get('total'):
+        if x.get('total') and not x.get('list_empty'):   # counter without a list = no active ads (Meta's counter is stale)
             c = min(x['total'], sum(a.get('n') or 1 for a in x.get('ads') or [])); p = c / x['total']
             if p < .7: low.append(f'{b} {round(100 * p)}%')
-    kept = [b for b, x in B.items() if x.get('list_empty')]
-    low += [f'{b}: Facebook не отдал список, показаны объявления прошлых дней' for b in kept]
-    add('C3', 'Реклама: охват текстов ≥ 70% по каждому бренду', 'ok' if not low else 'warn', 'все бренды выше 70%' if not low else 'ниже порога: ' + ', '.join(low) + ' — выводы по офферам и ценам этих брендов не делаются')
+    add('C3', 'Реклама: охват текстов ≥ 70% по каждому бренду', 'ok' if not low else 'warn', ('все бренды выше 70%' + ''.join(f'; {b}: счётчик Meta {x["total"]}, но объявлений нет — считаем, что рекламы нет' for b, x in B.items() if x.get('list_empty'))) if not low else 'ниже порога: ' + ', '.join(low) + ' — выводы по офферам и ценам этих брендов не делаются')
     # C4 sudden jump of a counter vs previous snapshot (could be a failed read, not a real change)
     ds = sorted(ad)
     if len(ds) > 1:
