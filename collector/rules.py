@@ -3,12 +3,12 @@ Used by comp_build.py and journal.py so both describe an offer the same way."""
 import re
 
 TAGS = [
-    ('1+1 / второй в подарок', r"1\s*\+\s*1|второй в подарок|ikkinchisi\s*(sovg|bepul)|ikkinchisini bepul|bittasi sizga|по цене одного|bir set narxiga|2 ta katta|два больших"),
-    ('Скидка', r"\d{1,2}\s*%(?!\s*(gacha\s*)?(keshbek|кешб|cashback))|chegirma|скидк"),
-    ('Бесплатная доставка', r"бесплатн\w* доставк|доставляем .{0,40}бесплатно|yetkazib berish bepul|bepul yetkaz|БЕСПЛАТНО"),
+    ('1+1 / второй в подарок', r"(?<!\d)[1-3]\s*\+\s*1(?!\d)|по цене (одного|одной|двух)|ikkitasi narxiga|uchtasi narxiga|второй в подарок|ikkinchisi\s*(sovg|bepul)|ikkinchisini bepul|bittasi sizga|по цене одного|bir set narxiga|2 ta katta|два больших"),
+    ('Скидка', r"(?<!\d)\d{1,2}\s*%(?!\s*(gacha\s*)?(keshbek|кешб|cashback|бонус|bonus))|chegirma|скидк"),
+    ('Бесплатная доставка', r"бесплатн\w* доставк|доставляем .{0,40}бесплатно|yetkazib berish bepul|bepul yetkaz|tekin yetkaz|доставк\w*\W{1,4}бесплатно"),
     ('Промокод', r"промо-?код|promo-?kod|promokod|\b[A-Z]{3,}\d{2,}\b"),
-    ('Новинка', r"tanishing|tatib ko.?ring|новинк|yangi format|новом формате|endilikda|новый вкус|yangi ta.m|endi .{0,20}da|теперь в|встречайте|tez kunda|yangilik|уже здесь"),
-    ('Открытие филиала', r"yangi .{0,25}filial|filial\w* ochil|ochilishi|ochildi|открыл\w*|новый филиал|нового филиала|kutib oling"),
+    ('Новинка', r"tanishing|tatib ko.?ring|новинк|yangi format|новом формате|endilikda|новый вкус|yangi ta.m|endi .{0,20}da|теперь в|встречайте|tez kunda|yangilik|уже здесь|kutib oling"),
+    ('Открытие филиала', r"yangi .{0,25}filial|filial\w* ochil|ochilishi|ochildi|открыл\w*|новый филиал|нового филиала|ochadi|ochiladi|ochamiz|откроется|скоро открыт|скоро откро"),
     ('Комбо / сет', r"комбо|kombo|combo|сет\b|set\b|набор"),
     ('Дешевле в приложении', r"дешевле|arzonroq|в приложении .{0,30}сум|ilovada \d"),
     ('Цена', r"\d[\d\s]{2,}\s*(so.?m|сум|sum)"),
@@ -26,8 +26,9 @@ BOILER = [  # standard lines that are not the offer itself
     re.compile(r"[^.!?\n]{0,60}(kechiks\w*|опозда\w*)[^.!?\n]{0,80}", re.I),              # late -> promo-code guarantee
 ]
 COMBO_EXTRA = re.compile(r"ichimlik|напит\w*|\bkola\b|колой|\bfri\b|\bфри\b|uchta|3 ta |три пицц|ikki kishilik|на двоих|2 ta |два больш|комбо|kombo|combo|сет\b|set\b|набор", re.I)
+FOOD = re.compile(r"pizza|pitsa|pitstsa|пицц|burger|бургер|lavash|лаваш|shaurma|шаурм|donar|донер|hot.?dog|хот.?дог|strips|стрипс|qanot|крыл|chicken|tovuq|курин|nagget|наггет|basket|баскет|sendvich|сэндвич|сендвич|trindwich|тринвич", re.I)
 PRIMARY = ['1+1 / второй в подарок', 'Кешбэк / клуб', 'Скидка', 'Промокод', 'Бесплатная доставка', 'Комбо / сет', 'Дешевле в приложении',
-           'Подарок к заказу', 'Новинка', 'Открытие филиала', 'Дети / праздник', 'Цена']
+           'Подарок к заказу', 'Открытие филиала', 'Новинка', 'Дети / праздник', 'Цена']   # an opening matters more than "new" ("tez kunda ... ochadi")
 
 CODE = re.compile(r"\b[A-Z]{3,}\d{2,}\b")
 CODE_AFTER_WORD = re.compile(r"(?:промо-?код\w*|promo-?kod\w*|promokod\w*)\W{1,4}[«\"“]?([A-Za-z][A-Za-z0-9]{3,14})\b", re.I)
@@ -35,8 +36,9 @@ NOT_CODE = {'bilan', 'orqali', 'kiriting', 'введите', 'ishlating', 'ис�
 
 
 def headline(text):
-    """The offer lives in the opening lines; bilingual ads repeat it after ---, so take the first part only."""
-    return SPLIT.split(text or '')[0][:220]
+    """The offer lives in the opening lines. Bilingual ads repeat it after ---: take the start of each language part (an offer
+    deeper than 220 characters, like Safia's double cashback, was missed before)."""
+    return ' \n '.join(p.strip()[:400] for p in SPLIT.split(text or '')[:2] if p.strip())
 
 
 CODE_IN_LIST = re.compile(r"(?<![A-Za-z0-9])([A-Z][A-Z0-9]{2,11})\s*[—–-]\s*\d")
@@ -62,7 +64,8 @@ def tags(text):
     for p in BOILER: clean = p.sub(' ', clean)
     out = [n for n, p in TAGS if p.search(clean)]
     if any(p.search(head) for p in BOILER[:2]) and 'Гарантия времени' not in out: out.append('Гарантия времени')
-    if COMBO_EXTRA.search(clean) and 'Комбо / сет' not in out: out.append('Комбо / сет')
+    # a drink or fries make a combo only together with food (Safia's post about stickers on cups is not a combo)
+    if COMBO_EXTRA.search(clean) and FOOD.search(clean) and 'Комбо / сет' not in out: out.append('Комбо / сет')
     # explicit promo code (DODO30, SALOM30) counts anywhere in the text unless it is the lateness guarantee
     full = text or ''
     for p in BOILER[2:]: full = p.sub(' ', full)
@@ -75,7 +78,7 @@ def primary(tg):
     return next((t for t in PRIMARY if t in tg), 'Без оффера')
 
 
-NOT_PRICE_BEFORE = re.compile(r"(скидк\w*|chegirma|вместо|минимал\w*|сумм\w* заказа|заказ\w* от|доставк\w* от|доставк\w*|доход\w*|оплата\w*|экономи\w*|daromad\w*|bonus\w*|kassada|на кассе|(?<![а-яёa-z])до(?![а-яё])|gacha)[^\d]{0,12}$", re.I)
+NOT_PRICE_BEFORE = re.compile(r"(скидк\w*|chegirma|вместо|минимал\w*|сумм\w* заказа|заказ\w* от|доставк\w* от|доставк\w*|yetkaz\w*(?: berish)?(?: narxi)?|доход\w*|оплата\w*|экономи\w*|daromad\w*|bonus\w*|kassada|на кассе|(?<![а-яёa-z])до(?![а-яё])|gacha)[^\d]{0,12}$", re.I)
 NOT_PRICE_AFTER = re.compile(r"^\W{0,3}(so.?m|сум\w*|sum)?\W{0,2}(o.rniga|chegirma|скидк|бонус|bonus|dan (yuqori|ortiq|boshlab berilgan)|gacha|daromad|в (день|месяц)|в час)", re.I)
 NUM = re.compile(r"\d{1,3}(?:[\s  .]\d{3})+(?![\d.,]\d)|\d{4,6}")
 CUR_AFTER = re.compile(r"^\s*(so.?m|сум|sum|dan\b|so.?mdan)", re.I)
@@ -97,9 +100,26 @@ CATS = [(n, re.compile(p, re.I)) for n, p in CATS]
 SLICE = re.compile(r"bo.?lak|кусоч|кусок|slice|ломтик|порци", re.I)
 
 
+PIZZA_SET = re.compile(r"(?<!\d)[2-9]\s*(ta|x|шт\w*|pitsa\w*|pizza\w*|пицц\w*)\b|ikkita|uchta|to.rtta|две пицц|три пицц|четыре пицц|набор|kombo|комбо|combo|\bset\b|\bсет\b|to.plam", re.I)
+SNACK = re.compile(r"pocket|покет|mini ?pi|мини.?пицц|perekus|перекус", re.I)
+
+
 def price_cat(text, start, end):
-    """Category of the product nearest to the price (looks at the same sentence first)."""
+    """Category of the product nearest to the price (looks at the same sentence first).
+    Pizza is split into one pizza / a set of pizzas / a snack: "3 pizzas from 84 000" must not be compared with one pizza."""
     if SLICE.search(text[max(0, start - 60):end + 40]): return 'Кусочки / порции'   # a slice is not a pizza: prices are not comparable
+    c = _price_cat(text, start, end)
+    if c == 'Пицца':
+        near = text[max(0, start - 90):end + 30]
+        if SNACK.search(near): return 'Перекус'
+        if PIZZA_SET.search(near): return 'Пицца, набор'
+    # food + drink + fries for one price is a combo (KFC "Yoki Yoki": burger or nuggets, cola, fries for 27 000)
+    if c in ('Курица', 'Бургер', 'Лаваш / шаурма') and re.search(r"kola|кол[аой]|pepsi|пепси|ichimlik|напит", text, re.I) and re.search(r"\bfri\b|\bфри\b|kartoshka|картошк", text, re.I):
+        return 'Комбо / сет'
+    return c
+
+
+def _price_cat(text, start, end):
     best = None
     for n, p in CATS:
         for m in p.finditer(text):

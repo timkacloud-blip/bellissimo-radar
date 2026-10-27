@@ -11,7 +11,7 @@ NAMES = {'bellissimo': 'Bellissimo', 'kfc': 'KFC', 'evos': 'EVOS', 'oqtepa': 'Oq
 IOS_ID = {'bellissimo': '1507547994', 'kfc': '6733229176', 'evos': '1595897228', 'oqtepa': '6744400909', 'dodo': '894649641', 'maxway': '1565502018',
           'uzum': '1665523197', 'yandex': '1078986931', 'sariqbola': '6471396712', 'hardees': '6754248343', 'safia': '1554545839'}
 PROMO = re.compile(r"\d+\s*\+\s*\d|\d{1,2}\s?%|скидк|акци|aksiya|chegirma|бесплат|bepul|в подарок|sovg.a|промокод|promokod|bonus|бонус", re.I)
-OPEN = re.compile(r"открыл|открыт[иь]е|новый филиал|ochildi|yangi filial|ochilish|скоро открыт|tez orada ochil", re.I)
+OPEN = re.compile(r"открыл|открыт[иь]е|новый филиал|ochildi|yangi filial|ochilish|скоро открыт|скоро откро|откроется|tez orada ochil|ochadi|ochiladi|ochamiz", re.I)
 HIRE = re.compile(r"ваканс|требуют|ищем (курьер|повар|сотрудник)|kuryer.*(kerak|ishga)|ishga taklif|bo'sh ish|vakansiya|приглашаем на работу", re.I)
 PRICE = re.compile(r"(\d{1,3}(?:[\s\u00a0\u202f.,]?\d{3}))\s*(?:сум|so[‘'’`]?m|sum)", re.I)
 
@@ -52,17 +52,25 @@ for i, d in enumerate(days):
             if pt and t is not None and abs(t - pt) >= 5 and abs(t - pt) / pt >= .3:
                 ev(d, b, 'ads', ('Резкий рост' if t > pt else 'Резкий спад') + f' рекламы: {pt} → {t} {plural(t, "объявление", "объявления", "объявлений")}',
                    f'активные объявления в Meta, снимки {prev[8:]}.{prev[5:7]} и {d[8:]}.{d[5:7]}', 'Ad Library', '', 'high')
-            new = [a for a in ads if a.get('id') not in seen_ids and tsd(a.get('start')) > prev]
-            if len(new) >= 5: ev(d, b, 'wave', f'Новая волна креативов: {len(new)} новых объявлений', '; '.join(head(a)[:60] for a in new[:3]), 'Ad Library', '', 'mid', new[0].get('id', ''))
+            new = {}
+            for a in ads:   # new messages, not new ids: one text under several ids is one creative
+                if a.get('id') not in seen_ids and tsd(a.get('start')) > prev and head(a): new.setdefault(key(head(a)), a)
+            new = list(new.values())
+            if len(new) >= 3: ev(d, b, 'wave', f'Новая волна рекламы: {len(new)} {plural(len(new), "новое сообщение", "новых сообщения", "новых сообщений")}', '; '.join(head(a)[:60] for a in new[:3]), 'Ad Library', '', 'mid', new[0].get('id', ''))
         for a in ads:
             h = head(a); k = (b, key(h)); seen_ids.add(a.get('id'))
             if not h or k in seen: continue
             seen.add(k)
-            if prev and (PROMO.search(h) or prices(h)) and tsd(a.get('start')) >= (dt.date.fromisoformat(d) - dt.timedelta(days=14)).isoformat():
-                p = prices(h); typ = 'open' if OPEN.search(h) else 'hire' if HIRE.search(h) else 'offer'
-                ev(tsd(a.get('start')) if tsd(a.get('start')) > prev else d, b, typ,
-                   ('Оффер: ' + gist(h, p[0] if p else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм'}[typ],
-                   ru_part(a.get('body') or '') or h, 'Реклама Meta', f"https://www.facebook.com/ads/library/?id={a.get('id')}", 'high' if typ in ('offer', 'open') else 'mid', a.get('id', ''))
+            # an event for every new message that is an offer, an opening or a new product. On the first snapshot too, if the ad started
+            # in the 14 days before it (otherwise everything running on day one became "background" and was never shown)
+            if tsd(a.get('start')) < (dt.date.fromisoformat(d) - dt.timedelta(days=14)).isoformat(): continue
+            tg = set(tags(a.get('body') or h)); p = prices(h)
+            typ = ('open' if OPEN.search(h) or 'Открытие филиала' in tg else 'hire' if HIRE.search(h) else 'offer' if (tg & OFFER_TAGS or p)
+                   else 'new' if 'Новинка' in tg else None)
+            if typ:
+                ev(tsd(a.get('start')) if not prev or tsd(a.get('start')) > prev else d, b, typ,
+                   ('Оффер: ' + gist(h, p[0] if p else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм', 'new': 'Новинка'}[typ],
+                   ru_part(a.get('body') or '') or h, 'Реклама Meta', f"https://www.facebook.com/ads/library/?id={a.get('id')}", 'high' if typ in ('offer', 'open', 'new') else 'mid', a.get('id', ''))
 
 # ---- App Store
 ios = snaps('ios'); dd = sorted(ios)
@@ -116,7 +124,7 @@ for m in (L(os.path.join(DATA, 'journal_manual.json')) or []):
     m = dict(m); m.setdefault('src', 'Вручную'); m.setdefault('imp', 'high'); m.setdefault('detail', ''); m.setdefault('link', ''); m.setdefault('ref', ''); E.append(m)
 
 # dedupe same brand/type/title on same day
-u = {}; [u.setdefault((e['date'], e['b'], e['type'], e['title'][:60], e['detail'][:60]), e) for e in E]
+u = {}; [u.setdefault((e['date'], e['b'], e['type'], e['title'][:60]) + ((e['detail'][:60],) if e['type'] in ('app', 'rating', 'ads') else ()), e) for e in E]   # Uzbek and Russian versions of one offer are one event
 E = sorted(u.values(), key=lambda e: (e['date'], e['imp'] == 'high'), reverse=True)
 cov = {'adlib': sorted(ad), 'ios': sorted(ios), 'play': sorted(pl), 'tg': sorted(tg), 'baseline': base}
 json.dump({'built': dt.datetime.now(dt.timezone.utc).isoformat()[:16], 'coverage': cov, 'events': E, 'note': L(os.path.join(DATA, 'boss_note.json'))}, open(os.path.join(SITE, 'data', 'journal.json'), 'w', encoding='utf-8'), ensure_ascii=False)

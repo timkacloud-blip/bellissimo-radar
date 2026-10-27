@@ -3,7 +3,7 @@ name: site
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'collector/*.py', 'build.sh']
+    paths: ['site/**', 'collector/*.py', 'build.sh', 'tests/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install pillow
+      - name: Check the text rules on hand-checked examples
+        run: python3 tests/test_rules.py
       - name: Build site
         run: set -o pipefail; bash build.sh 2>&1 | tail -5
       - name: Self-check

@@ -267,7 +267,7 @@ function renderMe(){
 }
 
 // ---------- Сводка ----------
-const TYP={mention:"Упоминания",offer:"Оффер",open:"Открытие",ads:"Реклама",wave:"Новые креативы",app:"Приложение",rating:"Рейтинг и топ",hire:"Найм",other:"Другое"};
+const TYP={mention:"Упоминания",offer:"Оффер",new:"Новинка",open:"Открытие",ads:"Реклама",wave:"Новые креативы",app:"Приложение",rating:"Рейтинг и топ",hire:"Найм",other:"Другое"};
 function evRow(e){ const lv=e.imp==="high"?"p-acc":"p-mute";
   return `<div class="srow"><span class="pill ${lv}">${esc(TYP[e.type]||e.type)}</span><div><div class="t">${dot(e.b)}<b>${esc(B(e.b).name)}</b> · ${dfmt(e.date)} · <b>${esc(e.title)}</b></div>${e.detail?`<div class="m">${esc(e.detail.slice(0,180))}${e.detail.length>180?"…":""}</div>`:""}<div class="m">${esc(e.src||"")}${e.link?` · <a class="lnk" href="${esc(e.link)}" target="_blank" rel="noopener">открыть ↗</a>`:""}</div></div></div>` }
 const evKey=e=>e.b+"|"+e.type+"|"+String(e.detail||e.title).toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim().slice(0,60);
