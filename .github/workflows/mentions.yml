@@ -19,14 +19,16 @@ jobs:
         with: { python-version: '3.12' }
       - run: pip install -q google-play-scraper pytrends
       - name: Import what the Mac collected
-        run: python3 mentions/import_mac.py state/mentions_data.db data/mentions_mac.json
+        run: |
+          python3 -c "import sqlite3;print(sqlite3.connect('state/mentions_data.db').execute('select count(*) from items').fetchone()[0])" > rows_before.txt
+          python3 mentions/import_mac.py state/mentions_data.db data/mentions_mac.json
       - name: Collect
         env:
           MENTIONS_DB: state/mentions_data.db
           META_TOKEN: ${{ secrets.META_TOKEN }}
           YOUTUBE_KEY: ${{ secrets.YOUTUBE_KEY }}
         run: |
-          SRC="tgweb media"
+          SRC="rematch tgweb media"
           # once per Tashkent day (first run after midnight): app reviews and Google Trends. GitHub may delay or skip scheduled runs, so we look at the DB, not the clock.
           TODAY=$(TZ=Asia/Tashkent date +%F)
           LAST=$(python3 -c "import sqlite3;r=sqlite3.connect('state/mentions_data.db').execute(\"select last_run from status where source='play'\").fetchone();print((r[0] if r else '')[:10])")
@@ -38,6 +40,18 @@ jobs:
           python3 mentions/collect.py $SRC 2>&1 | tee mentions.log
       - name: Build data for the tab
         run: python3 mentions/build.py state/mentions_data.db site/mentions_data.json
+      - name: Check the DB before saving (a broken DB must not overwrite the good one)
+        run: |
+          python3 - <<'PY'
+          import sqlite3, sys
+          db = sqlite3.connect('state/mentions_data.db'); ok = db.execute('PRAGMA integrity_check').fetchone()[0]
+          n = db.execute('select count(*) from items').fetchone()[0]; before = int(open('rows_before.txt').read().strip() or 0)
+          print('integrity', ok, 'rows', before, '->', n)
+          if ok != 'ok' or n < before * 0.8: sys.exit('DB looks broken or lost more than 20% of rows: not saving')
+          PY
+      - name: Keep a copy of the DB (14 days)
+        uses: actions/upload-artifact@v4
+        with: { name: mentions-db, path: state/mentions_data.db, retention-days: 14, overwrite: true }
       - name: Save DB (state branch, history is overwritten)
         run: |
           cd state && git config user.name Claude && git config user.email noreply@anthropic.com

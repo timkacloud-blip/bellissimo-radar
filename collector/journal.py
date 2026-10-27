@@ -4,7 +4,7 @@ plus manual entries from DATA/journal_manual.json. Writes SITE/data/journal.json
 Usage: python3 journal.py DATA_DIR SITE_DIR"""
 import json, os, re, sys, glob, datetime as dt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rules import gist, plural, ru_part, prices as offer_prices  # noqa: E402
+from rules import gist, plural, ru_part, tags, prices as offer_prices  # noqa: E402
 DATA, SITE = sys.argv[1], sys.argv[2]; RAW = os.path.join(DATA, 'raw')
 NAMES = {'bellissimo': 'Bellissimo', 'kfc': 'KFC', 'evos': 'EVOS', 'oqtepa': 'Oqtepa', 'dodo': 'Dodo Pizza', 'maxway': 'MaxWay', 'uzum': 'Uzum Tezkor',
          'yandex': 'Yandex Eats', 'sariqbola': 'Sariq Bola', 'hardees': "Hardee's", 'safia': 'Safia'}
@@ -24,6 +24,11 @@ def snaps(kind):
         d = re.search(r'(\d{4}-\d\d-\d\d)', f).group(1); x = L(f)
         if x: out[d] = x
     return out
+# what counts as an offer in a Telegram post: the same tags the site uses (rules.tags), not a loose word list
+OFFER_TAGS = {'1+1 / второй в подарок', 'Скидка', 'Бесплатная доставка', 'Промокод', 'Комбо / сет', 'Дешевле в приложении', 'Подарок к заказу', 'Кешбэк / клуб', 'Гарантия времени'}
+# channel menu inside a post, e.g. Safia: "Aksiyalar 🎁 | Yangiliklar 👧🏻 | Blog 💭" — three or more short items split by "|"
+MENU = re.compile(r"(?:[^\s|]{1,20}(?:\s+[^\s|]{1,4}){0,2}\s*\|\s*){2,}[^\s|]{1,20}(?:\s+[^\s|]{1,4}){0,2}")
+def strip_menu(t): return MENU.sub(' ', t or '')
 def head(a): return re.split(r'-{3,}|—{3,}|_{3,}|\*{3,}', (a.get('body') or a.get('title') or ''))[0].strip()
 def key(t): return re.sub(r'[^\w]+', ' ', t.lower())[:70].strip()
 def tsd(x):
@@ -74,13 +79,23 @@ for i in range(1, len(dd)):
         elif bool(pa) != bool(pc) and (pa or pc) and (pa or pc) <= 20: ev(dd[i], b, 'rating', 'Попал в топ App Store' if pc else 'Выпал из топа App Store', f'было #{pa or "—"}, стало #{pc or "—"}', 'App Store')
 
 # ---- Google Play
-pl = snaps('play'); dd = sorted(pl)
+pl = snaps('play'); dd = sorted(pl); pmax = {}
+def pdate(x):
+    try: return dt.datetime.strptime(str(x).strip(), '%b %d, %Y').date()
+    except Exception: return None
+for b in NAMES:
+    v = (pl[dd[0]].get('play') or {}).get(b) if dd else None
+    if v: pmax[b] = pdate(v[3])
 for i in range(1, len(dd)):
     for b in NAMES:
         x, y = (pl[dd[i - 1]].get('play') or {}).get(b), (pl[dd[i]].get('play') or {}).get(b)
         if x and y:
-            if x[3] and y[3] and x[3] != y[3]: ev(dd[i], b, 'app', 'Обновление Android-приложения', f'дата обновления в Google Play: {y[3]}', 'Google Play')
+            # Google Play gives the update date differently from request to request (21.10 / 20.10 / 21.10): an update is only a date later than any seen before
+            yd = pdate(y[3])
+            if yd and pmax.get(b) and yd > pmax[b]: ev(dd[i], b, 'app', 'Обновление Android-приложения', f'дата обновления в Google Play: {y[3]}', 'Google Play')
             if x[0] and y[0] and abs(y[0] - x[0]) >= .1: ev(dd[i], b, 'rating', f'Рейтинг в Google Play: {x[0]:.1f} → {y[0]:.1f}', '', 'Google Play')
+        v = (pl[dd[i]].get('play') or {}).get(b)
+        if v and pdate(v[3]) and (not pmax.get(b) or pdate(v[3]) > pmax[b]): pmax[b] = pdate(v[3])
 
 # ---- Telegram
 tg = snaps('tg'); tbase = min(tg) if tg else None; tseen = set()
@@ -88,9 +103,9 @@ for d in sorted(tg):
     for b, ch in (tg[d].get('ch') or {}).items():
         for p in ch.get('posts') or []:
             if p['id'] in tseen: continue
-            tseen.add(p['id']); t = p.get('txt') or ''; pd = (p.get('t') or d)[:10]
+            tseen.add(p['id']); t = strip_menu(p.get('txt')); pd = (p.get('t') or d)[:10]
             if pd < (dt.date.fromisoformat(tbase) - dt.timedelta(days=7)).isoformat(): continue
-            typ = 'open' if OPEN.search(t) else 'hire' if HIRE.search(t) else 'offer' if (PROMO.search(t) or prices(t)) else None
+            typ = 'open' if OPEN.search(t) else 'hire' if HIRE.search(t) else 'offer' if (set(tags(t)) & OFFER_TAGS or prices(t)) else None
             if not typ: continue
             pr = prices(t)
             ev(pd, b, typ, ('Оффер: ' + gist(t, pr[0] if pr else None)) if typ == 'offer' else {'open': 'Открытие', 'hire': 'Найм'}[typ],

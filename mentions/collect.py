@@ -589,7 +589,47 @@ def reanalyze():
             db.execute('UPDATE items SET text=?, sentiment=?, themes=? WHERE id=?', (t2, s2, th2, id_)); ch += 1
     db.commit(); return ch
 
-SOURCES = {'tgweb': run_tgweb, 'ig': run_ig, 'ads': run_ads, 'play': run_play, 'appstore': run_appstore, 'igc': run_igc, 'tgw': run_tgw, 'media': run_media, 'yt': run_yt, 'trends': run_trends}
+def rematch():
+    """Re-checks stored mentions from YouTube, Telegram and media against the current brand dictionary and removes what no longer matches.
+    Needed after the dictionary is tightened (e.g. Italian "bellissimo" = "beautiful"). Runs every time after the Mac import: Mac rows come
+    back from the export, so they are checked again. YouTube videos are checked by title + description, fetched once per video."""
+    key = secret('youtube_key.txt'); base = lambda i: i.split('#')[0]
+    rows = db.execute("SELECT id,source,kind,brand,text,scope,parent FROM items WHERE source IN ('yt','tg','media') AND scope IN ('earned','context')").fetchall()
+    done = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='rematch' AND source='yt'")}
+    vids = sorted({base(r[0])[4:] for r in rows if r[1] == 'yt' and r[2] == 'video'} - done)
+    meta = {}
+    if key:
+        for i in range(0, len(vids), 50):
+            try:
+                for v in http('https://www.googleapis.com/youtube/v3/videos?' + urllib.parse.urlencode({'part': 'snippet', 'id': ','.join(vids[i:i + 50]), 'key': key})).get('items', []):
+                    meta[v['id']] = v['snippet']['title'] + ' ' + v['snippet']['description']
+            except RuntimeError: break
+    groups = {}
+    for r in rows: groups.setdefault(base(r[0]), []).append(r)
+    video_brands = {}; dropped = 0
+    for b_id, rs in groups.items():
+        src, kind, scope = rs[0][1], rs[0][2], rs[0][5]
+        if scope == 'context': continue
+        if src == 'yt' and kind == 'video':
+            vid = b_id[4:]
+            if vid in done: video_brands[vid] = {r[3] for r in rs}; continue
+            if vid not in meta: video_brands[vid] = {r[3] for r in rs}; continue   # deleted or private video / no key: leave as is
+            text = meta[vid]
+        else: text = rs[0][4] or ''
+        ok = set(match_brands(text))
+        for r in rs:
+            if r[3] not in ok: db.execute('DELETE FROM items WHERE id=?', (r[0],)); dropped += 1
+        if src == 'yt' and kind == 'video':
+            video_brands[b_id[4:]] = ok & {r[3] for r in rs}
+            db.execute("INSERT OR REPLACE INTO snap VALUES ('rematch','yt',?,1)", (b_id[4:],))
+    for b_id, rs in groups.items():   # comments under a video that is no longer ours go with it
+        r = rs[0]
+        if r[5] == 'context' and r[1] == 'yt' and r[6] in video_brands and not video_brands[r[6]]:
+            db.execute('DELETE FROM items WHERE id=?', (r[0],)); dropped += 1
+    db.commit()
+    return dropped, f'проверено видео: {len(meta)}, удалено строк: {dropped}'
+
+SOURCES = {'rematch': rematch, 'tgweb': run_tgweb, 'ig': run_ig, 'ads': run_ads, 'play': run_play, 'appstore': run_appstore, 'igc': run_igc, 'tgw': run_tgw, 'media': run_media, 'yt': run_yt, 'trends': run_trends}
 # старый сборщик 'tg' (личный аккаунт, глобальный поиск) отключён: читает только чужие каналы из telegram_watch.json через отдельный аккаунт
 GROUPS = {'fast': ['ig', 'ads', 'play', 'appstore', 'igc', 'yt', 'trends'], 'slow': ['media', 'tgw']}
 

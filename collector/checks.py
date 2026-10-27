@@ -56,7 +56,9 @@ if ad:
         for b, x in B.items():
             o, n = (prev.get(b) or {}).get('total'), x.get('total')
             if o and n is not None and o >= 10 and abs(n - o) / o > .5: jumps.append(f'{b} {o}→{n}')
-        add('C4', 'Реклама: нет подозрительных скачков счётчика (±50% за снимок)', 'ok' if not jumps else 'warn', 'скачков нет' if not jumps else 'проверить вручную: ' + ', '.join(jumps))
+            ao, an = len((prev.get(b) or {}).get('ads') or []), len(x.get('ads') or [])   # cards we hold, not Meta's counter
+            if ao >= 10 and an < .7 * ao and not x.get('list_empty'): jumps.append(f'{b}: собранных карточек {ao}→{an}')
+        add('C4', 'Реклама: нет скачков счётчика (±50%) и провалов сбора (−30% карточек)', 'ok' if not jumps else 'warn', 'скачков нет' if not jumps else 'проверить вручную: ' + ', '.join(jumps))
 
 # C5/C6 apps
 if ios:

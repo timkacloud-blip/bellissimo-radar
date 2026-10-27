@@ -79,9 +79,10 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
   const known=load(THUMBS,{}); const out={date:D, ts:Date.now(), source:'server', brands:{}};
   let withData=0, Q=[];
   for(const b of Object.keys(P)){
+    // Carry-over is by the day we last saw the ad, not by end_date: Meta sets end_date = yesterday on every running ad.
     // Facebook gives a counter but an empty list on every filter: checked by hand (MaxWay, 26.10) — the page really has no active ads, the counter is stale
     const keep=false, noads=empty[b]&&!seen[b].size;
-    const ads=Object.values(store[b]).filter(a=>seen[b].has(a.id)||(a.last>=cut&&!noads&&!(a.end&&a.end<now)));
+    const ads=Object.values(store[b]).filter(a=>seen[b].has(a.id)||(a.last>=cut&&!noads));
     for(const id of Object.keys(store[b])) if(!seen[b].has(id)&&store[b][id].last<cut) delete store[b][id];   // not seen for days: gone
     if(!tried[b]&&!ads.length){ out.brands[b]={err:'no data'}; continue }
     if(tried[b]) withData++;

@@ -33,18 +33,18 @@ def build(db, today, TZ):
     ig = [[d, b, m.get('followers'), m.get('posts30'), m.get('likes30'), m.get('comments30')] for (d, b), m in sorted(ig.items()) if b in NAMES]
     # 5) Google Trends (недельные значения как отдал Google)
     trends = [[d, b, v] for d, b, v in db.execute("SELECT date,brand,value FROM trends ORDER BY date") if b in NAMES]
-    # 6) наши упоминания: по дням и источникам, темы, примеры
-    own = [[d, s, se, n] for d, s, se, n in db.execute("SELECT date,source,sentiment,COUNT(*) FROM items WHERE brand='bellissimo' AND kind!='video' AND date>=? GROUP BY 1,2,3", [since])]
+    # 6) наши упоминания: по дням и источникам, темы, примеры (без комментариев «контекст» под чужими видео: это не про нас)
+    own = [[d, s, se, n] for d, s, se, n in db.execute("SELECT date,source,sentiment,COUNT(*) FROM items WHERE brand='bellissimo' AND kind!='video' AND scope!='context' AND date>=? GROUP BY 1,2,3", [since])]
     themes = {}
-    for d, se, th in db.execute("SELECT date,sentiment,themes FROM items WHERE brand='bellissimo' AND kind!='video' AND themes!='' AND date>=?", [since]):
+    for d, se, th in db.execute("SELECT date,sentiment,themes FROM items WHERE brand='bellissimo' AND kind!='video' AND scope!='context' AND themes!='' AND date>=?", [since]):
         for t in th.split('|'):
             if t: themes[(d, se, t)] = themes.get((d, se, t), 0) + 1
     themes = [[d, se, t, n] for (d, se, t), n in themes.items()]
     posts = []
-    for d, s, se, th, r, u, t in db.execute("SELECT date,source,sentiment,themes,rating,url,text FROM items WHERE brand='bellissimo' AND kind!='video' AND text!='' AND sentiment IN ('neg','pos') AND date>=? ORDER BY ts DESC", [str(today - dt.timedelta(days=120))]):
+    for d, s, se, th, r, u, t in db.execute("SELECT date,source,sentiment,themes,rating,url,text FROM items WHERE brand='bellissimo' AND kind!='video' AND scope!='context' AND text!='' AND sentiment IN ('neg','pos') AND date>=? ORDER BY ts DESC", [str(today - dt.timedelta(days=120))]):
         posts.append({'d': d, 's': s, 'e': se, 'h': th or '', 'r': r, 'u': u or '', 't': t[:300]})
     posts = [p for p in posts if p['e'] == 'neg'][:700] + [p for p in posts if p['e'] == 'pos'][:400]
-    cov = {'own': dict(db.execute("SELECT source, MIN(date) FROM items WHERE brand='bellissimo' AND kind!='video' GROUP BY 1")),
+    cov = {'own': dict(db.execute("SELECT source, MIN(date) FROM items WHERE brand='bellissimo' AND kind!='video' AND scope!='context' GROUP BY 1")),
            'talk': dict(db.execute("SELECT source, MIN(date) FROM items WHERE scope='earned' AND source IN ('yt','tg','media') AND kind IN ('video','mention','post') GROUP BY 1")),
            'rev_comp': dict(db.execute("SELECT source, MIN(date) FROM items WHERE source IN ('play','appstore') AND scope='app_review' GROUP BY 1")),
            'rat': (db.execute("SELECT MIN(date) FROM snap WHERE source LIKE 'play_%' OR source LIKE 'appstore_%'").fetchone() or [None])[0],

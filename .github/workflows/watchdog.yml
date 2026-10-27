@@ -1,0 +1,37 @@
+name: watchdog
+# If the morning collection did not run at all (GitHub skipped the schedule or the run died early), nobody would know:
+# the self-check lives inside that run. This separate run looks at the newest snapshot and writes to Telegram if it is stale.
+on:
+  schedule:
+    - cron: '43 5 * * *'   # 10:43 Tashkent
+    - cron: '43 9 * * *'   # 14:43 Tashkent, in case the first check was skipped too
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Is today's data there?
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          python3 - <<'PY'
+          import glob, os, re, json, datetime as dt, urllib.request, urllib.parse
+          today = (dt.datetime.utcnow() + dt.timedelta(hours=5)).date().isoformat()
+          last = max((re.search(r'(\d{4}-\d\d-\d\d)', f).group(1) for f in glob.glob('data/raw/comp_adlib_*.json')), default=None)
+          mac = (json.load(open('data/mentions_mac.json')).get('at') or '')[:16] if os.path.exists('data/mentions_mac.json') else ''
+          msgs = []
+          if last != today: msgs.append(f'утренний сбор не прошёл: последний снимок рекламы {last}. Открыть Actions → daily → Run workflow')
+          try:
+              h = (dt.datetime.utcnow() + dt.timedelta(hours=5) - dt.datetime.fromisoformat(mac)).total_seconds() / 3600
+              if h > 30: msgs.append(f'Mac не присылал Telegram-данные {round(h)} ч (последний раз {mac}). Проверить, что Mac включён и в сети')
+          except Exception: pass
+          print('last snapshot', last, 'mac', mac, 'problems', msgs)
+          tok, chat = os.environ.get('TG_BOT_TOKEN'), os.environ.get('TG_CHAT_ID')
+          if msgs and tok and chat:
+              urllib.request.urlopen(urllib.request.Request(f'https://api.telegram.org/bot{tok}/sendMessage',
+                  urllib.parse.urlencode({'chat_id': chat, 'text': '🔴 Радар: ' + '\n🔴 '.join(msgs)}).encode()), timeout=20)
+          PY
