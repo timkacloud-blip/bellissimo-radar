@@ -398,7 +398,8 @@ function freshStrip(){ const el=$("#fresh"); if(!D) return;
   const mb=MN&&MN.built?Date.parse(MN.built.replace(" ","T")+"+05:00"):null;
   const H=D.health, hc=H?`<span data-tip="${esc((H.checks||[]).filter(c=>c.st!=="ok").map(c=>c.name+": "+c.msg).join(" • ")||"Все автопроверки пройдены")} (проверено ${esc(H.at)}, Ташкент)"><i class="fd" style="background:var(--${H.overall==="ok"?"good":H.overall==="warn"?"warn":"bad"})"></i>Проверки: ${H.n.ok} из ${H.checks.length}${H.n.fail?` <b class="cw">${H.n.fail} сбой</b>`:H.n.warn?` <b class="cw">${H.n.warn} замеч.</b>`:""}</span>`:""
   const mbad=((typeof MN!=="undefined"&&MN&&MN.status)||[]).filter(x=>x.ok!==1||(x.note&&String(x.note).trim()));
-  const hc2=hc+(mbad.length?` <span data-tip="${esc(mbad.map(x=>x.s+": "+(x.note||"ошибка")).join(" • ").slice(0,600))}"><i class="fd" style="background:var(--warn)"></i>Сбор упоминаний: <b class="cw">${mbad.length} с замечаниями</b></span>`:"");
+  const hc2=hc;   // one status: mentions sources are inside the checks (C9, C12)
+  const _unused=hc+(mbad.length?` <span data-tip="${esc(mbad.map(x=>x.s+": "+(x.note||"ошибка")).join(" • ").slice(0,600))}"><i class="fd" style="background:var(--warn)"></i>Сбор упоминаний: <b class="cw">${mbad.length} с замечаниями</b></span>`:"");
   el.innerHTML=it("Радар",builtMs(),30,"Реклама, приложения, Telegram — "+dts)+it("Упоминания",mb,14)+hc2+`<span class="note hide-m">время — Ташкент</span>` }
 function covNote(t){ const p=$("#p-"+t); if(!p) return; let el=p.querySelector(":scope > .covnote");
   const dd=Object.keys(D.daily||{}).sort(), aa=Object.keys(D.apps||{}).sort(), tt=Object.keys(D.tg_hist||{}).sort();

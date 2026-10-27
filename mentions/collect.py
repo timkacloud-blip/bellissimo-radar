@@ -531,9 +531,10 @@ def run_yt():
         p['key'] = key; return http('https://www.googleapis.com/youtube/v3/' + ep + '?' + urllib.parse.urlencode(p))
     after = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
     own_ids = set((CFG.get('youtube_channels') or {}).keys()); vids = {}; capped = []; n = 0; cap = CFG.get('yt_cap', 50)
-    for q, brand0 in search_queries(3, 0):
+    # YouTube search costs 100 of the 10 000 daily units: 14 brands x 2 names x up to 2 pages stays within the limit (3 x 3 did not)
+    for q, brand0 in search_queries(2, 0):
         tok = None
-        for page in range(3):   # листаем дальше, пока в выдаче много подходящих (иначе у крупных брендов часть пропадёт)
+        for page in range(2):   # листаем дальше, пока в выдаче много подходящих (иначе у крупных брендов часть пропадёт)
             r = y('search', part='snippet', q=q, type='video', order='date', maxResults=cap, publishedAfter=after, regionCode='UZ', **({'pageToken': tok} if tok else {}))
             hit = 0
             for v in r.get('items', []):
@@ -541,7 +542,7 @@ def run_yt():
                 if bl: vids[v['id']['videoId']] = (sn, bl, sn.get('channelId') in own_ids); hit += 1
             tok = r.get('nextPageToken')
             if not tok or hit < cap // 5: break
-            if page == 2: capped.append(q)
+            if page == 1: capped.append(q)
     for vid, (sn, bl, owned) in vids.items():
         n += save_multi(bl, 'yt', 'video', 'ytv:' + vid, parse_iso(sn['publishedAt']), sn['title'], 'owned' if owned else 'earned', url='https://youtu.be/' + vid)
         try:

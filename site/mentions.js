@@ -93,7 +93,7 @@ function blocks(){const R=range(),out=[];
  if(OKP&&OP.t&&O.o.neg>=10&&negPct(O)-negPct(OP)>=5)al.push(["p-bad",`Негатив вырос: ${negPct(OP).toFixed(0)}% → ${negPct(O).toFixed(0)}% (${O.o.neg} негативных).`]);
  const wk=[];for(let i=1;i<=4;i++){const x=ownAgg(ad(R.b,-7*i+1-6),ad(R.b,-7*i));wk.push(x.t)}if(R.L<=14&&wk.reduce((x,y)=>x+y,0)>=40&&O.t>2*(wk.reduce((x,y)=>x+y,0)/4)*(R.L/7))al.push(["p-warn",`Всплеск упоминаний: ${O.t} за ${R.L} дн. при обычных ${Math.round(wk.reduce((x,y)=>x+y,0)/4*(R.L/7))}.`]);
  const IMP={yt:"YouTube не собирается (исчерпан лимит запросов), видео и комментарии оттуда пока не входят в долю обсуждений.",ads:"Часть комментариев под рекламой не собирается (нет разрешения Meta), негатив под рекламой может быть занижен.",trends:"Google Trends ответил не по всем брендам, в поиске возможны пропуски."};
- D.status.filter(x=>x.ok===0||(x.ok===1&&x.note&&IMP[x.s])).forEach(x=>al.push(["p-warn",IMP[x.s]||((SRC[x.s]||x.s)+" не собирается, цифры могут быть неполными.")]));
+ D.status.filter(x=>x.s!=="trends"&&(x.ok===0||(x.s==="ads"&&/ошибок: [1-9]/.test(x.note||"")))).forEach(x=>al.push(["p-warn",IMP[x.s]||((SRC[x.s]||x.s)+" не собирается, цифры могут быть неполными.")]));
  const tg=(CV().tgw)||{};if(tg.total&&!tg.full)al.push(["p-warn",`Telegram: прочитано ${tg.read} из ${tg.total} каналов, доля обсуждений пока неполная.`]);
  if(CV().media_on===false)al.push(["p-warn","Сайты СМИ ещё не подключены: в доле обсуждений новостных сайтов пока нет."]);
  if(false)0;const old=D.status.filter(x=>x.ok===1&&D.today&&nd(x.at.slice(0,10),D.today)>3);if(old.length)al.push(["p-warn","Давно не обновлялись: "+old.map(x=>SRC[x.s]||x.s).join(", ")+"."]);

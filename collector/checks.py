@@ -64,6 +64,15 @@ if ad:
             if ao >= 10 and an < .7 * ao and not x.get('list_empty'): jumps.append(f'{b}: собранных карточек {ao}→{an}')
         add('C4', 'Реклама: нет скачков счётчика (±50%) и провалов сбора (−30% карточек)', 'ok' if not jumps else 'warn', 'скачков нет' if not jumps else 'проверить вручную: ' + ', '.join(jumps))
 
+# C14 the offer rules still recognise most messages (a jump of "no offer" means the texts changed or a rule broke)
+cj = L(os.path.join(SITE, 'data', 'comp.json'))
+if cj:
+    u = {}
+    for a in cj.get('ads') or []:
+        if a.get('active') and a.get('goal') != 'Найм' and (a.get('body') or a.get('title')): u.setdefault(a.get('msg') or a['id'], a)
+    no = [a for a in u.values() if a.get('offer') == 'Без оффера']; sh = len(no) / len(u) if u else 0
+    add('C14', 'Реклама: оффер распознан у большинства сообщений (без оффера ≤ 35%)', 'ok' if sh <= .35 else 'warn', f'без оффера {len(no)} из {len(u)} ({round(100 * sh)}%)')
+
 # C5/C6 apps
 if ios:
     d = max(ios); x = ios[d]; bad = [b for b, v in (x.get('ios') or {}).items() if not v or not (v[0] or 0)]
@@ -72,6 +81,11 @@ if ios:
 if play:
     d = max(play); x = play[d].get('play') or {}; bad = [b for b, v in x.items() if not v or not v[0]]
     add('C7', 'Google Play: рейтинги прочитаны у всех приложений', 'ok' if not bad and len(x) >= 11 else 'warn', f'{len(x)} приложений' + (f', без данных: {", ".join(bad)}' if bad else ''))
+
+# C13 Google Play: update date and installs read for every app (the journal and the apps tab use them)
+if play:
+    x = play[max(play)].get('play') or {}; miss = [b for b, v in x.items() if not v or len(v) < 4 or not v[2] or not v[3]]
+    add('C13', 'Google Play: дата обновления и установки прочитаны', 'ok' if not miss else 'warn', 'у всех приложений' if not miss else 'нет данных: ' + ', '.join(miss))
 
 # C8 telegram channels
 if tg:
@@ -101,7 +115,8 @@ for k, name in SRC.items():
     try: hh = (NOW - dt.datetime.fromisoformat(str(r['at']).replace(' ', 'T')).replace(tzinfo=TZ)).total_seconds() / 3600
     except Exception: continue
     if hh > 72: old.append(f'{name} {round(hh / 24)} дн.')
-    if not r.get('ok') or re.search(r'ошибок: [1-9]', str(r.get('note') or '')): errs.append(f'{name}: ' + (str(r.get('note') or 'ошибка')[:80]))
+    note = str(r.get('note') or ''); fe = re.search(r'лент работает (\d+) из (\d+)', note)
+    if not r.get('ok') or re.search(r'ошибок: [1-9]', note) or (fe and int(fe.group(1)) < .7 * int(fe.group(2))): errs.append(f'{name}: ' + (note or 'ошибка')[:80])
 add('C12', 'Упоминания: каждый источник обновлялся за 3 дня и без ошибок', 'ok' if not old and not errs else 'warn',
     'все источники свежие' if not old and not errs else '; '.join((['давно не обновлялись: ' + ', '.join(old)] if old else []) + errs))
 
