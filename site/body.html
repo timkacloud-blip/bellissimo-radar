@@ -13,16 +13,24 @@
 
 <section class="panel" id="p-boss" hidden>
   <div class="card key">
-    <div class="chd"><h2>Главное за неделю</h2><span class="hint" data-tip="Собирается автоматически из данных радара: самое заметное в рекламе, приложениях и офферах. Только факты, без прогнозов.">?</span><span class="sub" id="boss-key-sub"></span></div>
+    <div class="chd"><h2>Что изменилось у конкурентов</h2><span class="hint" data-tip="Открытия, акции, новинки, обгон в App Store и резкий рост рекламы за 7 дней. «Что делать» — правило для каждого типа события, а не прогноз.">?</span><span class="sub" id="boss-key-sub"></span></div>
     <ol class="keys" id="boss-key"></ol>
   </div>
+  <div class="card c7">
+    <div class="chd"><h2>Мы</h2><span class="sub">App Store и Google Play — сейчас, отзывы — за 30 дней</span></div>
+    <div class="mtiles" id="boss-me"></div>
+  </div>
+  <div class="card c5">
+    <div class="chd"><h2>Требует проверки</h2><span class="sub">что не собралось или собрано частично</span></div>
+    <ul class="chk" id="boss-check"></ul>
+  </div>
   <div class="card">
-    <div class="chd"><h2>Сводка по брендам</h2><span class="hint" data-tip="Реклама, приложения и Telegram сравниваются со снимком 7+ дней назад. Поиск — изменение интереса к самому бренду в Google за 4 недели.">?</span><span class="sub" id="boss-sum-sub"></span></div>
+    <div class="chd"><h2>Сводка по брендам</h2><span class="hint" data-tip="Реклама, приложения и Telegram сравниваются со снимком 7+ дней назад. ">?</span><span class="sub" id="boss-sum-sub"></span></div>
     <p class="note only-m">Таблицу можно листать вбок →</p>
     <div class="tbl scroll" id="boss-sum"></div>
     <p class="note" id="boss-sum-n"></p>
   </div>
-  <div class="card c7">
+  <div class="card c7" hidden>
     <div class="chd"><h2>Главное за 7 дней у конкурентов</h2><span class="sub">новые акции, открытия, резкие изменения рекламы · не больше двух событий на бренд</span></div>
     <div class="ins" id="boss-top"></div>
     <div class="more"><button class="btn ghost" data-go="jr">Все события в журнале →</button></div>

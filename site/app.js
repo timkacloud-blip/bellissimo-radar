@@ -273,34 +273,49 @@ function evRow(e){ const lv=e.imp==="high"?"p-acc":"p-mute";
 const evKey=e=>e.b+"|"+e.type+"|"+String(e.detail||e.title).toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim().slice(0,60);
 function topEvents(list,perBrand,max){ const seen=new Set(), cnt={}, out=[]; for(const e of list){ const k=evKey(e); if(seen.has(k)) continue; seen.add(k); cnt[e.b]=(cnt[e.b]||0)+1; if(cnt[e.b]>perBrand) continue; out.push(e); if(out.length>=max) break } return out }
 function keyFindings(bD,sm){
-  // "Главное за неделю": a few facts a manager can act on, ordered by importance. Each one links to where the detail is.
-  const K=[], nm=b=>B(b).name, L=REF(), RK=(D.rank||{}).b||{}, me=(RK.bellissimo||{}).avg;
+  // First screen, block 1: what changed at competitors this week and what to do about it. Only checked events; the "what to do"
+  // text is a rule per event type, not AI. Ordered: openings, offers, new products, App Store, ads volume.
+  const K=[], nm=b=>B(b).name, RK=(D.rank||{}).b||{}, me=(RK.bellissimo||{}).avg;
   const go=(t,label)=>` <span class="lnk" role="link" tabindex="0" data-go="${t}">${label||"подробнее"} →</span>`;
-  // 1. a spike of negative mentions about us
-  const neg=J.events.find(e=>e.type==="mention"&&e.b==="bellissimo"&&within(e.date,7));
-  if(neg) K.push({lvl:"bad",h:`${neg.title} (${dfmt(neg.date)}).`,m:neg.detail+"."+go("mn","упоминания")});
-  // 2. App Store: who is above us on a weekly average
-  if(me){ const above=Object.entries(RK).filter(([b,x])=>b!=="bellissimo"&&x.avg&&x.avg<me).sort((x,y)=>x[1].avg-y[1].avg);
-    const R0=D.rank, per=R0.cur?`${dfmt(R0.cur[0])}–${dfmt(R0.cur[1])}`:"неделю";
-    K.push(above.length?{lvl:"bad",h:`В App Store в среднем выше нас: ${above.map(([b,x])=>`${nm(b)} (#${x.avg.toLocaleString("ru-RU")})`).join(", ")}.`,m:`Мы в среднем #${me.toLocaleString("ru-RU")} за ${per} в «Еда и напитки».`+go("app","приложения")}
-                        :{lvl:"good",h:`В App Store мы в среднем выше всех конкурентов: #${me.toLocaleString("ru-RU")}.`,m:`Среднее место за ${per}.`+go("app","приложения")}) }
-  // 3. the biggest change in competitors' Meta ads over the comparison window
-  if(bD.span>0){ const ch=ORDER.filter(b=>D.brands[b]&&!B(b).own).map(b=>{ const n=((D.daily[bD.now]||{})[b]||{}).total, o=((D.daily[bD.wk]||{})[b]||{}).total; return {b,n,o,d:n!=null&&o?(n-o)/o:null} }).filter(x=>x.d!=null&&x.o>=10&&Math.abs(x.d)>=.3).sort((x,y)=>Math.abs(y.d)-Math.abs(x.d));
-    if(ch.length){ const x=ch[0], more=ch.slice(1,3).map(y=>`${nm(y.b)} ${fchg(y.n,y.o)}`).join(", ");
-      K.push({lvl:"warn",h:`${nm(x.b)} ${x.d>0?"нарастил":"сократил"} рекламу в Meta: ${x.o} → ${x.n} объявлений (${fchg(x.n,x.o)}).`,m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)}.${more?" Также: "+more+".":""} Объявления ≠ бюджет: Meta его не раскрывает.`+go("ads","реклама")}) }
-    else K.push({lvl:"mute",h:"У конкурентов нет резких изменений в рекламе Meta.",m:`За ${dfmt(bD.wk)}→${dfmt(bD.now)} ни у кого объём не изменился на 30% и больше.`+go("ads","реклама")}) }
-  // 4. new competitor offers this week, grouped by mechanic
-  const thin=new Set(lowCov().map(o=>o.b));   // ad texts of these brands are a sample: no conclusions from them
-  const off=topEvents(J.events.filter(e=>e.type==="offer"&&e.b!=="bellissimo"&&within(e.date,7)&&!(e.src==="Реклама Meta"&&thin.has(e.b))),3,40);
-  if(off.length){ const by={}; off.forEach(e=>e.title.replace(/^Оффер:\s*/,"").split(" · ").map(m=>m.trim()).forEach(m=>{ if(!m||/^\d/.test(m)||/не распознана/.test(m)) return; (by[m]=by[m]||new Set()).add(nm(e.b)) }));
-    const top=Object.entries(by).filter(x=>x[1].size>=2).sort((x,y)=>y[1].size-x[1].size)[0], brands=[...new Set(off.map(e=>nm(e.b)))];
-    K.push({lvl:"acc",h:`${off.length} ${plural(off.length,"новый оффер","новых оффера","новых офферов")} у конкурентов за неделю${top?`, чаще всего — «${top[0]}» (${[...top[1]].join(", ")})`:""}.`,m:`Бренды: ${brands.join(", ")}.`+(thin.size?` Реклама ${[...thin].map(nm).join(", ")} собрана не полностью и сюда не входит (Telegram учтён).`:"")+go("off","офферы")}) }
-  // 5. pizza prices in ads: ours vs competitors (the category where we compete directly)
-  const P={}; D.ads.filter(a=>a.active&&a.goal!=="Найм"&&!thin.has(a.b)).forEach(a=>(a.pitems||[]).forEach(x=>{ if(x.c==="Пицца"&&(P[a.b]==null||x.p<P[a.b])) P[a.b]=x.p }));
-  if(P.bellissimo&&Object.keys(P).length>1&&!thin.has("bellissimo")){ const L2=Object.entries(P).sort((x,y)=>x[1]-y[1]), cheaper=L2.filter(([b,p])=>b!=="bellissimo"&&p<P.bellissimo);
-    K.push({lvl:cheaper.length?"warn":"mute",h:cheaper.length?`В рекламе пиццу дешевле нашей предлагает ${cheaper.map(([b])=>nm(b)).join(", ")}.`:`Наша цена на пиццу в рекламе — самая низкая среди конкурентов.`,
-      m:"Минимальная цена в рекламе: "+L2.map(([b,p])=>`${nm(b)} — от ${fmt(p)}`).join(", ")+" сум. Это цены офферов, наборы могут отличаться."+(thin.size?` Не учтены (реклама собрана не полностью): ${[...thin].map(nm).join(", ")}.`:"")+go("off","цены")}) }
-  return K.slice(0,4);
+  const lnk=e=>e.link?` <a class="lnk" href="${esc(e.link)}" target="_blank" rel="noopener">открыть ↗</a>`:"";
+  const short=t=>{ t=String(t).replace(/\s+/g," ").trim(); const m=t.slice(0,95).match(/^.{30,}?[.!?](\s|$)/); return m?m[0].trim():t.length>95?t.slice(0,92)+"…":t };
+  const thin=new Set(lowCov(.5).map(o=>o.b));   // copies, not messages: at 50%+ of copies the messages themselves are usually all there
+  const ev=J.events.filter(e=>e.b!=="bellissimo"&&within(e.date,7)&&e.imp==="high");
+  const once=new Set(), take=(type,max)=>topEvents(ev.filter(e=>e.type===type),1,max).filter(e=>{ const k=e.b+type; if(once.has(k)) return false; once.add(k); return true });
+  take("open",2).forEach(e=>K.push({lvl:"bad",h:`${nm(e.b)}: открытие — ${esc(short(e.detail||e.title))}`,todo:"проверить наши точки и рекламу в этом районе или городе до их открытия.",m:`${e.src}, ${dfmt(e.date)}`+lnk(e)}));
+  if(me){ Object.entries(RK).filter(([b,x])=>b!=="bellissimo"&&x.avg&&x.prev&&x.avg<me&&x.prev>=me).forEach(([b,x])=>
+    K.push({lvl:"bad",h:`${nm(b)} обогнал нас в App Store: в среднем #${x.avg.toLocaleString("ru-RU")} за неделю (было #${x.prev.toLocaleString("ru-RU")}), мы #${me.toLocaleString("ru-RU")}`,todo:"посмотреть их акции в приложении и сравнить с нашей механикой.",m:"Чарт «Еда и напитки», 7 дней к 7"+go("app","приложения")})) }
+  take("offer",2).forEach(e=>{ const mech=e.title.replace(/^Оффер:\s*/,"").replace(/ · /g,", ");
+    const strong=/1\+1|Скидка|Бесплатная доставка|Подарок|Кешбэк/.test(mech);
+    K.push({lvl:strong?"warn":"acc",h:`${nm(e.b)}: ${esc(mech)}`,todo:strong?"сравнить с нашей текущей механикой и решить, нужен ли ответ на этой неделе.":"посмотреть оффер и цену, отличаются ли от наших.",
+      m:`${e.src}, с ${dfmt(e.date)}${thin.has(e.b)&&e.src==="Реклама Meta"?' · <span class="cw" data-tip="Видим не все объявления бренда">выборка</span>':""}`+lnk(e)}) });
+  take("new",2).forEach(e=>K.push({lvl:"acc",h:`${nm(e.b)}: новинка — ${esc(short(e.detail||""))}`,todo:"посмотреть, есть ли у нас похожий продукт и стоит ли его продвигать сейчас.",m:`${e.src}, ${dfmt(e.date)}`+lnk(e)}));
+  if(bD.span>0){ ORDER.filter(b=>D.brands[b]&&!B(b).own).map(b=>{ const n=((D.daily[bD.now]||{})[b]||{}).total, o=((D.daily[bD.wk]||{})[b]||{}).total; return {b,n,o,d:n!=null&&o?(n-o)/o:null} })
+    .filter(x=>x.d!=null&&x.o>=10&&x.d>=.3).sort((x,y)=>y.d-x.d).slice(0,1).forEach(x=>
+      K.push({lvl:"warn",h:`${nm(x.b)} нарастил рекламу в Meta: ${x.o} → ${x.n} объявлений (${fchg(x.n,x.o)})`,todo:"посмотреть их новые объявления; если это акция — сравнить с нашей.",m:`${dfmt(bD.wk)}→${dfmt(bD.now)}`+go("ads","реклама")})) }
+  // prices: compare only the same thing (one pizza with one pizza, a set of pizzas with a set)
+  ["Пицца","Пицца, набор"].forEach(cat=>{ const P={}, T={};
+    D.ads.filter(a=>a.active&&a.goal!=="Найм"&&!thin.has(a.b)).forEach(a=>(a.pitems||[]).forEach(x=>{ if(x.c===cat&&(P[a.b]==null||x.p<P[a.b])){ P[a.b]=x.p; T[a.b]=x.t } }));
+    if(P.bellissimo==null) return; const cheaper=Object.entries(P).filter(([b,p])=>b!=="bellissimo"&&p<P.bellissimo);
+    if(cheaper.length) K.push({lvl:"warn",h:`${cat==="Пицца"?"Одна пицца":"Набор пицц"} дешевле нашего (от ${fmt(P.bellissimo)}): ${cheaper.map(([b,p])=>`${nm(b)} от ${fmt(p)}`).join(", ")}`,todo:"сверить размер и состав: если сопоставимы — решить, нужен ли ответ по цене.",m:`Цены из текста рекламы. ${cheaper.map(([b])=>`${nm(b)}: «${esc((T[b]||"").slice(0,70))}»`).join(" ")}`+go("off","офферы")}) });
+  return K.slice(0,5);
+}
+function bossMe(sm,bA){
+  // First screen, block 2: four numbers about us
+  const RK=(D.rank||{}).b||{}, r=RK.bellissimo||{}, pl=((D.apps[bA.now]||{}).play||{}).bellissimo;
+  const tile=(t,v,sub)=>`<div class="mt"><div class="mt-t">${t}</div><div class="mt-v">${v}</div><div class="note">${sub||""}</div></div>`;
+  const out=[tile("App Store, место",r.avg?`#${r.avg.toLocaleString("ru-RU")}`:"—",r.prev?`неделю назад #${r.prev.toLocaleString("ru-RU")}`:"среднее за 7 дней"),
+    tile("Google Play",pl?`★ ${(+pl[0]).toFixed(2)}`:"—",pl?`${fmt(pl[1])} оценок`:"")];
+  if(sm){ const O=sm.O; out.push(tile("Негатив о нас, 30 дней",O.t?`${Math.round(100*O.o.neg/O.t)}%`:"—",`из ${fmt(O.t)} отзывов и комментариев`));
+    const th={}; ((MN&&MN.themes)||[]).forEach(([d,se,t,n])=>{ if(se==="neg"&&d>=sm.a&&d<=sm.b) th[t]=(th[t]||0)+n });
+    const top=Object.entries(th).sort((x,y)=>y[1]-x[1])[0]; out.push(tile("Главная тема негатива",top?esc(top[0]):"—",top?`${top[1]} за 30 дней`:"")) }
+  return out.join("");
+}
+function bossCheck(){
+  // First screen, block 3: what did not collect or is a sample, so the numbers above are read with care
+  const H=D.health; if(!H) return "";
+  const bad=(H.checks||[]).filter(c=>c.st!=="ok");
+  return bad.length?bad.map(c=>`<li><span class="pill ${c.st==="fail"?"p-bad":"p-warn"}">${c.st==="fail"?"сбой":"замечание"}</span> ${esc(c.name)}: ${esc(c.msg.slice(0,160))}</li>`).join(""):'<li class="note">Всё собрано, проверки пройдены.</li>';
 }
 function renderBoss(){
   const nm=b=>B(b).name;
@@ -309,8 +324,9 @@ function renderBoss(){
   const sm=MN&&window.mentionsSummary?window.mentionsSummary(MN,MCTX(),30):null;
   // key findings
   const K=keyFindings(bD,sm);
-  $("#boss-key").innerHTML=K.map(k=>`<li class="k-${k.lvl}"><b>${esc(k.h)}</b><div class="m">${k.m}</div></li>`).join("")||'<div class="empty">Пока недостаточно данных</div>';
-  $("#boss-key-sub").textContent=`на ${dfmt(REF())}, сравнение с ${dfmt(bD.wk)}`;
+  $("#boss-key").innerHTML=K.map(k=>`<li class="k-${k.lvl}"><b>${k.h}</b>${k.todo?`<div class="todo"><b>Что делать:</b> ${k.todo}</div>`:""}<div class="m">${k.m}</div></li>`).join("")||'<div class="empty">За неделю у конкурентов не было проверенных изменений: новых акций, открытий, новинок или резкого роста рекламы.</div>';
+  $("#boss-me").innerHTML=bossMe(sm,bA); $("#boss-check").innerHTML=bossCheck();
+  $("#boss-key-sub").textContent=`${dfmt(bD.wk)}–${dfmt(REF())} · только проверенные события · у каждого — что предлагаем сделать`;
   // summary table: few columns, only what a manager needs
   // Google Trends: only a brand's own dynamics (last 4 weeks vs the 4 before). Levels between brands depend on how the query is worded, so no share and no ranking.
   const tr=b=>{ const v=((MN&&MN.trends)||[]).filter(r=>r[1]===b).sort((x,y)=>x[0].localeCompare(y[0])).map(r=>r[2]); if(v.length<8) return null;
@@ -339,8 +355,7 @@ function renderBoss(){
   const top=topEvents(J.events.filter(e=>e.imp==="high"&&e.b!=="bellissimo"&&within(e.date,7)),2,6);
   $("#boss-top").innerHTML=top.map(evRow).join("")||'<div class="empty">За 7 дней крупных изменений у конкурентов не было</div>';
   const us=[], ev7=topEvents(J.events.filter(e=>e.b==="bellissimo"&&within(e.date,7)),3,3), ia=(D.apps[bA.now]||{}).ios||{};
-  if(sm){ const O=sm.O; us.push(`<div class="srow"><span class="pill p-mute">факт</span><div><div class="t"><b>Отзывы и комментарии о нас за 30 дней: ${fmt(O.t)}, негатив ${O.t?Math.round(100*O.o.neg/O.t):0}%</b></div><div class="m">${dfmt(sm.a)}–${dfmt(sm.b)}: ${(()=>{const n=k=>((O.s||{})[k]||{}).n||0, mine=n("ig")+n("ads"), rev=n("play")+n("appstore"), rest=O.t-mine-rev; return `${fmt(mine)} — комментарии под нашими постами и рекламой, ${fmt(rev)} — отзывы в магазинах`+(rest>0?`, ${fmt(rest)} — в Telegram и на YouTube`:"")})()}. <span class="lnk" role="link" tabindex="0" data-go="mn">Подробнее →</span></div></div></div>`) }
-  if(ia.bellissimo) us.push(`<div class="srow"><span class="pill p-mute">факт</span><div><div class="t"><b>App Store: в среднем #${(RK.bellissimo||{}).avg?.toLocaleString("ru-RU")||"—"} за неделю, сегодня #${ia.bellissimo[3]||"—"}, ★ ${ia.bellissimo[1]??"—"}</b></div><div class="m">Google Play: ★ ${pa.bellissimo?(+pa.bellissimo[0]).toFixed(2):"—"}, отзывов ${pa.bellissimo?fmt(pa.bellissimo[1]):"—"}</div></div></div>`);
+  // our 30-day mentions and App Store place are in the «Мы» tiles above; here only our events
   us.push(...ev7.map(evRow));
   $("#boss-us").innerHTML=us.join("")||'<div class="empty">Нет событий</div>';
   // offers 14 days
