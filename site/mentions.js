@@ -117,8 +117,9 @@ function blocks(){const R=range(),out=[];
    ["YouTube",f((c.talk||{}).yt),"видео и комментарии, собирается по лимиту запросов"],
    ["Сайты СМИ",c.media_on?f((c.talk||{}).media):"не подключены","лента новостных сайтов"]];
   out.push(card("Полнота данных","⚠ значит, что данные начинаются позже начала выбранного периода и цифры за ранние даты неполные",tbl(["Источник","Данные с","Заметка"],rowsC.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="note" style="white-space:normal;text-align:left">${r[2]}</td></tr>`).join("")),"c12"))}
- /* поиск: только динамика каждого бренда относительно самого себя, без долей и мест */
- {const br=Object.keys(S.sh).sort((x,y)=>(x==="bellissimo"?-1:0)-(y==="bellissimo"?-1:0)||nm(x).localeCompare(nm(y),"ru"));const shown=br.filter(sel);
+ /* поиск: только динамика каждого бренда относительно самого себя, без долей и мест. Скрыто: Google Trends почти не видит поиск по этим брендам в Узбекистане */
+ if(!window.TRENDS_ON) out.push(card("Поиск в Google","временно убран",'<p class="note">Google Trends по Узбекистану почти не видит запросы по этим брендам: у Bellissimo 76 дней из 90 с нулём, а KFC раздут чужими запросами (игра «KFC The Vault», «kfc near me»). Индекс показывал шум. Вернём, когда будут реальные объёмы поиска из Планировщика ключевых слов Google Ads.</p>',"c4"));
+ else {const br=Object.keys(S.sh).sort((x,y)=>(x==="bellissimo"?-1:0)-(y==="bellissimo"?-1:0)||nm(x).localeCompare(nm(y),"ru"));const shown=br.filter(sel);
   const mean={};br.forEach(b=>{const v=S.keys.map(k=>S.w[k][b]||0);mean[b]=v.length?v.reduce((x,y)=>x+y,0)/v.length:0});
   const wsh={};S.keys.forEach(k=>{wsh[k]={};br.forEach(b=>{wsh[k][b]=mean[b]?100*(S.w[k][b]||0)/mean[b]:null})});
   const chg=b=>{const o=SP.sum[b],n=S.sum[b];if(!o||o<10||n==null)return'<span class="note" data-tip="В прошлом периоде слишком мало запросов или данных нет, процент был бы шумом">–</span>';const d=(n-o)/o;return`<span class="chg">${d>0?"+":"−"}${Math.abs(Math.round(100*d))}%</span>`};

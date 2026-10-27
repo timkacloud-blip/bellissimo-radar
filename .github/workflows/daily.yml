@@ -1,9 +1,9 @@
 name: daily
 on:
   schedule:
-    # GitHub starts scheduled runs late (up to ~5 h in practice), so start early and keep a backup run.
-    - cron: '17 0 * * *'   # 05:17 Tashkent
-    - cron: '47 2 * * *'   # 07:47 Tashkent, backup if the first one is delayed or fails
+    # GitHub starts scheduled runs late (up to ~5 h in practice), so start at night: even 5 h late the data is ready by 07:00.
+    - cron: '17 19 * * *'   # 00:17 Tashkent
+    - cron: '47 21 * * *'   # 02:47 Tashkent, backup: exits at once if today's collection already went through
   workflow_dispatch:
 permissions:
   contents: write
@@ -20,27 +20,44 @@ jobs:
       name: github-pages
     steps:
       - uses: actions/checkout@v4
+      - name: Already collected today?
+        if: github.event_name == 'schedule'
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json, datetime as dt, os
+          d = (dt.datetime.utcnow() + dt.timedelta(hours=5)).date().isoformat(); p = f'data/raw/status_{d}.json'
+          s = json.load(open(p)) if os.path.exists(p) else {}
+          done = all((s.get(k) or {}).get('ok') for k in ('ios', 'play', 'tg', 'adlib')) and os.path.exists(f'data/raw/comp_adlib_{d}.json')
+          print('SKIP=1' if done else 'SKIP=0')
+          PY
       - uses: actions/setup-python@v5
+        if: env.SKIP != '1'
         with: { python-version: '3.11' }
       - run: pip install pillow
+        if: env.SKIP != '1'
       - uses: actions/setup-node@v4
+        if: env.SKIP != '1'
         with: { node-version: '20' }
       - name: Install Playwright
+        if: env.SKIP != '1'
         run: npm install --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
       - name: Collect apps and Telegram
+        if: env.SKIP != '1'
         run: python3 collector/collect.py all 2>&1 | tee data/logs/collect.txt
       - name: Collect Ad Library
+        if: env.SKIP != '1'
         run: node collector/adlib_headless.js data/raw data/thumbs_store.json 2>&1 | tee data/logs/adlib.txt
       - name: Build site
+        if: env.SKIP != '1'
         run: set -o pipefail; bash build.sh 2>&1 | tee data/logs/build.txt
       - name: Self-check
-        if: always()
+        if: always() && env.SKIP != '1'
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: python3 collector/checks.py data _site 2>&1 | tee data/logs/checks.txt
       - name: Save history
-        if: always()
+        if: always() && env.SKIP != '1'
         run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
@@ -49,5 +66,7 @@ jobs:
           git pull --rebase -X theirs || true
           git push
       - uses: actions/upload-pages-artifact@v3
+        if: env.SKIP != '1'
         with: { path: _site }
       - uses: actions/deploy-pages@v4
+        if: env.SKIP != '1'

@@ -1,3 +1,6 @@
+// Google Trends is hidden: in Uzbekistan it sees almost no searches for these brands (Bellissimo: 76 zero days of 90), and KFC is inflated by
+// global queries. Back when real volumes come from Google Ads Keyword Planner.
+const TRENDS_ON=false; window.TRENDS_ON=TRENDS_ON;
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -5,7 +8,7 @@ const fmt=n=>n==null||!isFinite(n)?"—":Math.round(n).toLocaleString("ru-RU");
 const kfmt=n=>n==null?"—":n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+" млн":n>=1e4?Math.round(n/1e3)+" тыс":fmt(n);
 const plural=(n,a,b,c)=>{ n=Math.abs(n)%100; const m=n%10; return n>10&&n<20?c:m===1?a:m>=2&&m<=4?b:c };
 const ls={get(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const S={tab:"boss",lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:true,nw:false,limit:24,prc:"",tgb:"",jr:{per:"30",b:"",t:"",hi:false,own:false}};
+const S={tab:"boss",lang:"all",brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:false,nw:false,limit:24,prc:"",tgb:"",jr:{per:"30",b:"",t:"",hi:false,own:false}};
 let D=null, TH={}, thumbsLoaded=false, J={events:[],coverage:{}}, MN=null, MNP=null;
 const LIM={}, TS={};   // "show more" limits and table sort state, by table id
 
@@ -33,6 +36,7 @@ const builtMs=()=>D&&D.info&&D.info.built?Date.parse(D.info.built.replace(" ","T
 const inLang=a=>S.lang==="all"||a.lang===S.lang||a.lang==="—";
 const active=()=>D.ads.filter(a=>a.active&&inLang(a));
 const txtKey=a=>(a.body||a.title||"").slice(0,80);
+const um=x=>new Set(x.map(a=>a.msg||a.id)).size;   // unique messages: one text under several ids counts once
 function dedupe(A,imgGroup){ const m=new Map(); A.forEach(a=>{ const t=txtKey(a), k=a.b+"|"+(t||(imgGroup?"img|"+(a.start||"")+"|"+(a.fmt||""):a.id)); const x=m.get(k);
   if(x){ x.sim++; x.ntot+=(a.n||1); const dmax=Math.max(x.days||0,a.days||0), smin=[x.start,a.start].filter(Boolean).sort()[0]; if(!TH[x.id]&&TH[a.id]) Object.assign(x,a,{sim:x.sim,ntot:x.ntot}); x.days=dmax; if(smin) x.start=smin }
   else m.set(k,Object.assign({},a,{sim:0,ntot:a.n||1})) }); return [...m.values()] }
@@ -105,8 +109,8 @@ function renderAds(){
   // who advertises how much: one table instead of ten tiles
   const oc=Object.fromEntries(bs.map(b=>[b,objCount(b)])), tot=bs.reduce((s,b)=>s+(oc[b].v||0),0), mx=Math.max(1,...bs.map(b=>oc[b].v||0));
   $("#ov-sov-sub").textContent=S.lang==="all"?`активные объявления Meta на ${dfmt(L)}`:`≈ по собранным объявлениям, язык ${S.lang}`;
-  $("#ov-sov").innerHTML=table("ov-sov",[{h:"Бренд",l:1},{h:"Доля",l:1},{h:"Объявлений"},{h:"Креативов",tip:"Карточки в галерее без найма. Одинаковые копии объявления Facebook объединяет сам, поэтому креативов меньше, чем объявлений"},{h:"Новых за 7 дней"},{h:"Найм",tip:"Сообщения о найме курьеров и персонала"},{h:"Охват текстов",tip:"Какую часть объявлений Meta мы видим с текстом. Ниже 70% — цифры по офферам, ценам и сообщениям этого бренда занижены"}],
-    bs.map(b=>{ const x=A.filter(a=>a.b===b), m=x.filter(a=>a.goal!=="Найм").length, n7=sales(x).filter(a=>a.start&&dDiff(a.start,L)<7).length, hr=x.filter(a=>a.goal==="Найм").length, sh=tot?100*(oc[b].v||0)/tot:0;
+  $("#ov-sov").innerHTML=table("ov-sov",[{h:"Бренд",l:1},{h:"Доля",l:1},{h:"Объявлений"},{h:"Сообщений",tip:"Разные тексты рекламы без найма. Один текст с разными картинками и под разными ID считается один раз"},{h:"Новых за 7 дней"},{h:"Найм",tip:"Сообщения о найме курьеров и персонала"},{h:"Охват текстов",tip:"Какую часть объявлений Meta мы видим с текстом. Ниже 70% — цифры по офферам, ценам и сообщениям этого бренда занижены"}],
+    bs.map(b=>{ const x=A.filter(a=>a.b===b), m=um(x.filter(a=>a.goal!=="Найм")), n7=um(sales(x).filter(a=>a.start&&dDiff(a.start,L)<7)), hr=um(x.filter(a=>a.goal==="Найм")), sh=tot?100*(oc[b].v||0)/tot:0;
       return {cls:B(b).own?"me":"",s:[B(b).name,sh,oc[b].v,m,n7,hr,(cov(b)||{}).p||0],c:[bname(b)+(B(b).own?'<span class="note" data-tip="Вся страница бренда: франшиза, найм, филиалы"> *</span>':""),
         `<div class="sbarw"><div class="sbar"><i style="width:${100*(oc[b].v||0)/mx}%;background:${B(b).color}"></i></div><span>${sh.toFixed(0)}%</span></div>`,`<b>${ofmt(oc[b])}</b>`,m,n7?`<span class="pill p-acc">+${n7}</span>`:'<span class="note">0</span>',hr||'<span class="note">0</span>',covPill(b)]} }).sort((x,y)=>(y.s[2]||0)-(x.s[2]||0)));
   // ad insights only; App Store lives in its own tab
@@ -146,7 +150,7 @@ function renderGallery(A0){
     (meta>got?` · <span data-tip="Ad Library отдаёт не все объявления крупных брендов. Число объявлений — из счётчика Meta, тексты и картинки — из того, что удалось собрать.">собрано ${fmt(got)} из ${fmt(meta)} объявлений Meta ⓘ</span>`:"");
   $("#ads-gal").innerHTML=A.slice(0,S.limit).map(adCard).join("")||'<div class="empty">Ничего не найдено — ослабьте фильтры или нажмите «Сбросить фильтры»</div>';
   $("#ads-more").hidden=A.length<=S.limit; $("#ads-more").textContent=`Показать ещё (${Math.max(0,A.length-S.limit)})`;
-  $("#f-reset").hidden=!(S.brands.size||S.goal||S.tag||S.fmt||S.q||S.hire||!S.raw||S.nw||S.sort!=="new");
+  $("#f-reset").hidden=!(S.brands.size||S.goal||S.tag||S.fmt||S.q||S.hire||S.raw||S.nw||S.sort!=="new");
 }
 
 // ---------- Офферы и цены ----------
@@ -155,8 +159,8 @@ function renderOff(){
   const A0=active().filter(a=>a.goal!=="Найм"), tgc={}; (D.tg_posts||[]).forEach(p=>(p.codes||[]).forEach(c=>{ (tgc[p.b]=tgc[p.b]||new Set()).add(c) }));
   const top=(arr,n)=>{ const m={}; arr.forEach(x=>{ if(x) m[x]=(m[x]||0)+1 }); return Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,n) };
   const sb=ORDER.filter(b=>A0.some(a=>a.b===b));
-  $("#off-sum").innerHTML=table("off-sum",[{h:"Бренд",l:1},{h:"Карточек"},{h:"Главные механики",l:1,w:1},{h:"Цена от, сум",tip:"Минимальная цена, найденная в тексте рекламы. Категория по ближайшему слову, может ошибаться."},{h:"Промокоды",l:1,w:1},{h:"Кнопка",l:1,w:1},{h:"Куда ведёт",l:1,w:1}],
-    sb.map(b=>{ const x=A0.filter(a=>a.b===b), n=x.length, mech=top(x.flatMap(a=>a.tags.filter(t=>t!=="Цена"&&t!=="Гарантия времени")),3), pr=(pi=>pi.filter(i=>!/^(Напиток|Другое|Кусочки \/ порции)$/.test(i.c))[0]||pi[0])(x.flatMap(a=>(a.pitems||[])).sort((p,q)=>p.p-q.p)),
+  $("#off-sum").innerHTML=table("off-sum",[{h:"Бренд",l:1},{h:"Сообщений",tip:"Разные тексты рекламы без найма"},{h:"Главные механики",l:1,w:1},{h:"Цена от, сум",tip:"Минимальная цена, найденная в тексте рекламы. Категория по ближайшему слову, может ошибаться."},{h:"Промокоды",l:1,w:1},{h:"Кнопка",l:1,w:1},{h:"Куда ведёт",l:1,w:1}],
+    sb.map(b=>{ const x=A0.filter(a=>a.b===b), n=um(x), mech=top(x.flatMap(a=>a.tags.filter(t=>t!=="Цена"&&t!=="Гарантия времени")),3), pr=(pi=>pi.filter(i=>!/^(Напиток|Другое|Кусочки \/ порции)$/.test(i.c))[0]||pi[0])(x.flatMap(a=>(a.pitems||[])).sort((p,q)=>p.p-q.p)),
         codes=new Set(x.flatMap(a=>a.codes||[])); (tgc[b]||[]).forEach(c=>codes.add(c)); const cb=top(x.map(a=>ctaRu(a.cta)),2), gl=top(x.map(a=>a.goal),2), cv=cov(b), thin=cv&&cv.p<.7;
       return {cls:B(b).own?"me":"",s:[B(b).name,n,mech.length?mech[0][1]:0,pr?pr.p:null,codes.size,cb.length?cb[0][1]:0,gl.length?gl[0][1]:0],
         c:[bname(b)+(thin?' <span class="note" data-tip="Реклама бренда собрана не полностью">⚠</span>':""),`<b>${n}</b>`,mech.map(([t,v])=>`<span class="pill p-mute">${esc(t)} · ${v}</span>`).join(" ")||'<span class="note">нет</span>',
@@ -327,6 +331,7 @@ function renderBoss(){
   const cols=[{h:"Бренд",l:1},{h:`Реклама Meta, объявлений<br><span class="note">${spanTxt(bD)}</span>`},
     {h:`App Store, среднее место<br><span class="note">${R0.cur?dfmt(R0.cur[0])+"–"+dfmt(R0.cur[1]):""}${R0.approx?' <span class="cw" data-tip="Предыдущей полной недели ещё нет — стрелки предварительные">⚠</span>':""}</span>`,tip:"Среднее место в чарте «Еда и напитки» за 7 дней. Стрелка — к предыдущей неделе."},
     {h:`Google Play, рейтинг`},{h:`Интерес в Google, динамика<br><span class="note">4 недели к предыдущим 4</span>`,tip:"Как изменился поиск самого бренда в Google (Узбекистан). Бренды между собой не сравниваются: уровень зависит от написания запроса, в других словах короткие названия (KFC, Evos) ищут и в другом смысле."}];
+  if(!TRENDS_ON){ cols.pop(); rows.forEach(r=>{r.s.pop();r.c.pop()}) }
   $("#boss-sum").innerHTML=table("boss-sum",cols,rows,{cls:"sum"});
   $("#boss-sum-sub").textContent=`данные на ${dfmt(REF())}`;
   $("#boss-sum-n").innerHTML=`Зелёный и красный — с нашей стороны (конкурент поднялся в App Store — красный). Серые изменения — просто факт. Проценты только при базе от 10 объявлений. * — вся страница Bellissimo, включая франшизу и найм. Наведите на число объявлений, чтобы увидеть все дни.`;
@@ -443,7 +448,7 @@ $("#f-brand").addEventListener("click",e=>{ const b=e.target.closest(".chip"); i
 [["#f-goal","goal"],["#f-tag","tag"],["#f-fmt","fmt"],["#f-sort","sort"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.value; S.limit=24; rerender() }));
 [["#f-raw","raw"],["#f-hire","hire"],["#f-new","nw"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{ S[k]=e.target.checked; S.limit=24; rerender() }));
 let qt; $("#f-q").addEventListener("input",e=>{ clearTimeout(qt); qt=setTimeout(()=>{ S.q=e.target.value; S.limit=24; rerender() },200) });
-$("#f-reset").addEventListener("click",()=>{ Object.assign(S,{brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:true,nw:false,limit:24}); rerender() });
+$("#f-reset").addEventListener("click",()=>{ Object.assign(S,{brands:new Set(),goal:"",tag:"",fmt:"",sort:"new",q:"",hire:false,raw:false,nw:false,limit:24}); rerender() });
 $("#ads-more").addEventListener("click",()=>{ S.limit+=24; rerender() });
 $("#pr-cat").addEventListener("change",e=>{ S.prc=e.target.value; LIM["off-pr"]=0; rerender() });
 $("#tg-b").addEventListener("change",e=>{ S.tgb=e.target.value; rerender() });

@@ -63,6 +63,13 @@ def goal(a):
     return 'Сайт'
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import hashlib
+def msgkey_raw(b, a):
+    """Same message = same brand + text (first 200 chars, letters only); ads without text: same picture day and format."""
+    t = re.sub(r'\W+', ' ', ((a.get('body') or '') + ' ' + (a.get('title') or '')).lower()).strip()[:200]
+    if '{{' in t: t = ''
+    return (b, t) if t else (b, 'img', a.get('start'), a.get('fmt'))
+def msgid(b, a): return hashlib.md5(repr(msgkey_raw(b, a)).encode()).hexdigest()[:10]
 from rules import tags, primary, prices, price_items, codes, lang, plural, ru_part  # noqa: E402
 
 # ---------- Ad Library snapshots ----------
@@ -76,10 +83,12 @@ for f in files:
     for b, B in d.get('brands', {}).items():
         if 'ads' not in B: continue
         g = B['ads']
-        if g and all(len(a.get('ids') or []) >= min(a.get('n') or 1, 200) for a in g): cov = len({i for a in g for i in a['ids']})   # every copy listed: exact
-        else: cov = sum(a.get('n') or 1 for a in g)
+        # one creative comes back under 2-3 ids from different filters: group by message first, a group's copies = the largest n inside it
+        mx = {}
+        for a in g: k = (msgkey_raw(b, a), a.get('fmt'), a.get('start'), a.get('plat')); mx[k] = max(mx.get(k, 0), a.get('n') or 1)   # same text+format+start+platforms = the same group
+        cov = sum(mx.values())
         if B.get('total') is not None: cov = min(cov, B['total'])   # copies behind the creatives we hold vs Meta's own counter
-        daily[D][b] = {'total': B.get('total'), 'groups': len(B['ads']), 'covered': cov}
+        daily[D][b] = {'total': B.get('total'), 'groups': len(B['ads']), 'msgs': len({k[0] for k in mx}), 'covered': cov}
         for a in B['ads']:
             if a.get('thumb'): store[a['id']] = a['thumb']
             r = ads.get(a['id'])
@@ -103,6 +112,7 @@ for r in ads.values():
     end = r['last'] if r['active'] else r['last']
     r['days'] = (dt.date.fromisoformat(end) - dt.date.fromisoformat(r['start'])).days + 1 if r['start'] else None
     r['thumb'] = 1 if r['id'] in store else 0
+    r['msg'] = msgid(r['b'], r)
     r['plat'] = ''.join(x[0] for x in r['plat'].split('|') if x)  # F I A M W T
 
 # ---------- Apps ----------
@@ -179,20 +189,24 @@ if last:
         if not A: continue
         cv = (daily.get(last) or {}).get(b) or {}
         sample = f" По {cv['covered']} из {cv['total']} объявлений (остальные Facebook не отдал)." if cv.get('total') and cv.get('covered', 0) < cv['total'] else ''
-        new7 = [r for r in A if r['goal'] != 'Найм' and r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7]
-        n_msg = len([r for r in A if r['goal'] != 'Найм'])   # cards (creatives), not unique texts
+        def uniq(rs):   # one row per message (the same text under several ids counts once)
+            u = {}
+            for r in rs: u.setdefault(r['msg'], r)
+            return list(u.values())
+        new7 = uniq([r for r in A if r['goal'] != 'Найм' and r['start'] and (L - dt.date.fromisoformat(r['start'])).days < 7])
+        n_msg = len(uniq([r for r in A if r['goal'] != 'Найм']))   # unique messages, not cards
         nm = BRANDS[b]['name']; own = BRANDS[b].get('own')
         if new7 and not own:
             g = collections.Counter(r['goal'] for r in new7).most_common(2)
-            ins.append({'sec': 'ads', 'b': b, 'lvl': 'acc', 't': f"{nm}: запустил {len(new7)} {plural(len(new7), 'новую карточку', 'новые карточки', 'новых карточек')} рекламы за 7 дней",
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'acc', 't': f"{nm}: запустил {len(new7)} {plural(len(new7), 'новое сообщение', 'новых сообщения', 'новых сообщений')} в рекламе за 7 дней",
                         'm': 'Куда ведут: ' + ', '.join(f"{k} — {v}" for k, v in g) + '.' + sample})
         offers = collections.Counter(r['offer'] for r in A if r['offer'] not in ('Найм', 'Без оффера', 'Цена', 'Каталог товаров', 'Только видео/картинка'))
         if offers and not own:
             ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: чаще всего — " + ', '.join(k for k, _ in offers.most_common(3)),
-                        'm': f"среди {n_msg} {plural(n_msg, 'активной карточки', 'активных карточек', 'активных карточек')} без найма." + sample})
-        hire = len([r for r in A if r['goal'] == 'Найм'])
+                        'm': f"среди {n_msg} {plural(n_msg, 'активного сообщения', 'активных сообщений', 'активных сообщений')} без найма." + sample})
+        hire = len(uniq([r for r in A if r['goal'] == 'Найм']))
         if hire >= 3 and hire / max(n_msg + hire, 1) > .3 and not own:
-            ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} {plural(hire, 'карточка', 'карточки', 'карточек')} рекламы о найме (и {n_msg} о продажах)",
+            ins.append({'sec': 'ads', 'b': b, 'lvl': 'mute', 't': f"{nm}: {hire} {plural(hire, 'сообщение', 'сообщения', 'сообщений')} в рекламе о найме (и {n_msg} о продажах)",
                         'm': 'Ищут курьеров и персонал. В карточки о продажах найм не входит.'})
     if apps:
         a = apps[max(apps)]; ch = a.get('ios_chart', []); R = RANK.get('b', {})

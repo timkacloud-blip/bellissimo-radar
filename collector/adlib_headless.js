@@ -50,7 +50,10 @@ function row(L){ const a=L[0], sn=a.snapshot||{}, cd=(sn.cards||[])[0]||{}, im=(
     const r=doc&&jget(doc,'"search_results_connection":'); if(!r) return null;
     return {count:r.count, groups:(r.edges||[]).filter(ed=>ed.node&&ed.node.collated_results&&ed.node.collated_results.length).map(ed=>row(ed.node.collated_results))} };
   // copies we hold: sum of group sizes (Facebook lists only some copies of a group by id, so an exact count by id is not possible); capped at Meta's counter
-  const held=(b,ids)=>ids.reduce((s,id)=>s+((store[b][id]||{}).n||1),0);
+  // one group comes back under several ids from different filters: count it once (same text + format + start + platforms), with its largest n.
+  // Without this the brand looked fully collected too early and the remaining filters were skipped.
+  const gkey=a=>[(a.body||'')+' '+(a.title||''),a.fmt,a.start,a.plat].join('|');
+  const held=(b,ids)=>{ const m=new Map(); ids.forEach(id=>{ const a=store[b][id]||{}, k=gkey(a); m.set(k,Math.max(m.get(k)||0,a.n||1)) }); return [...m.values()].reduce((s,x)=>s+x,0) };
   const covered=b=>Math.min(totals[b]||0,held(b,[...seen[b]]));
   const done=b=>totals[b]!=null && covered(b)>=totals[b];
 

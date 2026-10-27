@@ -46,7 +46,11 @@ if ad:
     low = []
     for b, x in B.items():
         if x.get('total') and not x.get('list_empty'):   # counter without a list = no active ads (Meta's counter is stale)
-            c = min(x['total'], sum(a.get('n') or 1 for a in x.get('ads') or [])); p = c / x['total']
+            mx = {}   # one group can come back under several ids: count it once, with its largest number of copies
+            for a in x.get('ads') or []:
+                t = re.sub(r'\W+', ' ', ((a.get('body') or '') + ' ' + (a.get('title') or '')).lower()).strip()[:200]
+                k = (t, a.get('fmt'), a.get('start'), a.get('plat')); mx[k] = max(mx.get(k, 0), a.get('n') or 1)   # same text+format+start+platforms = one group
+            c = min(x['total'], sum(mx.values())); p = c / x['total']
             if p < .7: low.append(f'{b} {round(100 * p)}%')
     add('C3', 'Реклама: охват текстов ≥ 70% по каждому бренду', 'ok' if not low else 'warn', ('все бренды выше 70%' + ''.join(f'; {b}: счётчик Meta {x["total"]}, но объявлений нет — считаем, что рекламы нет' for b, x in B.items() if x.get('list_empty'))) if not low else 'ниже порога: ' + ', '.join(low) + ' — выводы по офферам и ценам этих брендов не делаются')
     # C4 sudden jump of a counter vs previous snapshot (could be a failed read, not a real change)
@@ -118,8 +122,10 @@ for r in R: print(f'  [{ICON[r["st"]]}] {r["id"]} {r["name"]} — {r["msg"]}')
 
 # Telegram message only when something is wrong
 tok, chat = os.environ.get('TG_BOT_TOKEN'), os.environ.get('TG_CHAT_ID')
-if overall != 'ok' and tok and chat:
-    lines = [f'Radar {NOW.strftime("%d.%m %H:%M")}: {"есть сбои" if overall == "fail" else "есть замечания"}'] + [f'{"🔴" if r["st"] == "fail" else "🟡"} {r["name"]}: {r["msg"]}' for r in R if r['st'] != 'ok']
+QUIET = {'C3'}   # a known limit of collecting without login, shown on the site; not worth a message every night
+loud = [r for r in R if r['st'] == 'fail' or (r['st'] == 'warn' and r['id'] not in QUIET)]
+if loud and tok and chat:
+    lines = [f'Radar {NOW.strftime("%d.%m %H:%M")}: {"есть сбои" if overall == "fail" else "есть замечания"}'] + [f'{"🔴" if r["st"] == "fail" else "🟡"} {r["name"]}: {r["msg"]}' for r in loud]
     try:
         urllib.request.urlopen(urllib.request.Request(f'https://api.telegram.org/bot{tok}/sendMessage', urllib.parse.urlencode({'chat_id': chat, 'text': '\n'.join(lines)[:3500]}).encode()), timeout=20)
         print('telegram sent')
