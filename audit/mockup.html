@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Макет первого экрана — Радар конкурентов</title>
+<style>
+:root{--g:#006F4C;--r:#EE3737;--bg:#F4F4F4;--card:#fff;--fg:#1d1d1f;--fg2:#5b5f66;--line:#e4e4e7;--warn:#b26a00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:14px}
+header h1{font-size:20px;margin:0}
+header h1 b{color:var(--g)}
+.st{font-size:13px;color:var(--fg2);display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--g)}
+.dot.w{background:var(--warn)}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+nav a{font-size:13px;color:var(--fg2);text-decoration:none;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line)}
+nav a.on{background:var(--g);color:#fff;border-color:var(--g)}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}nav{margin-left:0}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{font-size:16px;margin:0 0 2px}
+.sub{font-size:12.5px;color:var(--fg2);margin-bottom:10px}
+ol{list-style:none;margin:0;padding:0}
+ol li{display:grid;grid-template-columns:12px 1fr;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line)}
+ol li:first-child{border-top:0}
+.b{width:10px;height:10px;border-radius:50%;margin-top:6px}
+.what{font-weight:600}
+.do{grid-column:2;font-size:13.5px;background:#eef6f2;border-left:3px solid var(--g);padding:6px 9px;border-radius:6px}
+.do b{color:var(--g)}
+.src{grid-column:2;font-size:12px;color:var(--fg2)}
+.src a{color:var(--g)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:10px}
+.tile .n{font-size:22px;font-weight:700}
+.tile .l{font-size:12px;color:var(--fg2)}
+.tile .c{font-size:12px}
+.up{color:var(--g)} .dn{color:var(--r)}
+.chk{margin-top:14px}
+.chk li{font-size:13.5px;padding:6px 0}
+.chk .b{background:var(--warn)}
+.more{margin-top:14px;font-size:13px;color:var(--fg2)}
+.more a{color:var(--g);margin-right:12px}
+.note{margin-top:18px;font-size:12px;color:var(--fg2);border-top:1px dashed var(--line);padding-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1><b>Bellissimo</b> · радар конкурентов</h1>
+  <span class="st"><i class="dot"></i>Данные на 27.10, 10:24 · всё собрано, 1 замечание</span>
+  <nav aria-label="Разделы">
+    <a class="on" href="#">Главное</a><a href="#">Реклама и офферы</a><a href="#">Приложения</a><a href="#">Упоминания</a><a href="#">Журнал</a><a href="#">?</a>
+  </nav>
+</header>
+
+<div class="grid">
+  <section class="card" aria-labelledby="h-ch">
+    <h2 id="h-ch">Что изменилось у конкурентов</h2>
+    <div class="sub">21–27.10 · только проверенные события · у каждого — что предлагаем сделать</div>
+    <ol>
+      <li><i class="b" style="background:#7d4cdb"></i>
+        <div class="what">EVOS: новинка Chizzi-Chizz и анонс открытия в Термезе</div>
+        <div class="do"><b>Что делать:</b> проверить наши точки и рекламу в Термезе до открытия.</div>
+        <div class="src">Реклама Meta с 26.10 · <a href="#">открыть ↗</a></div></li>
+      <li><i class="b" style="background:#7d4cdb"></i>
+        <div class="what">EVOS поднялся в App Store: в среднем #1,7 за неделю (было #11,6), мы #3,6</div>
+        <div class="do"><b>Что делать:</b> посмотреть их акции в приложении (кешбэк 5% бонусами) и сравнить с нашей механикой.</div>
+        <div class="src">Чарт «Еда и напитки», 7 дней к 7 · <a href="#">приложения →</a></div></li>
+      <li><i class="b" style="background:#e4002b"></i>
+        <div class="what">KFC: 1+1 по средам, 28.10 — 1+1 на открытии в Намангане (74 000 → 37 000)</div>
+        <div class="do"><b>Что делать:</b> решить, нужен ли ответ в Намангане на этой неделе.</div>
+        <div class="src">Реклама Meta с 22.10, цена с картинки · <a href="#">открыть ↗</a></div></li>
+      <li><i class="b" style="background:#ff6900"></i>
+        <div class="what">Dodo: «3 пиццы 20–25 см от 89 000». У нас «3 пиццы 20 см от 84 000»</div>
+        <div class="do"><b>Что делать:</b> ничего, наша цена ниже на 5 000. Следить.</div>
+        <div class="src">Реклама Meta, тот же набор: 3 пиццы · <a href="#">цены →</a></div></li>
+      <li><i class="b" style="background:#0a84ff"></i>
+        <div class="what">MaxWay: с 26.10 реклама не читается; до этого шла акция «второй в подарок»</div>
+        <div class="do"><b>Что делать:</b> открыть их Ad Library вручную и проверить, идёт ли акция.</div>
+        <div class="src">Нет данных, а не «нет рекламы» · <a href="#">открыть ↗</a></div></li>
+    </ol>
+  </section>
+
+  <div>
+    <section class="card" aria-labelledby="h-us">
+      <h2 id="h-us">Мы</h2>
+      <div class="sub">неделя к прошлой неделе</div>
+      <div class="tiles">
+        <div class="tile"><div class="l">App Store, место</div><div class="n">#3,6</div><div class="c dn">было #3,4</div></div>
+        <div class="tile"><div class="l">Google Play</div><div class="n">★ 4,71</div><div class="c">45 857 оценок</div></div>
+        <div class="tile"><div class="l">Негатив, 30 дней</div><div class="n">12%</div><div class="c">без YouTube</div></div>
+        <div class="tile"><div class="l">Главная тема негатива</div><div class="n" style="font-size:16px">Размер порции</div><div class="c">33 упоминания за 30 дней</div></div>
+      </div>
+    </section>
+    <section class="card chk" aria-labelledby="h-chk">
+      <h2 id="h-chk">Требует проверки</h2>
+      <ol>
+        <li><i class="b"></i><div>3 из 19 лент СМИ не открылись: UzReport, Kruz.uz, Xabar.uz</div></li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<div class="more">Дальше: <a href="#">таблица брендов</a><a href="#">все события за 30 дней</a><a href="#">галерея рекламы</a></div>
+
+<p class="note">Макет первого экрана для аудита. Цифры из данных 27.10 с поправками из аудита: негатив без YouTube (A1), без ложных событий (A2, A3), с пропущенными новинкой и открытием EVOS (A8), цена набора сравнивается с таким же набором (A7). Тексты «Что делать» — правила, а не ИИ.</p>
+</div>
+</body>
+</html>
