@@ -595,7 +595,8 @@ def rematch():
     back from the export, so they are checked again. YouTube videos are checked by title + description, fetched once per video."""
     key = secret('youtube_key.txt'); base = lambda i: i.split('#')[0]
     rows = db.execute("SELECT id,source,kind,brand,text,scope,parent FROM items WHERE source IN ('yt','tg','media') AND scope IN ('earned','context')").fetchall()
-    done = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='rematch' AND source='yt'")}
+    ver = int(hashlib.md5(json.dumps(CFG.get('brands'), sort_keys=True).encode()).hexdigest()[:7], 16)   # recheck everything when the dictionary changes
+    done = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='rematch' AND source='yt' AND value=?", (ver,))}
     vids = sorted({base(r[0])[4:] for r in rows if r[1] == 'yt' and r[2] == 'video'} - done)
     meta = {}
     if key:
@@ -621,7 +622,7 @@ def rematch():
             if r[3] not in ok: db.execute('DELETE FROM items WHERE id=?', (r[0],)); dropped += 1
         if src == 'yt' and kind == 'video':
             video_brands[b_id[4:]] = ok & {r[3] for r in rs}
-            db.execute("INSERT OR REPLACE INTO snap VALUES ('rematch','yt',?,1)", (b_id[4:],))
+            db.execute("INSERT OR REPLACE INTO snap VALUES ('rematch','yt',?,?)", (b_id[4:], ver))
     for b_id, rs in groups.items():   # comments under a video that is no longer ours go with it
         r = rs[0]
         if r[5] == 'context' and r[1] == 'yt' and r[6] in video_brands and not video_brands[r[6]]:
