@@ -1,89 +1,91 @@
-kfc base count=140 groups=9 new=0 covered=89/140
-evos base count=12 groups=10 new=0 covered=7/12
-oqtepa base count=112 groups=15 new=0 covered=112/112
-dodo base count=69 groups=26 new=0 covered=53/69
+kfc base count=94 groups=10 new=10 covered=83/94
+evos base count=12 groups=10 new=10 covered=7/12
+oqtepa base count=112 groups=15 new=15 covered=49/112
+dodo base count=69 groups=25 new=25 covered=33/69
 maxway base empty list, retry
 maxway base empty list, retry
 maxway base still empty
-uzum base count=72 groups=28 new=0 covered=45/72
-bellissimo base count=89 groups=20 new=0 covered=50/89
-sariqbola base count=18 groups=9 new=0 covered=14/18
-hardees base count=4 groups=4 new=0 covered=2/4
-safia base count=22 groups=15 new=0 covered=22/22
+uzum base count=72 groups=28 new=28 covered=30/72
+bellissimo base count=89 groups=21 new=21 covered=36/89
+sariqbola base count=18 groups=9 new=9 covered=14/18
+hardees base count=0 groups=0 new=0 covered=0/0
+safia base count=22 groups=15 new=15 covered=22/22
 maxway asc empty list, retry
 maxway asc empty list, retry
 maxway asc still empty
-hardees asc count=4 groups=4 new=0 covered=2/4
-bellissimo asc count=89 groups=10 new=0 covered=50/89
+bellissimo asc count=89 groups=10 new=7 covered=45/89
+uzum asc count=72 groups=22 new=17 covered=40/72
+oqtepa asc count=112 groups=20 new=20 covered=112/112
+dodo asc count=69 groups=22 new=15 covered=52/69
 evos asc count=12 groups=10 new=2 covered=7/12
-uzum asc count=72 groups=22 new=0 covered=45/72
-kfc asc count=140 groups=15 new=0 covered=89/140
-dodo asc count=69 groups=23 new=0 covered=53/69
 sariqbola asc count=18 groups=9 new=0 covered=14/18
+kfc asc count=94 groups=15 new=12 covered=89/94
 maxway ru empty list, retry
 maxway ru empty list, retry
 maxway ru still empty
-hardees ru count=3 groups=3 new=0 covered=2/4
-bellissimo ru count=67 groups=21 new=0 covered=50/89
+bellissimo ru count=67 groups=22 new=6 covered=50/89
+uzum ru count=9 groups=9 new=0 covered=40/72
 evos ru count=12 groups=10 new=0 covered=7/12
-uzum ru count=9 groups=9 new=0 covered=45/72
-kfc ru count=65 groups=7 new=3 covered=89/140
-dodo ru count=28 groups=22 new=0 covered=53/69
+dodo ru count=27 groups=21 new=6 covered=60/69
 sariqbola ru count=0 groups=0 new=0 covered=14/18
+kfc ru count=52 groups=7 new=3 covered=89/94
 maxway uz empty list, retry
 maxway uz empty list, retry
 maxway uz still empty
-hardees uz count=0 groups=0 new=0 covered=2/4
+uzum uz count=52 groups=24 new=7 covered=44/72
 bellissimo uz count=2 groups=2 new=0 covered=50/89
 evos uz count=0 groups=0 new=0 covered=7/12
-uzum uz count=52 groups=24 new=0 covered=45/72
-kfc uz count=72 groups=8 new=3 covered=89/140
-dodo uz count=33 groups=24 new=0 covered=53/69
 sariqbola uz count=8 groups=1 new=0 covered=14/18
+dodo uz count=34 groups=23 new=3 covered=62/69
+kfc uz count=39 groups=8 new=3 covered=89/94
 maxway ru-asc empty list, retry
 maxway ru-asc empty list, retry
 maxway ru-asc still empty
-hardees ru-asc count=3 groups=3 new=0 covered=2/4
-bellissimo ru-asc count=67 groups=9 new=0 covered=50/89
+bellissimo ru-asc count=67 groups=9 new=2 covered=50/89
 evos ru-asc count=12 groups=10 new=0 covered=7/12
-uzum ru-asc count=9 groups=9 new=0 covered=45/72
-kfc ru-asc count=65 groups=10 new=5 covered=93/140
-dodo ru-asc count=28 groups=22 new=1 covered=53/69
+uzum ru-asc count=9 groups=9 new=0 covered=44/72
 sariqbola ru-asc count=0 groups=0 new=0 covered=14/18
+dodo ru-asc count=27 groups=21 new=1 covered=62/69
+kfc ru-asc count=52 groups=10 new=5 covered=94/94
 maxway uz-asc empty list, retry
 maxway uz-asc empty list, retry
 maxway uz-asc still empty
-hardees uz-asc count=0 groups=0 new=0 covered=2/4
 bellissimo uz-asc count=2 groups=2 new=0 covered=50/89
 evos uz-asc count=0 groups=0 new=0 covered=7/12
-uzum uz-asc count=52 groups=21 new=0 covered=45/72
-kfc uz-asc count=72 groups=10 new=0 covered=93/140
-dodo uz-asc count=33 groups=22 new=1 covered=54/69
+uzum uz-asc count=52 groups=21 new=1 covered=44/72
 sariqbola uz-asc count=8 groups=1 new=0 covered=14/18
+dodo uz-asc count=34 groups=20 new=1 covered=63/69
 maxway en count=0 groups=0 new=0 covered=0/7
-hardees en count=1 groups=1 new=0 covered=2/4
 bellissimo en count=0 groups=0 new=0 covered=50/89
 evos en count=0 groups=0 new=0 covered=7/12
-uzum en count=0 groups=0 new=0 covered=45/72
-kfc en count=0 groups=0 new=0 covered=93/140
+uzum en count=0 groups=0 new=0 covered=44/72
 sariqbola en count=0 groups=0 new=0 covered=14/18
-dodo en count=0 groups=0 new=0 covered=54/69
+dodo en count=0 groups=0 new=0 covered=63/69
+bellissimo video count=45 groups=15 new=0 covered=50/89
 evos video count=3 groups=3 new=0 covered=7/12
-kfc video count=89 groups=7 new=0 covered=93/140
-dodo video count=3 groups=3 new=0 covered=54/69
+uzum video count=31 groups=27 new=1 covered=45/72
+sariqbola video count=15 groups=8 new=0 covered=14/18
+dodo video count=3 groups=3 new=0 covered=63/69
+bellissimo image count=0 groups=0 new=0 covered=50/89
 evos image count=0 groups=0 new=0 covered=7/12
-kfc image count=0 groups=0 new=0 covered=93/140
-dodo image count=0 groups=0 new=0 covered=54/69
-kfc instagram count=140 groups=9 new=0 covered=93/140
-dodo instagram count=69 groups=26 new=0 covered=54/69
-kfc facebook count=86 groups=8 new=2 covered=93/140
-dodo facebook count=68 groups=26 new=0 covered=54/69
-kfc video-asc count=89 groups=9 new=0 covered=94/140
-dodo video-asc count=3 groups=3 new=0 covered=54/69
-kfc image-asc count=0 groups=0 new=0 covered=94/140
-dodo image-asc count=0 groups=0 new=0 covered=54/69
-kfc instagram-asc count=140 groups=15 new=0 covered=94/140
-kfc facebook-asc count=86 groups=14 new=5 covered=115/140
-kfc ig-video count=89 groups=7 new=0 covered=115/140
-kfc fb-video count=53 groups=5 new=0 covered=115/140
-adlib OK kfc:140/115 evos:12/9 oqtepa:112/112 dodo:69/56 maxway:7/0 uzum:72/45 bellissimo:89/58 sariqbola:18/14 hardees:4/2 safia:22/22
+uzum image count=1 groups=1 new=0 covered=45/72
+dodo image count=0 groups=0 new=0 covered=63/69
+bellissimo instagram count=89 groups=21 new=0 covered=50/89
+uzum instagram count=72 groups=27 new=0 covered=45/72
+dodo instagram count=69 groups=25 new=0 covered=63/69
+bellissimo facebook count=89 groups=21 new=0 covered=50/89
+uzum facebook count=72 groups=27 new=0 covered=45/72
+dodo facebook count=68 groups=25 new=0 covered=63/69
+bellissimo video-asc count=45 groups=10 new=2 covered=56/89
+uzum video-asc count=31 groups=27 new=0 covered=45/72
+dodo video-asc count=3 groups=3 new=0 covered=63/69
+uzum image-asc count=1 groups=1 new=0 covered=45/72
+bellissimo image-asc count=0 groups=0 new=0 covered=56/89
+dodo image-asc count=0 groups=0 new=0 covered=63/69
+uzum instagram-asc count=72 groups=22 new=0 covered=45/72
+bellissimo instagram-asc count=89 groups=10 new=0 covered=56/89
+uzum facebook-asc count=72 groups=22 new=0 covered=45/72
+bellissimo facebook-asc count=89 groups=10 new=0 covered=56/89
+bellissimo ig-video count=45 groups=15 new=0 covered=56/89
+bellissimo fb-video count=45 groups=15 new=0 covered=56/89
+adlib OK kfc:94/94 evos:12/9 oqtepa:112/112 dodo:69/66 maxway:7/0 uzum:72/45 bellissimo:89/60 sariqbola:18/14 hardees:0/0 safia:22/22

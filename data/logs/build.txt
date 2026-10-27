@@ -1,20 +1,20 @@
-ads 296 active 278 thumbs 296 insights 15 dates ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27']
-journal 34 events; 9 high
+ads 302 active 284 thumbs 302 insights 14 dates ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28']
+journal 65 events; 32 high
 _site:
-total 468
-drwxr-xr-x  3 runner runner   4096 Oct 27 07:03 .
-drwxr-xr-x 11 runner runner   4096 Oct 27 07:03 ..
--rw-r--r--  1 runner runner      0 Oct 27 07:03 .nojekyll
--rw-r--r--  1 runner runner  65752 Oct 27 07:03 app.js
-drwxr-xr-x  2 runner runner   4096 Oct 27 07:03 data
--rw-r--r--  1 runner runner  49036 Oct 27 07:03 index.html
--rw-r--r--  1 runner runner  40206 Oct 27 07:03 mentions.js
--rw-r--r--  1 runner runner 305165 Oct 27 07:03 mentions_data.json
+total 484
+drwxr-xr-x  3 runner runner   4096 Oct 27 23:13 .
+drwxr-xr-x 12 runner runner   4096 Oct 27 23:13 ..
+-rw-r--r--  1 runner runner      0 Oct 27 23:13 .nojekyll
+-rw-r--r--  1 runner runner  66822 Oct 27 23:13 app.js
+drwxr-xr-x  2 runner runner   4096 Oct 27 23:13 data
+-rw-r--r--  1 runner runner  49926 Oct 27 23:13 index.html
+-rw-r--r--  1 runner runner  40270 Oct 27 23:13 mentions.js
+-rw-r--r--  1 runner runner 319061 Oct 27 23:13 mentions_data.json
 
 _site/data:
-total 3664
-drwxr-xr-x 2 runner runner    4096 Oct 27 07:03 .
-drwxr-xr-x 3 runner runner    4096 Oct 27 07:03 ..
--rw-r--r-- 1 runner runner  377048 Oct 27 07:03 comp.json
--rw-r--r-- 1 runner runner   10687 Oct 27 07:03 journal.json
--rw-r--r-- 1 runner runner 3348416 Oct 27 07:03 thumbs.json
+total 3756
+drwxr-xr-x 2 runner runner    4096 Oct 27 23:13 .
+drwxr-xr-x 3 runner runner    4096 Oct 27 23:13 ..
+-rw-r--r-- 1 runner runner  388102 Oct 27 23:13 comp.json
+-rw-r--r-- 1 runner runner   26313 Oct 27 23:13 journal.json
+-rw-r--r-- 1 runner runner 3417506 Oct 27 23:13 thumbs.json
