@@ -86,7 +86,7 @@ function blocks(){const R=range(),out=[];
  const base=(st,br)=>{const rows=D.rat.filter(r=>r[1]===br&&r[2]===st&&r[0]>=R.a&&r[0]<=R.b);return rows.length>1&&nd(rows[0][0],rows[rows.length-1][0])>=3?rows[0]:null};
  const PLB=PL(),OKP=prevOk(Object.keys(O.s),R),NOC='<span class="note" data-tip="За прошлый период у части источников данных нет: сбор начался позже. Сравнение было бы ложным.">нет сравнения: за '+PLB+' данные неполные</span>';
  const ver=[],al=[];
- ver.push(`<p><b>Репутация за период:</b> наших упоминаний ${O.t}, негатив ${negPct(O).toFixed(0)}%${OP.t&&OKP?` (за ${PLB}: ${negPct(OP).toFixed(0)}%)`:""}.</p>`);
+ ver.push(`<p><b>Репутация за период:</b> отзывов и комментариев о нас ${O.t}, негатив ${negPct(O).toFixed(0)}%${OP.t&&OKP?` (за ${PLB}: ${negPct(OP).toFixed(0)}%)`:""}.</p>`);
  const sk=Object.keys(S.sh).filter(b=>!S.low[b]).sort((x,y)=>S.sh[y]-S.sh[x]);
  if(T.ok&&T.sh.bellissimo!=null){const rk=Object.keys(T.sh).sort((x,y)=>T.c[y]-T.c[x]);ver.push(`<p><b>Обсуждения:</b> наша доля ${pc(T.sh.bellissimo)}, ${rk.indexOf("bellissimo")+1}-е место (публикаций всего ${T.tot}).</p>`)}else ver.push(`<p><b>Обсуждения:</b> публикаций за период ${T.tot}, для доли нужно не меньше ${D.min_n}.</p>`);
  if(rp.ok||ra.ok){const m=(st,x)=>x.c.bellissimo!=null?`${st}: наших отзывов ${x.c.bellissimo}`:"";ver.push(`<p><b>Отзывы в приложениях:</b> ${[m("Play",rp),m("App Store",ra)].filter(Boolean).join(", ")||"наших отзывов нет"}.</p>`)}

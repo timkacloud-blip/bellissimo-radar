@@ -38,6 +38,9 @@ jobs:
           if [ "$IGH" -ge 10 ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC ig ads igc"; fi
           echo "sources: $SRC" 
           python3 mentions/collect.py $SRC 2>&1 | tee mentions.log
+      - name: Re-check sentiment with the current dictionary
+        env: { MENTIONS_DB: state/mentions_data.db }
+        run: python3 mentions/collect.py reanalyze
       - name: Build data for the tab
         run: python3 mentions/build.py state/mentions_data.db site/mentions_data.json
       - name: Check the DB before saving (a broken DB must not overwrite the good one)

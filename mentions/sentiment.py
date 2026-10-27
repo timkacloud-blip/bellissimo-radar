@@ -27,6 +27,7 @@ jirkanch, bezor, qimmat, qimat, xafa, rezil, sharmanda, buzilgan, bekor, yetkazm
 musor, dabdala, aynig, aynib, yoqmad, yoqmay, yoqmag, yoqmed, yoqtirm, bemaza, pishmagan, hayf, xayf, aldam, sifatsiz, yaramay, iflos,
 to'ydirm, toydirm, tuydirm, to'ymas, toymas, to'ymay, toymay, tuymay, tuymim, toymim, to'ymim, tuymid, toymid, to'ymid, tuymad, toymad, to'ymad,
 kichkin, yeb qo'yaman, yeb beraman, o'zim yeb, ozim yeb, uzim yeb, bitta o'zim, bir o'zim, bir uzim, bittada, o'zim yiy, ozim yiy, uzim yiy,
+bir ozim, bitta ozim, bitta uzim, ozim yiv, o'zim yiv, uzim yiv, ozim yev, o'zim yev, toyamanmi, toyamanov, to'yamanmi, toyamizmi, to'yamizmi, не наемся,
 zorga yet, zo'rga yet, yetmay, yetmag, kalla bilan, rostini ayt, chiqmayap, ochilmay, kirmay, yuklanmay, siri yo, sir yo, siri yu, past sort,
 mazasi yu, mazasi yo, maza-matras, mazamatras, ta'mi yu, ta'mi yo, tami yu, tami yo, tushirvord, tuwirvord, bulmay, bo'lmay, bulmagur, bo'lmagur""")
 
@@ -78,7 +79,15 @@ def analyze(text, rating=None):
         if re.match(r"(mi|misiz|misan|mis)\b", rest): continue            # «yaxshimisiz» — приветствие, не оценка
         if set(before) & NEGATORS or 'emas' in after or re.match(r"(mas|emas|emes)\b", rest): neg += 1
         else: pos += 1
-    neg += sum(1 for r in _NEG if r.search(t))
+    for r in _NEG:
+        m = r.search(t)
+        if not m: continue
+        if re.match(r"[a-z']*masa", t[m.start():m.start() + 25]): continue   # «agar zakaz kechikmasa» = «если не опоздаете»: условие, не жалоба
+        neg += 1
+    # laughing about the portion («4 5 kisimas bir ozim yivoraman 🤣»): sarcasm, the portion is small
+    if not rating and any(e in text for e in '🤣😂😅') and re.search(r"(?<![a-z'])(kishi|kisi|ozim|o'zim|uzim|porsiya|kichkin|toy|to'y|tuy|ports|malenk|naed)", t):
+        neg += 2
+        if 'Размер порции' not in themes: themes.append('Размер порции')
     if pos and neg and _PAST.search(t): pos = 0                           # «раньше было хорошо, теперь плохо»
     if len(words) <= 2:                                                   # эмодзи считаем только у совсем коротких реплик
         pos += min(2, sum(text.count(e) for e in POS_EMOJI)); neg += min(2, sum(text.count(e) for e in NEG_EMOJI))

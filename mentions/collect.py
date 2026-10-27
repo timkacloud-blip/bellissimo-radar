@@ -66,10 +66,20 @@ def save(source, kind, id_, ts, text, rating=None, url=None, parent=None, brand=
     text = PHONE.sub('[тел]', (text or '').strip())
     if not text and not rating: return 0
     s, th = analyze(text, rating)
+    s, th = about_other(text, brand, scope, s, th)
     cur = db.execute('INSERT OR IGNORE INTO items(id,source,kind,brand,date,ts,text,rating,sentiment,themes,url,parent,seen,scope,thash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         (id_, source, kind, brand, day(ts), ts, text[:2000], rating, s, '|'.join(th), url, parent,
          dt.datetime.now(TZ).strftime('%Y-%m-%d %H:%M'), scope, thash(text)))
     return cur.rowcount
+
+def about_other(text, brand, scope, s, th):
+    """A comment under our post that praises another brand («Энг зор пицца … ДОДА ПИЦЦА ЭКАН 👍») is not praise for us."""
+    if brand != 'bellissimo' or scope != 'owned': return s, th
+    t = norm(text or '')   # names only: under our post the context words of another brand's rule are not needed
+    other = [b for b, p in globals().get('_bp', {}).items() if b != 'bellissimo' and any(r.search(t) for k in ('names', 'typos') for r in p[k])
+             and not any(r.search(t) for r in p['minus'])]
+    if not other: return s, th
+    return ('neg' if s == 'pos' else 'neu' if s == 'neg' else s), ['Хвалят конкурента' if s == 'pos' else 'Про конкурента']
 
 def save_multi(brands, source, kind, id_, ts, text, scope, **kw):
     """Одно сообщение — по строке на каждый названный бренд."""
@@ -583,8 +593,8 @@ def run_trends():
 def reanalyze():
     """Пересчёт тональности по всей истории (после правок словаря) и маскировка телефонов."""
     ch = 0
-    for id_, text, rating, sent, th in db.execute('SELECT id, text, rating, sentiment, themes FROM items').fetchall():
-        t2 = PHONE.sub('[тел]', text or ''); s2, th2 = analyze(t2, rating); th2 = '|'.join(th2)
+    for id_, text, rating, sent, th, brand, scope in db.execute('SELECT id, text, rating, sentiment, themes, brand, scope FROM items').fetchall():
+        t2 = PHONE.sub('[тел]', text or ''); s2, th2 = analyze(t2, rating); s2, th2 = about_other(t2, brand, scope, s2, th2); th2 = '|'.join(th2)
         if (t2, s2, th2) != (text, sent, th):
             db.execute('UPDATE items SET text=?, sentiment=?, themes=? WHERE id=?', (t2, s2, th2, id_)); ch += 1
     db.commit(); return ch
