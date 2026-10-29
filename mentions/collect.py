@@ -412,17 +412,20 @@ def run_tgw():
     print('  tgw: подключаюсь (%s), каналов в кэше %d из %d' % ('первый проход: посты %d дн, комментарии %d дн' % (pdays, cdays) if first else 'обновление', sum(1 for h in watch if h in cache), len(watch)), flush=True)
     with TelegramClient(os.path.join(HERE, 'tg2'), int(api_id), api_hash) as c:
         for i, (h, typ) in enumerate(watch.items(), 1):
-            if first and db.execute("SELECT 1 FROM snap WHERE date='full' AND source='tgw' AND key=?", (h,)).fetchone(): continue   # уже прочитан в первом проходе
+            done_h = db.execute("SELECT 1 FROM snap WHERE date='full' AND source='tgw' AND key=?", (h,)).fetchone()
+            if first and done_h: continue   # уже прочитан в первом проходе
+            # канал, добавленный в список позже, один раз читается на 30 дней назад (группы и чаты веб-лента не показывает, их видит только Mac)
+            pd_h, cd_h = (pdays, cdays) if (first or done_h) else (30, 7)
             try:
                 main, linked, mid, lid = peer(h, c)
-                g1, t1 = scan(c, main, now - dt.timedelta(days=pdays), 'post', mid, h, typ, False)
+                g1, t1 = scan(c, main, now - dt.timedelta(days=pd_h), 'post', mid, h, typ, False)
                 g2 = t2 = 0
                 if linked:
-                    try: g2, t2 = scan(c, linked, now - dt.timedelta(days=cdays), 'mention', lid, h, typ, True)
+                    try: g2, t2 = scan(c, linked, now - dt.timedelta(days=cd_h), 'mention', lid, h, typ, True)
                     except FloodWaitError: raise
                     except Exception as ex: note.append(f'{h} комментарии: {type(ex).__name__}')
                 n += g1 + g2; done += 1
-                if first: db.execute("INSERT OR REPLACE INTO snap VALUES ('full','tgw',?,1)", (h,))
+                if first or not done_h: db.execute("INSERT OR REPLACE INTO snap VALUES ('full','tgw',?,1)", (h,))
                 db.commit()
                 print(f'  [{i}/{len(watch)}] @{h}: постов просмотрено {t1}, комментариев {t2}, упоминаний новых {g1 + g2}', flush=True)
             except FloodWaitError as ex:
