@@ -62,7 +62,7 @@ jobs:
       - name: Publish data
         run: |
           git config user.name Claude && git config user.email noreply@anthropic.com
-          git add site/mentions_data.json && (git commit -qm "mentions $(date -u +%F\ %H:%M)" || echo nothing)
+          git add site/mentions_data.json site/mentions_feed.json && (git commit -qm "mentions $(date -u +%F\ %H:%M)" || echo nothing)
           for i in 1 2 3; do git pull --rebase -X theirs -q && git push -q && break || sleep 5; done
       - name: Republish the site with the new mentions
         env: { GH_TOKEN: '${{ github.token }}' }

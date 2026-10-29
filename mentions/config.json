@@ -239,21 +239,57 @@
     "#oqtepa"
    ],
    "plus": [
-    "лаваш",
     "lavash",
+    "лаваш",
+    "шаурм",
+    "shaurma",
+    "burger",
     "бургер",
-    "доставка",
-    "промокод"
+    "yetkaz",
+    "доставк",
+    "buyurtma",
+    "заказ",
+    "promokod",
+    "промокод",
+    "oqtepalavash",
+    "#oqtepa",
+    "fastfud",
+    "фастфуд",
+    "kombo",
+    "комбо",
+    "filial",
+    "филиал",
+    "ilova",
+    "приложен",
+    "evos",
+    "kfc",
+    "safia",
+    "maxway"
    ],
    "minus": [
-    "квартира",
+    "avariya",
+    "bazmgoh",
+    "bozor",
+    "elektr",
+    "mahalla",
+    "mol bozor",
+    "to'yxona",
+    "tuman",
+    "авария",
     "аренда",
+    "базар",
+    "бозор",
+    "квартира",
+    "круг",
     "махалля",
+    "маҳалла",
+    "свет",
     "сохил",
-    "круг"
+    "туман",
+    "тўйхона"
    ],
    "geo": [],
-   "require": ""
+   "require": "plus"
   },
   "dodo": {
    "names": [
@@ -744,10 +780,7 @@
   "https://uza.uz/uz/rss": "UzA",
   "https://nuz.uz/feed/": "Nuz.uz",
   "https://tashkenttimes.uz/?format=feed&type=atom": "Tashkent Times",
-  "https://uzreport.news/feed/rss/ru": "UzReport",
-  "https://kruz.uz/uz/news/rss": "Kruz.uz",
   "https://podrobno.uz/rss/": "Podrobno.uz",
-  "https://www.xabar.uz/rss": "Xabar.uz",
   "https://www.uzdaily.uz/en/rss": "UzDaily",
   "https://uz.sputniknews.ru/export/rss2/archive/index.xml": "Sputnik UZ",
   "https://spot.uz/ru/rss/": "Spot.uz",
@@ -756,6 +789,15 @@
   "https://review.uz/rss": "Review.uz",
   "https://www.gazeta.uz/uz/rss": "Gazeta.uz (uz)",
   "https://daryo.uz/ru/rss": "Daryo (ru)",
-  "https://www.uzdaily.uz/ru/rss": "UzDaily (ru)"
+  "https://www.uzdaily.uz/ru/rss": "UzDaily (ru)",
+  "https://kun.uz/news/rss?lang=ru": "Kun.uz (ru)",
+  "https://www.uzdaily.uz/uz/rss/": "UzDaily (uz)",
+  "https://anhor.uz/api/rss?locale=ru": "Anhor.uz",
+  "https://aniq.uz/yangiliklar/rss": "Aniq.uz",
+  "https://upl.uz/rss.xml": "Upl.uz",
+  "https://www.gazeta.uz/oz/rss": "Gazeta.uz (ўз)",
+  "https://hook.report/feed/": "Hook.report",
+  "https://uz.kursiv.media/feed/": "Kursiv Uzbekistan",
+  "https://new.uz/rss": "New.uz"
  }
 }

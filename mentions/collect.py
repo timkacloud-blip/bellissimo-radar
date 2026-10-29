@@ -445,14 +445,28 @@ def run_tgweb():
     import html as _h
     watch = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
     have = {r[0] for r in db.execute("SELECT url FROM items WHERE source='tg' AND url IS NOT NULL")}
-    since = time.time() - 3 * 86400; n = 0; bad = []; ok = 0
+    full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source='tgweb'")}
+    today = dt.datetime.now(TZ).strftime('%Y-%m-%d')
+    def cnt(x):   # "92.8K" -> 92800
+        x = (x or '').strip().replace(' ', '').replace(',', '.'); m = {'K': 1e3, 'M': 1e6}.get(x[-1:].upper(), 1)
+        try: return int(float(x[:-1] if m > 1 else x) * m)
+        except Exception: return None
+    n = 0; bad = []; ok = 0; backfill = 0
     for h, typ in watch.items():
+        # a channel added to the list is read 30 days back once (in portions: at most 25 such channels per run), then 3 days
+        first = h not in full and backfill < 25
+        if first: backfill += 1
+        if h not in full and not first: continue
+        since = time.time() - (30 if first else 3) * 86400
         try:
             before = ''; got_ch = 0; seen_any = False
-            for page in range(6):
+            for page in range(15 if first else 6):
                 req = urllib.request.Request(f'https://t.me/s/{h}' + (f'?before={before}' if before else ''), headers={'User-Agent': 'Mozilla/5.0 (compatible; MentionsBot)'})
                 doc = urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'replace')
                 parts = doc.split('data-post="')[1:]
+                if page == 0:   # channel size: the reach of a publication in it
+                    m = re.search(r'counter_value">([^<]+)</span>\s*<span class="counter_type">(subscribers|подписчик|members)', doc)
+                    if m and cnt(m.group(1)): db.execute("INSERT OR REPLACE INTO snap VALUES (?,?,?,?)", (today, 'tgch', h, cnt(m.group(1))))
                 if not parts: break
                 seen_any = True; oldest = None; first_id = None
                 for blk in parts:
@@ -470,18 +484,28 @@ def run_tgweb():
                     if not t: continue
                     text = re.sub(r'\s+', ' ', _h.unescape(re.sub(r'<[^>]+>', '', re.sub(r'<br\s*/?>', ' ', t.group(1))))).strip()
                     url = f'https://t.me/{ref}'
-                    if ts < since or not text or url in have: continue
+                    if ts < since or not text: continue
+                    if url in have:   # already saved: only refresh its views
+                        v = re.search(r'tgme_widget_message_views">([^<]+)<', blk)
+                        if v and cnt(v.group(1)): db.execute("INSERT OR REPLACE INTO snap VALUES ('v','tgviews',?,?)", (url, cnt(v.group(1))))
+                        continue
                     bl = match_brands(text)
-                    if bl: got_ch += save_multi(bl, 'tg', 'post', f'tgweb:{ref}', ts, text, 'earned', url=url, parent='w:' + typ)
+                    if bl:
+                        got_ch += save_multi(bl, 'tg', 'post', f'tgweb:{ref}', ts, text, 'earned', url=url, parent='w:' + typ)
+                        v = re.search(r'tgme_widget_message_views">([^<]+)<', blk)
+                        if v and cnt(v.group(1)): db.execute("INSERT OR REPLACE INTO snap VALUES ('v','tgviews',?,?)", (url, cnt(v.group(1))))
                 if oldest is None or oldest < since or first_id is None: break
                 before = first_id
                 time.sleep(1)
             if not seen_any: raise RuntimeError('нет публичной ленты')
-            n += got_ch; ok += 1; db.commit()
+            n += got_ch; ok += 1
+            if first: db.execute("INSERT OR REPLACE INTO snap VALUES ('full','tgweb',?,1)", (h,))
+            db.commit()
         except Exception as ex:
             bad.append(f'@{h}: {type(ex).__name__}')
         time.sleep(0.7)
-    return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
+    wait = sum(1 for h in watch if h not in full) - backfill
+    return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + (f'; новых каналов дочитано за 30 дней: {backfill}, ждут очереди: {wait}' if backfill or wait > 0 else '') + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
 
 # ---------- СМИ и газеты: ленты RSS/Atom (заголовок и анонс; полный текст не читаем) ----------
 def run_media():
@@ -609,12 +633,13 @@ def rematch():
     ver = int(hashlib.md5(json.dumps(CFG.get('brands'), sort_keys=True).encode()).hexdigest()[:7], 16)   # recheck everything when the dictionary changes
     done = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='rematch' AND source='yt' AND value=?", (ver,))}
     vids = sorted({base(r[0])[4:] for r in rows if r[1] == 'yt' and r[2] == 'video'} - done)
-    meta = {}
+    meta = {}; asked = set()
     if key:
         for i in range(0, len(vids), 50):
             try:
                 for v in http('https://www.googleapis.com/youtube/v3/videos?' + urllib.parse.urlencode({'part': 'snippet', 'id': ','.join(vids[i:i + 50]), 'key': key})).get('items', []):
                     meta[v['id']] = v['snippet']['title'] + ' ' + v['snippet']['description']
+                asked |= set(vids[i:i + 50])
             except RuntimeError: break
     groups = {}
     for r in rows: groups.setdefault(base(r[0]), []).append(r)
@@ -625,8 +650,8 @@ def rematch():
         if src == 'yt' and kind == 'video':
             vid = b_id[4:]
             if vid in done: video_brands[vid] = {r[3] for r in rs}; continue
-            if vid not in meta: video_brands[vid] = {r[3] for r in rs}; continue   # deleted or private video / no key: leave as is
-            text = meta[vid]
+            if vid not in meta and vid not in asked: video_brands[vid] = {r[3] for r in rs}; continue   # not checked yet (no key or quota): leave as is
+            text = meta.get(vid) or rs[0][4] or ''   # deleted or private video: judge by the stored title
         else: text = rs[0][4] or ''
         ok = set(match_brands(text))
         for r in rs:
