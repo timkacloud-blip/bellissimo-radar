@@ -29,6 +29,10 @@ const CSS=`#p-mn tr.me td{background:var(--acc-soft);font-weight:650}#p-mn .info
 #p-mn .seg{display:inline-flex;gap:2px;background:var(--bg2);border-radius:10px;padding:2px;flex-wrap:wrap}#p-mn .seg button{border:0;background:none;border-radius:8px;padding:5px 11px;cursor:pointer;color:var(--fg2);font-size:12px}
 #p-mn .seg button[aria-pressed="true"]{background:var(--card-solid);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 #p-mn input[type=date]{background:var(--card-solid);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font:inherit;font-size:12.5px}
+#p-mn .fctl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}#p-mn .tbl{overflow-x:auto}#p-mn .fctl select{flex:1 1 150px;min-width:0}#p-mn .fctl select,#p-mn .fctl input{background:var(--card-solid);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;max-width:100%}#p-mn .fctl input{flex:1;min-width:160px}
+#p-mn .fitem{border-top:1px solid var(--line);padding:10px 0}#p-mn .fh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}#p-mn .ft{margin:6px 0 4px;font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}#p-mn .ft mark{background:var(--acc-soft);color:inherit;border-radius:3px;padding:0 2px}
+#p-mn .fm{font-size:12px;color:var(--fg2)}#p-mn .fm a{color:var(--acc)}#p-mn .fm summary{color:var(--fg2)}#p-mn h2.sect{font-size:17px}
+#p-mn .mnwhere>div{min-width:0}@media (max-width:700px){#p-mn .mnwhere{grid-template-columns:1fr!important}}
 #p-mn td .pill{font-weight:500}#p-mn .tbl td:nth-child(-n+2),#p-mn .tbl th:nth-child(-n+2){text-align:left}#p-mn .chip i{flex:none}#p-mn svg [data-tip]{cursor:default}#p-mn .tiles{margin-bottom:0}`;
 if(!document.getElementById("mn-css")){const s=document.createElement("style");s.id="mn-css";s.textContent=CSS;document.head.appendChild(s)}
 let D=null,P=null,M={from:null,to:null,preset:"30",brands:new Set(DEF),grp:"all"};
@@ -77,6 +81,64 @@ const row=(cells,me)=>`<tr class="${me?"me":""}">${cells.map(c=>`<td>${c}</td>`)
 const tbl=(head,rows)=>`<div class="tbl"><table><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr>${rows}</table></div>`;
 const sel=b=>M.brands.has(b);
 
+
+/* ---------- лента публикаций (как в iMAS, но с разметкой) ---------- */
+const CATS=["Акция бренда","Пресса и PR","Мнение","Партнёры и ориентиры","Найм","Промокод","Упоминание"];
+const CATC={"Акция бренда":"#ff9f0a","Пресса и PR":"#0a84ff","Мнение":"#ff375f","Партнёры и ориентиры":"#30b0c7","Найм":"#8e8e93","Промокод":"#af52de","Упоминание":"#a2a2a7"};
+const CATD={"Акция бренда":"Бренд рассказывает об акции или продукте: наши и чужие посевы в каналах, новости об акциях",
+ "Пресса и PR":"СМИ и бизнес-каналы: интервью, премии, рейтинги, новости компании","Мнение":"Люди пишут от себя: хвалят, ругают, спрашивают",
+ "Партнёры и ориентиры":"Бренд назван как ориентир («рядом с …») или в списке партнёров кешбэка","Найм":"Вакансии: курьеры, кассиры, повара",
+ "Промокод":"Промокоды и реферальные ролики: часто чужие аккаунты раздают коды за вознаграждение","Упоминание":"Остальное: бренд просто назван"};
+const SRCF={tg:"Telegram",media:"СМИ",yt:"YouTube"};
+let F={b:"bellissimo",cat:"",src:"",reg:"",q:"",sort:"new",lim:25,promo:false};
+// comparison with the previous period only where every source was already collected then (channels and media were added later)
+const feedFrom=()=>{const m={};(D.feed||[]).forEach(x=>{if(!m[x.src]||x.d<m[x.src])m[x.src]=x.d});return Object.values(m).sort().pop()||"9999"};
+const fk=x=>(x.t||"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").slice(0,120);
+const kfmt=n=>n==null?"":n>=1e6?(n/1e6).toFixed(n>=1e7?0:1).replace(".",",")+" млн":n>=1e3?Math.round(n/1e3)+" тыс":String(n);
+function feedIn(R,brands){return (D.feed||[]).filter(x=>IN(x.d,R.a,R.b)&&x.b.some(b=>brands.has(b)))}
+function feedGroups(list){const g=new Map();list.forEach(x=>{const k=fk(x);const y=g.get(k);if(y){y.items.push(x);y.reach+=x.r||0;y.views+=x.v||0}else g.set(k,{k,items:[x],reach:x.r||0,views:x.v||0,x})});return [...g.values()]}
+function feedSummary(R){const sel=new Set([...M.brands]);const all=feedIn(R,sel),P0=feedIn({a:R.pa,b:R.pb},sel);
+ const by=b=>all.filter(x=>x.b.includes(b)),byp=b=>P0.filter(x=>x.b.includes(b));
+ const brs=[...sel].filter(b=>by(b).length||byp(b).length).sort((x,y)=>by(y).length-by(x).length);
+ const rows=brs.map((b,i)=>{const L=by(b),reach=L.reduce((s,x)=>s+(x.r||0),0),views=L.reduce((s,x)=>s+(x.v||0),0),pl=byp(b).length,c={};L.forEach(x=>c[x.cat]=(c[x.cat]||0)+1);
+  const bar=`<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;min-width:120px;background:var(--bg2)">${CATS.filter(k=>c[k]).map(k=>`<i data-tip="${E(k)}: ${c[k]}" style="width:${100*c[k]/L.length}%;background:${CATC[k]}"></i>`).join("")}</div>`;
+  const cmp=R.pa>=feedFrom();
+  return row([i+1,dot(b)+E(nm(b)),fn(L.length),!cmp?'<span class="note" data-tip="Источники подключались позже: в прошлом периоде данных меньше, сравнение было бы ложным">–</span>':pl?`<span class="${L.length>pl?"cg":L.length<pl?"cb":"note"}">${sg(L.length-pl,"",0)||"0"}</span>`:'<span class="note">–</span>',reach?kfmt(reach):"–",views?kfmt(views):"–",bar],b==="bellissimo")}).join("");
+ const leg=CATS.map(k=>`<span class="note" style="margin-right:10px" data-tip="${E(CATD[k])}"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${CATC[k]};margin-right:4px"></i>${k}</span>`).join("");
+ return card("Публикации о брендах",`Telegram-каналы и чаты, сайты СМИ, YouTube · ${dm(R.a)}–${dm(R.b)} · бренды из фильтра`,
+  (rows?tbl(["#","Бренд","Публикаций","К "+PL(),"Охват каналов","Просмотры","Что это"],rows):'<div class="empty">За период публикаций нет.</div>')+`<p style="margin-top:8px">${leg}</p><p class="note">Охват — сумма подписчиков каналов, где вышла публикация (как в iMAS). Просмотры — у Telegram-постов. Одна и та же публикация в разных каналах считается в каждом канале.</p>`,"c12","","Считаются чужие публикации: новостные и областные каналы, чаты, каналы вакансий, бизнес-каналы, сайты СМИ, YouTube. Наши посты и комментарии под ними сюда не входят.")}
+function feedWhere(R){const fb=F.b==="*"?new Set([...M.brands]):new Set([F.b]);const L=feedIn(R,fb);if(!L.length)return"";
+ const ch={};L.forEach(x=>{const k=(x.src==="tg"?"@":"")+(x.ch||SRCF[x.src]);const y=ch[k]=ch[k]||{n:0,r:x.r,reg:x.reg,src:x.src,ch:x.ch};y.n++;if(x.r)y.r=x.r});
+ const top=Object.entries(ch).sort((a,b)=>b[1].n-a[1].n||(b[1].r||0)-(a[1].r||0)).slice(0,12);
+ const reg={};L.forEach(x=>{const k=x.reg||"не указан";reg[k]=(reg[k]||0)+1});const lg={};L.forEach(x=>{lg[x.lg]=(lg[x.lg]||0)+1});
+ const LG={"uzb":"узбекский (лат.)","ўзб":"узбекский (кир.)","рус":"русский","eng":"английский","—":"без текста"};
+ const bars=(o,lab)=>{const tot=Object.values(o).reduce((a,b)=>a+b,0);return Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div style="display:grid;grid-template-columns:140px 1fr 40px;gap:8px;align-items:center;margin:3px 0"><span class="note">${E(lab?lab[k]||k:k)}</span><div style="height:8px;border-radius:4px;background:var(--bg2)"><div style="height:8px;border-radius:4px;width:${100*n/tot}%;background:var(--acc)"></div></div><span>${n}</span></div>`).join("")};
+ const t=tbl(["Канал / источник","Регион","Подписчиков","Публикаций"],top.map(([k,y])=>row([y.src==="tg"&&y.ch?`<a href="https://t.me/${E(y.ch)}" target="_blank" rel="noopener">${E(k)}</a>`:E(k),E(y.reg||"–"),y.r?kfmt(y.r):"–",y.n])).join(""));
+ return card("Где писали",`${F.b==="*"?"бренды из фильтра":nm(F.b)} · ${L.length} публикаций`,`<div style="display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px" class="mnwhere"><div>${t}</div><div><h3 style="font-size:13px;margin:0 0 6px">Регионы</h3>${bars(reg)}<h3 style="font-size:13px;margin:14px 0 6px">Языки</h3>${bars(lg,LG)}</div></div>`,"c12")}
+function feedList(R){const fb=F.b==="*"?new Set([...M.brands]):new Set([F.b]);let L=feedIn(R,fb);
+ const q=F.q.trim().toLowerCase();const npromo=L.filter(x=>x.cat==="Промокод").length;if(F.cat)L=L.filter(x=>x.cat===F.cat);else if(!F.promo)L=L.filter(x=>x.cat!=="Промокод");if(F.src)L=L.filter(x=>x.src===F.src);if(F.reg)L=L.filter(x=>x.reg===F.reg);if(q)L=L.filter(x=>(x.t+" "+x.ch).toLowerCase().includes(q));
+ let G=feedGroups(L);G.sort(F.sort==="reach"?(a,b)=>b.reach-a.reach:(a,b)=>b.x.ts-a.x.ts);
+ const regs=[...new Set(feedIn(R,fb).map(x=>x.reg).filter(Boolean))].sort();
+ const brOpts=[...new Set([...M.brands])].map(b=>`<option value="${b}" ${F.b===b?"selected":""}>${E(nm(b))}</option>`).join("");
+ const ctl=`<div class="fctl"><select id="ff-b" aria-label="Бренд">${brOpts}<option value="*" ${F.b==="*"?"selected":""}>Все бренды из фильтра</option></select>
+  <select id="ff-cat" aria-label="Тип"><option value="">Все типы</option>${CATS.map(k=>`<option ${F.cat===k?"selected":""}>${k}</option>`).join("")}</select>
+  <select id="ff-src" aria-label="Источник"><option value="">Все источники</option>${Object.entries(SRCF).map(([k,t])=>`<option value="${k}" ${F.src===k?"selected":""}>${t}</option>`).join("")}</select>
+  <select id="ff-reg" aria-label="Регион"><option value="">Все регионы</option>${regs.map(r=>`<option ${F.reg===r?"selected":""}>${E(r)}</option>`).join("")}</select>
+  <select id="ff-sort" aria-label="Сортировка"><option value="new" ${F.sort==="new"?"selected":""}>Сначала новые</option><option value="reach" ${F.sort==="reach"?"selected":""}>Сначала с большим охватом</option></select>
+  <input id="ff-q" type="search" placeholder="Поиск по тексту и каналу" value="${E(F.q)}"> <button class="chip" id="ff-csv">Скачать CSV</button></div>
+  ${!F.cat&&npromo?`<p class="note" style="margin:-4px 0 8px">${F.promo?`Промокоды показаны (${npromo}).`:`Скрыто ${npromo} промокодов и реферальных роликов.`} <button class="chip" id="ff-promo">${F.promo?"Скрыть":"Показать"}</button></p>`:""}`;
+ const hl=t=>{let h=E(t);const rx=new RegExp("("+[...fb].map(b=>({bellissimo:"bell?i?ss?imo|бел+и+с+имо",oqtepa:"oq ?tepa|окт[еэ]па",kfc:"kfc|кфс",evos:"evos|эвос",dodo:"dodo|додо",safia:"safi[ay]|сафи[яа]",uzum:"uzum|узум",yandex:"yandex|яндекс",maxway:"max ?way|макс ?в[еэ]й",sariqbola:"sariq ?bola|сари[кқ] бола",papajohns:"papa ?john|папа ?джон",apex:"apex|апекс",dominos:"domino|доминос",hardees:"hardee|хардис"})[b]||b).join("|")+")","gi");return h.replace(rx,"<mark>$1</mark>")};
+ const it=g=>{const x=g.x,n=g.items.length,t=new Date(x.ts*1e3+5*36e5).toISOString().slice(11,16),neg=x.s==="neg",pos=x.s==="pos";
+  const chs=g.items.map(y=>y.src==="tg"&&y.ch?`<a href="${E(y.u)}" target="_blank" rel="noopener">@${E(y.ch)}</a>${y.r?` <span class="note">${kfmt(y.r)}</span>`:""}`:E(y.ch||SRCF[y.src])).join(" · ");
+  return `<div class="fitem"><div class="fh"><span class="pill" style="background:${CATC[x.cat]}22;color:${CATC[x.cat]}" data-tip="${E(CATD[x.cat])}">${E(x.cat)}</span>${x.k?`<span class="pill p-mute">${E(x.k)}</span>`:""}${neg?'<span class="pill p-bad">негатив</span>':pos?'<span class="pill p-good">позитив</span>':""}
+   ${x.b.map(b=>dot(b)+E(nm(b))).join(" ")} <span class="note">${dm(x.d)} ${t} · ${SRCF[x.src]}${x.reg?" · "+E(x.reg):""}</span></div>
+   <div class="ft">${hl((x.t||"").slice(0,420))}${(x.t||"").length>420?"…":""}</div>
+   <div class="fm">${n>1?`<details><summary>в ${n} ${n<5?"каналах":"каналах"} · охват ${g.reach?kfmt(g.reach):"–"}${g.views?" · 👁 "+kfmt(g.views):""}</summary>${chs}</details>`:`${chs}${x.v?` · 👁 ${kfmt(x.v)}`:""}${x.u&&x.src!=="tg"?` · <a href="${E(x.u)}" target="_blank" rel="noopener">открыть ↗</a>`:""}`}</div></div>`};
+ window.__mnFeedRows=L;
+ return card("Лента публикаций",`${L.length} публикаций, ${G.length} разных текстов · одинаковый текст в разных каналах показан один раз`,ctl+(G.length?G.slice(0,F.lim).map(it).join("")+(G.length>F.lim?`<div class="more"><button class="btn ghost" id="ff-more">Показать ещё ${Math.min(25,G.length-F.lim)} из ${G.length-F.lim}</button></div>`:""):'<div class="empty">Ничего не нашлось. Измените фильтры.</div>'),"c12")}
+function feedCsv(){const L=window.__mnFeedRows||[];const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+ const lines=[["Дата","Бренды","Тип","Тональность","Источник","Канал","Регион","Язык","Подписчиков","Просмотры","Ссылка","Текст"].map(q).join(",")].concat(L.map(x=>[x.d,x.b.map(nm).join(", "),x.cat,x.s,SRCF[x.src],x.ch,x.reg,x.lg,x.r||"",x.v||"",x.u,x.t].map(q).join(",")));
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+lines.join("\n")],{type:"text/csv"}));a.download="упоминания_"+range().a+"_"+range().b+".csv";document.body.appendChild(a);a.click();a.remove()}
 /* ---------- блоки ---------- */
 function blocks(){const R=range(),out=[];
  const S=searchAgg(R.a,R.b),SP=(CV().trends&&CV().trends>ad(R.pa,6)?{sh:{},sum:{},low:{},n:0}:searchAgg(R.pa,R.pb)),T=talkAgg(R.a,R.b,M.grp),TP=talkAgg(R.pa,R.pb,M.grp),T0=talkAgg(R.a,R.b,"all");
@@ -88,7 +150,9 @@ function blocks(){const R=range(),out=[];
  const ver=[],al=[];
  ver.push(`<p><b>Репутация за период:</b> отзывов и комментариев о нас ${O.t}, негатив ${negPct(O).toFixed(0)}%${OP.t&&OKP?` (за ${PLB}: ${negPct(OP).toFixed(0)}%)`:""}.</p>`);
  const sk=Object.keys(S.sh).filter(b=>!S.low[b]).sort((x,y)=>S.sh[y]-S.sh[x]);
- if(T.ok&&T.sh.bellissimo!=null){const rk=Object.keys(T.sh).sort((x,y)=>T.c[y]-T.c[x]);ver.push(`<p><b>Обсуждения:</b> наша доля ${pc(T.sh.bellissimo)}, ${rk.indexOf("bellissimo")+1}-е место (публикаций всего ${T.tot}).</p>`)}else ver.push(`<p><b>Обсуждения:</b> публикаций за период ${T.tot}, для доли нужно не меньше ${D.min_n}.</p>`);
+ if(D.feed){const sb=new Set(["bellissimo"]),a=feedIn(R,sb),p=feedIn({a:R.pa,b:R.pb},sb),cats={};a.forEach(x=>cats[x.cat]=(cats[x.cat]||0)+1);const top=Object.entries(cats).sort((x,y)=>y[1]-x[1]).slice(0,3).map(([k,n])=>`${k.toLowerCase()} ${n}`).join(", ");
+  ver.push(`<p><b>Публикации о нас:</b> ${a.length}${p.length?` (за ${PLB}: ${p.length})`:""}, охват каналов ${kfmt(a.reduce((s2,x)=>s2+(x.r||0),0))||"–"}${top?`; больше всего: ${top}`:""}.</p>`)}
+ else if(T.ok&&T.sh.bellissimo!=null){const rk=Object.keys(T.sh).sort((x,y)=>T.c[y]-T.c[x]);ver.push(`<p><b>Обсуждения:</b> наша доля ${pc(T.sh.bellissimo)}, ${rk.indexOf("bellissimo")+1}-е место (публикаций всего ${T.tot}).</p>`)}else ver.push(`<p><b>Обсуждения:</b> публикаций за период ${T.tot}, для доли нужно не меньше ${D.min_n}.</p>`);
  if(rp.ok||ra.ok){const m=(st,x)=>x.c.bellissimo!=null?`${st}: наших отзывов ${x.c.bellissimo}`:"";ver.push(`<p><b>Отзывы в приложениях:</b> ${[m("Play",rp),m("App Store",ra)].filter(Boolean).join(", ")||"наших отзывов нет"}.</p>`)}
  if(OKP&&OP.t&&O.o.neg>=10&&negPct(O)-negPct(OP)>=5)al.push(["p-bad",`Негатив вырос: ${negPct(OP).toFixed(0)}% → ${negPct(O).toFixed(0)}% (${O.o.neg} негативных).`]);
  const wk=[];for(let i=1;i<=4;i++){const x=ownAgg(ad(R.b,-7*i+1-6),ad(R.b,-7*i));wk.push(x.t)}if(R.L<=14&&wk.reduce((x,y)=>x+y,0)>=40&&O.t>2*(wk.reduce((x,y)=>x+y,0)/4)*(R.L/7))al.push(["p-warn",`Всплеск упоминаний: ${O.t} за ${R.L} дн. при обычных ${Math.round(wk.reduce((x,y)=>x+y,0)/4*(R.L/7))}.`]);
@@ -97,6 +161,7 @@ function blocks(){const R=range(),out=[];
  const tg=(CV().tgw)||{};if(tg.total&&!tg.full)al.push(["p-warn",`Telegram: прочитано ${tg.read} из ${tg.total} каналов, доля обсуждений пока неполная.`]);
  if(CV().media_on===false)al.push(["p-warn","Сайты СМИ ещё не подключены: в доле обсуждений новостных сайтов пока нет."]);
  if(false)0;const old=D.status.filter(x=>x.ok===1&&D.today&&nd(x.at.slice(0,10),D.today)>3);if(old.length)al.push(["p-warn","Давно не обновлялись: "+old.map(x=>SRC[x.s]||x.s).join(", ")+"."]);
+ if(D.feed){out.push(feedSummary(R));out.push(feedList(R));out.push(feedWhere(R));out.push(`<h2 class="sect" style="grid-column:1/-1;margin:18px 0 0">Голос клиентов: комментарии и отзывы о нас</h2>`)}
  out.push(card("Главное","вывод за выбранный период",`<div class="verdict">${ver.join("")}</div>`,"c7"));
  out.push(card("Что требует внимания","",al.map(([c,m])=>`<div class="alert"><span class="pill ${c}">внимание</span><span>${E(m)}</span></div>`).join("")||'<div class="alert"><span class="pill p-good">спокойно</span><span>Резких изменений нет.</span></div>',"c5"));
  const lp=latest("play","bellissimo"),la=latest("appstore","bellissimo"),bp=base("play","bellissimo"),ba=base("appstore","bellissimo");
@@ -163,7 +228,10 @@ function blocks(){const R=range(),out=[];
   <p><b>Тональность</b> определяется по словарю (русский и узбекский), без нейросети. Точность около 80%: тренды надёжны, отдельные комментарии стоит проверять глазами.</p>
   <p><b>Недельные данные:</b> Google Trends отдаёт данные по неделям, поэтому в поиске период округляется до недель.</p></details>`,"c12"));
  out.push(`<p class="note" style="grid-column:1/-1">Обновлено ${E(D.built)}.</p>`);
- return out.join("")}
+ const h2=x=>(x.match(/<h2>([^<]*)<\/h2>/)||[])[1]||"";
+ const drop=/^(Упоминания сторонними людьми|Поиск в Google)/, last=/^(Полнота данных|Instagram конкурентов|Как читать)/;
+ const keep=out.filter(x=>!drop.test(h2(x)));
+ return keep.filter(x=>!last.test(h2(x))).concat(keep.filter(x=>last.test(h2(x)))).join("")}
 
 function barHtml(){const R=[["7","7 дней"],["30","30 дней"],["90","90 дней"],["all","Всё время"]];
  return `<div class="card c12" id="mn-bar"><div class="chd"><h2>Фильтр</h2><span class="sub">действует на все блоки вкладки</span></div>
@@ -191,10 +259,14 @@ window.renderMentions=function(panel,data,ctx){D=data;applyCtx(ctx);
  setPreset("30");
  panel.innerHTML=barHtml()+'<div id="mn-body" style="display:contents"></div>';paint(panel);
  if(!panel.dataset.wired){panel.dataset.wired=1;
+  let qt=null;panel.addEventListener("input",e=>{if(e.target.id!=="ff-q")return;clearTimeout(qt);qt=setTimeout(()=>{F.q=e.target.value;F.lim=25;const pos=e.target.selectionStart;paint(panel);const i=panel.querySelector("#ff-q");if(i){i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}},350)});
   panel.addEventListener("click",e=>{const go=e.target.closest(".mnnav a[data-go]");if(go){e.preventDefault();const t=panel.querySelector("#"+go.dataset.go);if(t)t.scrollIntoView({behavior:"smooth",block:"start"});return}
    const p=e.target.closest("#mn-per button");if(p){setPreset(p.dataset.p);paint(panel);return}
    const g=e.target.closest("#mn-grp button");if(g){M.grp=g.dataset.g;paint(panel);return}
+   if(e.target.id==="ff-more"){F.lim+=25;paint(panel);return}
+   if(e.target.id==="ff-csv"){feedCsv();return}
+   if(e.target.id==="ff-promo"){F.promo=!F.promo;F.lim=25;paint(panel);return}
    const c=e.target.closest("#mn-chips .chip");if(c){if(c.dataset.b==="*"){Object.keys(D.names).forEach(b=>M.brands.add(b))}else if(M.brands.has(c.dataset.b))M.brands.delete(c.dataset.b);else M.brands.add(c.dataset.b);paint(panel)}});
-  panel.addEventListener("change",e=>{if(e.target.id==="mn-from"||e.target.id==="mn-to"){let f=panel.querySelector("#mn-from").value,t=panel.querySelector("#mn-to").value;if(f&&t){if(f>t)[f,t]=[t,f];M.from=f;M.to=t;M.preset="custom";paint(panel)}}})}
+  panel.addEventListener("change",e=>{const fm={"ff-b":"b","ff-cat":"cat","ff-src":"src","ff-reg":"reg","ff-sort":"sort"}[e.target.id];if(fm){F[fm]=e.target.value;F.lim=25;if(fm==="b")F.reg="";paint(panel);return}if(e.target.id==="mn-from"||e.target.id==="mn-to"){let f=panel.querySelector("#mn-from").value,t=panel.querySelector("#mn-to").value;if(f&&t){if(f>t)[f,t]=[t,f];M.from=f;M.to=t;M.preset="custom";paint(panel)}}})}
 };
 })();

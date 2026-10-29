@@ -390,7 +390,8 @@ const RAWU="https://raw.githubusercontent.com/timkacloud-blip/bellissimo-radar/m
 const MCTX=()=>({brands:Object.assign({},EXTRA_B,D.brands),apps:D.apps});
 function loadMn(){ if(!MNP){ const q="?"+Date.now(), g=u=>fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json() });
   const js=window.renderMentions?Promise.resolve():new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="mentions.js"+q; s.onload=ok; s.onerror=no; document.head.appendChild(s) });
-  MNP=Promise.all([g(RAWU+"mentions_data.json"+q).catch(()=>g("mentions_data.json"+q)),js]).then(([d])=>{ MN=d; mnEvents(); try{ freshStrip() }catch(e){} return d }).catch(()=>null) } return MNP }
+  const fd=g(RAWU+"mentions_feed.json"+q).catch(()=>g("mentions_feed.json"+q)).catch(()=>null);
+  MNP=Promise.all([g(RAWU+"mentions_data.json"+q).catch(()=>g("mentions_data.json"+q)),js,fd]).then(([d,_,f])=>{ if(f&&f.feed) d.feed=f.feed; MN=d; mnEvents(); try{ freshStrip() }catch(e){} return d }).catch(()=>null) } return MNP }
 function renderMn(){ const p=$("#p-mn"); if(p.dataset.ok) return; p.innerHTML='<div class="empty">Загружаю…</div>';
   loadMn().then(d=>{ if(!d) throw 0; window.renderMentions(p,d,MCTX()); p.dataset.ok=1 }).catch(()=>{ p.innerHTML='<div class="empty">Не удалось загрузить данные упоминаний. <button id="retry" class="chip">Повторить</button></div>' }) }
 
