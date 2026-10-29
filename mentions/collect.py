@@ -445,7 +445,8 @@ def run_tgweb():
     import html as _h
     watch = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
     have = {r[0] for r in db.execute("SELECT url FROM items WHERE source='tg' AND url IS NOT NULL")}
-    full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source='tgweb'")}
+    # channels the Mac already read 90 days back (first Telethon pass) need no web backfill
+    full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source IN ('tgweb','tgw')")}
     today = dt.datetime.now(TZ).strftime('%Y-%m-%d')
     def cnt(x):   # "92.8K" -> 92800
         x = (x or '').strip().replace(' ', '').replace(',', '.'); m = {'K': 1e3, 'M': 1e6}.get(x[-1:].upper(), 1)
@@ -456,7 +457,6 @@ def run_tgweb():
         # a channel added to the list is read 30 days back once (in portions: at most 25 such channels per run), then 3 days
         first = h not in full and backfill < 25
         if first: backfill += 1
-        if h not in full and not first: continue
         since = time.time() - (30 if first else 3) * 86400
         try:
             before = ''; got_ch = 0; seen_any = False
