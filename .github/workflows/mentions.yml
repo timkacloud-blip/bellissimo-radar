@@ -43,6 +43,11 @@ jobs:
         run: python3 mentions/collect.py reanalyze
       - name: Build data for the tab
         run: python3 mentions/build.py state/mentions_data.db site/mentions_data.json
+      - name: Telegram alerts (new notable publications, negative spike)
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python3 mentions/alerts.py state/mentions_data.db || echo "alerts failed"
       - name: Check the DB before saving (a broken DB must not overwrite the good one)
         run: |
           python3 - <<'PY'
