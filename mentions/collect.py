@@ -457,8 +457,8 @@ def run_tgweb():
         except Exception: return None
     n = 0; bad = []; ok = 0; backfill = 0
     for h, typ in watch.items():
-        # a channel added to the list is read 30 days back once (in portions: at most 25 such channels per run), then 3 days
-        first = h not in full and backfill < 25
+        # a channel added to the list is read 30 days back once (in portions: at most 20 such channels per run), then 3 days
+        first = h not in full and backfill < 20
         if first: backfill += 1
         since = time.time() - (30 if first else 3) * 86400
         try:
