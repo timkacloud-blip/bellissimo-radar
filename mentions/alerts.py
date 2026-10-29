@@ -50,6 +50,33 @@ if neg24 >= 8 and neg24 > 2 * max(neg14, 1) and not spike_sent:
 if comp:
     lines.append('🟠 Акции конкурентов в крупных каналах')
     for x in comp[:5]: lines.append(f"• {', '.join(NAMES.get(b, b) for b in x['b'])} — {where(x)}\n  {short(x, 120)}\n  {x['u']}")
+# Monday: weekly digest (last 7 days against the 7 before), once per week
+wk = NOW.strftime('%G-W%V')
+if NOW.weekday() == 0 and NOW.hour >= 9 and not db.execute("SELECT 1 FROM snap WHERE date='alert' AND source='alert' AND key=?", ('week' + wk,)).fetchone():
+    allf = F.build(db, NOW.date(), NAMES, days=15)
+    a7 = (NOW - dt.timedelta(days=7)).strftime('%Y-%m-%d'); a14 = (NOW - dt.timedelta(days=14)).strftime('%Y-%m-%d'); today = NOW.strftime('%Y-%m-%d')
+    cur = [x for x in allf if a7 <= x['d'] < today and x['cat'] != 'Промокод']; prev = [x for x in allf if a14 <= x['d'] < a7 and x['cat'] != 'Промокод']
+    us = [x for x in cur if 'bellissimo' in x['b']]; usp = [x for x in prev if 'bellissimo' in x['b']]
+    cats = {}
+    for x in us: cats[x['cat']] = cats.get(x['cat'], 0) + 1
+    top = sorted(us, key=lambda x: -(x['r'] or 0))[:3]
+    comp = {}
+    for x in cur:
+        for b in x['b']:
+            if b != 'bellissimo': comp[b] = comp.get(b, 0) + 1
+    neg = db.execute("SELECT COUNT(*) FROM items WHERE brand='bellissimo' AND sentiment='neg' AND scope='owned' AND date>=? AND date<?", (a7, today)).fetchone()[0]
+    negp = db.execute("SELECT COUNT(*) FROM items WHERE brand='bellissimo' AND sentiment='neg' AND scope='owned' AND date>=? AND date<?", (a14, a7)).fetchone()[0]
+    th = {}
+    for (t,) in db.execute("SELECT themes FROM items WHERE brand='bellissimo' AND sentiment='neg' AND scope='owned' AND date>=? AND date<? AND themes!=''", (a7, today)):
+        for k in t.split('|'): th[k] = th.get(k, 0) + 1
+    w = [f'📊 Неделя {dt.date.fromisoformat(a7).strftime("%d.%m")}–{(NOW - dt.timedelta(days=1)).strftime("%d.%m")}',
+         f'О нас: {len(us)} публикаций (неделей раньше {len(usp)}), охват каналов {F_k(sum(x["r"] or 0 for x in us))}' + (f'; ' + ', '.join(f'{k.lower()} {n}' for k, n in sorted(cats.items(), key=lambda x: -x[1])[:4]) if cats else ''),
+         f'Негатив в комментариях и отзывах: {neg} (неделей раньше {negp})' + (f'; темы: ' + ', '.join(f'{k.lower()} {n}' for k, n in sorted(th.items(), key=lambda x: -x[1])[:3]) if th else '')]
+    if top: w.append('Самые заметные:\n' + '\n'.join(f"• {where(x)} — {short(x, 90)}\n  {x['u']}" for x in top))
+    if comp: w.append('Конкуренты, публикаций: ' + ', '.join(f'{NAMES.get(b, b)} {n}' for b, n in sorted(comp.items(), key=lambda x: -x[1])[:6]))
+    w.append('Подробно: вкладка «Упоминания» → https://timkacloud-blip.github.io/bellissimo-radar/')
+    lines = w + ([''] + lines if lines else [])
+    db.execute("INSERT OR REPLACE INTO snap VALUES ('alert','alert',?,1)", ('week' + wk,)); db.commit()
 print('\n'.join(lines) or 'nothing new')
 tok, chat = os.environ.get('TG_BOT_TOKEN'), os.environ.get('TG_CHAT_ID')
 if lines and tok and chat:
