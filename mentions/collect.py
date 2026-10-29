@@ -383,11 +383,11 @@ def run_tgw():
         for m in c.iter_messages(ent, limit=cap):
             if m.date < since: break
             tot += 1
-            if not m.message or m.fwd_from: continue          # пересылки не считаем: оригинал считается там, где он написан
+            if not m.message: continue   # пересылки считаем (это охват в этом канале), но помечаем
             if getattr(m, 'via_bot_id', None): continue
             bl = match_brands(m.message)
             if not bl: continue
-            got += save_multi(bl, 'tg', kind, f'tgw:{idp}:{m.id}', int(m.date.timestamp()), m.message, 'earned',
+            got += save_multi(bl, 'tg', 'forward' if (m.fwd_from and kind == 'post') else kind, f'tgw:{idp}:{m.id}', int(m.date.timestamp()), m.message, 'earned',
                               url=f'https://t.me/{h}/{m.id}' if not comments else f'https://t.me/{h}/{m.reply_to.reply_to_top_id or m.reply_to.reply_to_msg_id}?comment={m.id}' if m.reply_to else f'https://t.me/{h}',
                               parent='w:' + typ)
         return got, tot
@@ -449,7 +449,8 @@ def run_tgweb():
     watch = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
     have = {r[0] for r in db.execute("SELECT url FROM items WHERE source='tg' AND url IS NOT NULL")}
     # channels the Mac already read 90 days back (first Telethon pass) need no web backfill
-    full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source IN ('tgweb','tgw')")}
+    full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source='tgweb' AND value>=2")}   # 2 = read 30 days back with forwards
+    nopv = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='nopreview' AND source='tgweb'")}   # groups: no web page, the Mac reads them
     today = dt.datetime.now(TZ).strftime('%Y-%m-%d')
     def cnt(x):   # "92.8K" -> 92800
         x = (x or '').strip().replace(' ', '').replace(',', '.'); m = {'K': 1e3, 'M': 1e6}.get(x[-1:].upper(), 1)
@@ -457,8 +458,9 @@ def run_tgweb():
         except Exception: return None
     n = 0; bad = []; ok = 0; backfill = 0
     for h, typ in watch.items():
-        # a channel added to the list is read 30 days back once (in portions: at most 20 such channels per run), then 3 days
-        first = h not in full and backfill < 20
+        if h in nopv: continue
+        # a channel added to the list is read 30 days back once (in portions: at most 30 such channels per run), then 3 days
+        first = h not in full and backfill < 30
         if first: backfill += 1
         since = time.time() - (30 if first else 3) * 86400
         try:
@@ -482,7 +484,7 @@ def run_tgweb():
                     try: ts = parse_iso(m.group(1))
                     except Exception: continue
                     oldest = ts if oldest is None else min(oldest, ts)
-                    if 'tgme_widget_message_forwarded_from' in blk: continue
+                    fwd = 'tgme_widget_message_forwarded_from' in blk   # a forward is real reach in this channel (iMAS counts it); marked as such
                     t = re.search(r'tgme_widget_message_text[^>]*>(.*?)</div>', blk, re.S)
                     if not t: continue
                     text = re.sub(r'\s+', ' ', _h.unescape(re.sub(r'<[^>]+>', '', re.sub(r'<br\s*/?>', ' ', t.group(1))))).strip()
@@ -494,7 +496,7 @@ def run_tgweb():
                         continue
                     bl = match_brands(text)
                     if bl:
-                        got_ch += save_multi(bl, 'tg', 'post', f'tgweb:{ref}', ts, text, 'earned', url=url, parent='w:' + typ)
+                        got_ch += save_multi(bl, 'tg', 'forward' if fwd else 'post', f'tgweb:{ref}', ts, text, 'earned', url=url, parent='w:' + typ)
                         v = re.search(r'tgme_widget_message_views">([^<]+)<', blk)
                         if v and cnt(v.group(1)): db.execute("INSERT OR REPLACE INTO snap VALUES ('v','tgviews',?,?)", (url, cnt(v.group(1))))
                 if oldest is None or oldest < since or first_id is None: break
@@ -502,13 +504,14 @@ def run_tgweb():
                 time.sleep(1)
             if not seen_any: raise RuntimeError('нет публичной ленты')
             n += got_ch; ok += 1
-            if first: db.execute("INSERT OR REPLACE INTO snap VALUES ('full','tgweb',?,1)", (h,))
+            if first: db.execute("INSERT OR REPLACE INTO snap VALUES ('full','tgweb',?,2)", (h,))
             db.commit()
         except Exception as ex:
-            bad.append(f'@{h}: {type(ex).__name__}')
+            if 'нет публичной ленты' in str(ex): db.execute("INSERT OR REPLACE INTO snap VALUES ('nopreview','tgweb',?,1)", (h,)); db.commit()
+            else: bad.append(f'@{h}: {type(ex).__name__}')
         time.sleep(0.7)
-    wait = sum(1 for h in watch if h not in full) - backfill
-    return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + (f'; новых каналов дочитано за 30 дней: {backfill}, ждут очереди: {wait}' if backfill or wait > 0 else '') + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
+    wait = sum(1 for h in watch if h not in full and h not in nopv) - backfill
+    return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + (f'; новых каналов дочитано за 30 дней: {backfill}, ждут очереди: {wait}' if backfill or wait > 0 else '') + (f'; групп без веб-ленты (читает Mac): {len(nopv)}' if nopv else '') + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
 
 # ---------- СМИ и газеты: ленты RSS/Atom (заголовок и анонс; полный текст не читаем) ----------
 def run_media():

@@ -78,7 +78,7 @@ def build(db, today, names, days=120):
     for d, k, v in db.execute("SELECT date,key,value FROM snap WHERE source='tgch' ORDER BY date"): subs[k.lower()] = int(v)
     views = {k: int(v) for k, v in db.execute("SELECT key,value FROM snap WHERE source='tgviews'")}
     rows = db.execute("""SELECT id,source,kind,brand,date,ts,text,sentiment,url,parent FROM items
-                         WHERE scope='earned' AND source IN ('tg','media','yt') AND kind IN ('post','mention','video') AND date>=? ORDER BY ts DESC""", [since]).fetchall()
+                         WHERE scope='earned' AND source IN ('tg','media','yt') AND kind IN ('post','mention','video','forward') AND date>=? ORDER BY ts DESC""", [since]).fetchall()
     by = {}
     for id_, src, kind, brand, d, ts, text, sent, url, parent in rows:
         if brand not in names: continue
@@ -94,7 +94,7 @@ def build(db, today, names, days=120):
             ctype = WATCH.get(handle.lower(), (parent or '').replace('w:', '') if (parent or '').startswith('w:') else '')
         elif src == 'media': handle = (parent or '').replace('w:media:', '')
         t = __import__('html').unescape(text or '')
-        by[base] = {'id': id_.split('#')[0], 'd': d, 'ts': ts, 'b': [brand], 'src': src, 'k': 'Комментарий в чате' if kind == 'mention' else '', 'ch': handle, 'ct': ctype,
+        by[base] = {'id': id_.split('#')[0], 'd': d, 'ts': ts, 'b': [brand], 'src': src, 'k': 'Комментарий в чате' if kind == 'mention' else 'Пересылка' if kind == 'forward' else '', 'ch': handle, 'ct': ctype,
                     'r': subs.get(handle.lower()) if src == 'tg' else None, 'v': views.get(url), 's': sent or 'neu',
                     'cat': category(t, src, ctype, sent), 'reg': region(handle if src == 'tg' else '', t), 'lg': lang(t), 'u': url or '', 't': t[:600]}
     feed = list(by.values())
