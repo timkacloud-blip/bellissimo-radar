@@ -125,6 +125,69 @@ def search_queries(n_names, n_typos):
 
 class Skip(Exception): pass
 
+UZ_HINT = re.compile(r"o['‘’ʻ`]zbekiston|uzbekistan|узбекистан|ўзбекистон|toshkent|tashkent|ташкент|тошкент|samarqand|самарканд|buxoro|бухар|andijon|андижан|namangan|наманган|farg.ona|фергана|so['‘’ʻ`]?m\b|сўм|\bсум\b|yetkazib|filial|[ўқғҳ]", re.I)
+def found_channels():
+    """Channels where the global Telegram search found any brand (same search for every brand), read like the hand-made list."""
+    since = str(dt.datetime.now(TZ).date() - dt.timedelta(days=60))
+    return {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date>=? AND date!='day'", (since,))}
+
+def watch_list():
+    w = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
+    low = {k.lower() for k in w}
+    for h, t in found_channels().items():
+        if h.lower() not in low: w[h] = t
+    return w
+
+def tg_search(c, cache, n_pages=5):
+    """Global Telegram search (all public channels and groups) for every brand with the same query budget.
+    Saves what matches the brand dictionary and remembers the channel, so it is read regularly afterwards.
+    Once a day; the first time 30 days back, then 3 days."""
+    from telethon.tl.functions.messages import SearchGlobalRequest
+    from telethon.tl.types import InputMessagesFilterEmpty, InputPeerEmpty
+    from telethon.errors import FloodWaitError
+    day = dt.datetime.now(TZ).strftime('%Y-%m-%d')
+    if db.execute("SELECT 1 FROM snap WHERE date='day' AND source='tgsearch' AND key=?", (day,)).fetchone(): return 0, ''
+    first = db.execute("SELECT 1 FROM snap WHERE date='day' AND source='tgsearch'").fetchone() is None
+    since = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30 if first else 3)
+    got = 0; chans = {}; stop = ''
+    for q, b in search_queries(4, 1):
+        rate, peer, oid = 0, InputPeerEmpty(), 0
+        try:
+            for _ in range(n_pages):
+                r = c(SearchGlobalRequest(q=q, filter=InputMessagesFilterEmpty(), min_date=since, max_date=None, offset_rate=rate, offset_peer=peer, offset_id=oid, limit=100))
+                ch = {x.id: x for x in getattr(r, 'chats', [])}
+                if not r.messages: break
+                for m in r.messages:
+                    pid = getattr(m.peer_id, 'channel_id', None); e = ch.get(pid)
+                    h = getattr(e, 'username', None) if e else None
+                    if not (h and m.message) or getattr(m, 'via_bot_id', None): continue
+                    if not UZ_HINT.search(m.message + ' ' + (getattr(e, 'title', '') or '')): continue   # not about Uzbekistan
+                    bl = match_brands(m.message)
+                    if not bl: continue
+                    kind = 'forward' if m.fwd_from else ('post' if getattr(e, 'broadcast', False) else 'mention')
+                    got += save_multi(bl, 'tg', kind, f'tgw:{pid}:{m.id}', int(m.date.timestamp()), m.message, 'earned', url=f'https://t.me/{h}/{m.id}', parent='w:found')
+                    chans[h] = chans.get(h, 0) + 1
+                    if h not in cache: cache[h] = {'id': e.id, 'hash': e.access_hash, 'lid': None, 'lhash': None, 'checked': 0}   # no username lookup later
+                last = r.messages[-1]
+                if last.date < since or len(r.messages) < 100: break
+                rate = int(getattr(r, 'next_rate', None) or last.date.timestamp())
+                lp = ch.get(getattr(last.peer_id, 'channel_id', None))
+                if lp is None: break
+                from telethon.tl.types import InputPeerChannel
+                peer, oid = InputPeerChannel(lp.id, lp.access_hash), last.id
+                time.sleep(1.5)
+        except FloodWaitError as ex:
+            if ex.seconds <= 60: time.sleep(ex.seconds + 2); continue
+            stop = f'поиск: Telegram попросил паузу {ex.seconds // 60} мин'; break
+        except Exception as ex:
+            print(f'  поиск «{q}»: {type(ex).__name__} {ex}', flush=True)
+        time.sleep(2)
+    for h, k in chans.items(): db.execute("INSERT OR REPLACE INTO snap VALUES (?,?,?,?)", (day, 'tgsearch', h, k))
+    if not stop: db.execute("INSERT OR REPLACE INTO snap VALUES ('day','tgsearch',?,1)", (day,))
+    db.commit()
+    print(f'  поиск по всему Telegram: упоминаний новых {got}, каналов с брендами {len(chans)}' + (f'; {stop}' if stop else ''), flush=True)
+    return got, f'поиск по всему Telegram: каналов {len(chans)}' + (f', {stop}' if stop else '')
+
 # ---------- Meta ----------
 TOKEN = secret('meta_token.txt')
 def g(path, **p):
@@ -366,7 +429,7 @@ def run_tgw():
     row = db.execute("SELECT value FROM snap WHERE date='wait' AND source='tgw' AND key='until'").fetchone()
     if row and time.time() < row[0]:
         raise Skip('Telegram просил паузу, продолжу после ' + dt.datetime.fromtimestamp(row[0], TZ).strftime('%H:%M'))
-    watch = json.load(open(wf)); need('telethon')
+    watch = watch_list(); need('telethon')
     from telethon.sync import TelegramClient
     from telethon.errors import FloodWaitError
     from telethon.tl.functions.channels import GetFullChannelRequest
@@ -411,6 +474,10 @@ def run_tgw():
         return main, linked, e['id'], e.get('lid')
     print('  tgw: подключаюсь (%s), каналов в кэше %d из %d' % ('первый проход: посты %d дн, комментарии %d дн' % (pdays, cdays) if first else 'обновление', sum(1 for h in watch if h in cache), len(watch)), flush=True)
     with TelegramClient(os.path.join(HERE, 'tg2'), int(api_id), api_hash) as c:
+        try:
+            sg, sn = tg_search(c, cache); n += sg; save_cache()
+            if sn: note.append(sn)
+        except Exception as ex: note.append(f'поиск: {type(ex).__name__}')
         for i, (h, typ) in enumerate(watch.items(), 1):
             done_h = db.execute("SELECT 1 FROM snap WHERE date='full' AND source='tgw' AND key=? AND value>=2", (h,)).fetchone()   # 2 = read 30 days back with forwards
             if first and db.execute("SELECT 1 FROM snap WHERE date='full' AND source='tgw' AND key=?", (h,)).fetchone(): continue   # уже прочитан в первом проходе
@@ -446,7 +513,7 @@ def run_tgw():
 def run_tgweb():
     """Public Telegram channels through the web preview (t.me/s/...): posts only, no login, runs on GitHub. Comments need the Mac (run_tgw)."""
     import html as _h
-    watch = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
+    watch = watch_list()
     have = {r[0] for r in db.execute("SELECT url FROM items WHERE source='tg' AND url IS NOT NULL")}
     # channels the Mac already read 90 days back (first Telethon pass) need no web backfill
     full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source='tgweb' AND value>=2")}   # 2 = read 30 days back with forwards
