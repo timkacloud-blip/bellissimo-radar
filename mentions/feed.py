@@ -23,7 +23,7 @@ PROMO_CODE = re.compile(r"(?i:promo-?[kc]od|prom[ao]kod|промо-?код|пр�
 LANDMARK = re.compile(r"mo.ljal|ориентир|yonida|qarshisida|ro.parasida|o.ng tomon|chap tomon|рядом с|напротив|возле|за углом", re.I)
 CASHBACK = re.compile(r"keshbek|кешб[еэ]к|cashback|karta bilan|по карте|картой", re.I)
 PRESS = re.compile(r"интервью|intervyu|премия|премии|mukofot|award|festival|фестивал|лауреат|номинац|nominats|директор|direktor|\bCEO\b|основател|asoschi|рейтинг|reyting|исследован|"
-                   r"tadqiqot|итоги|рынок|франшиз|franshiza|инвест|invest|выручк|daromad|филиалов|filiallar soni|топ-\d|top-\d", re.I)
+                   r"tadqiqot|итоги|рынок|франшиз|franshiza|инвест|invest|выручк|daromad|филиал|filial|откры|ochil|ochish|топ-\d|top-\d", re.I)
 OFFER = re.compile(r"(?<!\d)[1-3] ?\+ ?1(?!\d)|chegirma|скидк|aksiya|акци|bepul|бесплатн|so.m(ga|dan)?\b|сум\b|kombo|комбо|\bset\b|\bсет\b|sovg.a|подарок|pitsa bayram|yangi ta.m|новинк|tatib ko.ring", re.I)
 OPINION = re.compile(r"(?<![a-zа-я])(men|meni|menga|я|мне|по-моему|имхо|menimcha)(?![a-zа-я])", re.I)
 
@@ -68,7 +68,8 @@ def category(text, src, ctype, sent):
     if near_brand(text, LANDMARK) or near_brand(text, CASHBACK, 150): return 'Партнёры и ориентиры'
     if src == 'media' or ctype == 'business' or PRESS.search(text): return 'Пресса и PR'
     if OFFER.search(text): return 'Акция бренда'
-    if sent in ('pos', 'neg') or (src == 'tg' and ctype != 'news' and OPINION.search(text)): return 'Мнение'
+    # a long post with emotional words is a reposted announcement or a news piece, not somebody's opinion
+    if len(text) < 350 and (sent in ('pos', 'neg') or (src == 'tg' and ctype != 'news' and OPINION.search(text))): return 'Мнение'
     return 'Упоминание'
 
 
@@ -95,8 +96,14 @@ def build(db, today, names, days=120):
         elif src == 'media': handle = (parent or '').replace('w:media:', '')
         t = __import__('html').unescape(text or '')
         by[base] = {'id': id_.split('#')[0], 'd': d, 'ts': ts, 'b': [brand], 'src': src, 'k': 'Комментарий в чате' if kind == 'mention' else 'Пересылка' if kind == 'forward' else '', 'ch': handle, 'ct': ctype,
-                    'r': subs.get(handle.lower()) if src == 'tg' else None, 'v': views.get(url), 's': sent or 'neu',
+                    'r': subs.get(handle.lower()) if src == 'tg' else None, 'v': views.get(url), 's': 'neu',
                     'cat': category(t, src, ctype, sent), 'reg': region(handle if src == 'tg' else '', t), 'lg': lang(t), 'u': url or '', 't': t[:600]}
+        by[base]['_s'] = sent or 'neu'
+    # the tone dictionary is made for comments and reviews: on news, ads, job posts and press it reads ad copy («mazali», «zo'r»)
+    # or neutral words as emotion, so tone is kept only for YouTube and short opinion posts
+    for x in by.values():
+        sent = x.pop('_s')
+        if x['src'] == 'yt' or x['cat'] == 'Мнение': x['s'] = sent
     feed = list(by.values())
     # the same text in several channels (a seeded post) is one message: count where else it went
     key = lambda x: re.sub(r'\W+', ' ', x['t'].lower())[:120]
