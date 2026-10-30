@@ -11,13 +11,14 @@ REGION_OF = {k.lower(): v for k, v in REGION_OF.items()}
 try: WATCH = {k.lower(): v for k, v in json.load(open(os.path.join(H, 'telegram_watch.json'), encoding='utf-8')).items()}
 except Exception: WATCH = {}
 
+JUNK_CH = re.compile(r"mo?shina|mashin|avto|auto|uy_?bozor|uy_?joy|kvartir|ijara|telefon|telfon|chorva|mol_|parranda|mushuk|mebel|optim|rozgor|taxi|detski|olx", re.I)
 NAMES = {'bellissimo': r"bell?i?ss?imo|бел+и+с+имо", 'kfc': r"\bkfc\b|кфс", 'evos': r"\bevos\b|эвос|евос", 'oqtepa': r"oq ?tepa|ok ?tepa|окт[еэ]па|оқтепа",
          'dodo': r"dodo|додо", 'maxway': r"max ?way|макс ?в[еэ]й", 'sariqbola': r"sariq ?bola|сари[кқ] бола", 'hardees': r"hardee|хардис",
          'safia': r"safi[ay]|сафи[яа]", 'uzum': r"uzum ?tezkor|узум ?тезкор", 'yandex': r"yandex ?(eats|eda|go)|яндекс ?еда", 'papajohns': r"papa ?john|папа ?джон",
          'apex': r"apex ?pi|апекс", 'dominos': r"domino|доминос"}
 NAMES = {b: re.compile(p, re.I) for b, p in NAMES.items()}
 
-HIRE = re.compile(r"ishga taklif|kuryer bo.?ling|kuryerlik|набира\w* курьер|курьером|kuryerlar? (oyiga|qancha)|ish(chi|chilar)? kerak|ish bor\b|kuryer(lar)? kerak|kerak:? *(kuryer|kassir|pizzerist|povar|oshpaz|ofitsiant)|pizzerist|kassir|vakans|ваканс|требу[юе]тся|ищем (курьер|сотрудник|повар)|"
+HIRE = re.compile(r"kuryer(lar)? (bo.?lib|uchun)|kuryer bo.?l|daromad (oling|toping|qiling)|oyiga .{0,40}daromad|курьер(ом|ы)? .{0,30}(заработ|доход)|зарабатывай|ishga taklif|kuryer bo.?ling|kuryerlik|набира\w* курьер|курьером|kuryerlar? (oyiga|qancha)|ish(chi|chilar)? kerak|ish bor\b|kuryer(lar)? kerak|kerak:? *(kuryer|kassir|pizzerist|povar|oshpaz|ofitsiant)|pizzerist|kassir|vakans|ваканс|требу[юе]тся|ищем (курьер|сотрудник|повар)|"
                   r"приглашаем на работу|oylik maosh|maosh:|зарплат|курьер(ы|ов)? (нужн|требу)", re.I)
 PROMO_CODE = re.compile(r"(?i:promo-?[kc]od|prom[ao]kod|промо-?код|промокод)|(?<![A-Za-z])[A-Z]{3,}\d{2,}(?![A-Za-z0-9])")
 LANDMARK = re.compile(r"mo.ljal|ориентир|yonida|qarshisida|ro.parasida|o.ng tomon|chap tomon|рядом с|напротив|возле|за углом", re.I)
@@ -93,6 +94,7 @@ def build(db, today, names, days=120):
             handle = url.split('t.me/', 1)[1].split('/')[0].split('?')[0]
             if handle == 'c': handle = ''
             ctype = WATCH.get(handle.lower(), (parent or '').replace('w:', '') if (parent or '').startswith('w:') else '')
+            if ctype == 'found' and JUNK_CH.search(handle): continue   # car / flat / phone boards dropped from the list later
         elif src == 'media': handle = (parent or '').replace('w:media:', '')
         t = __import__('html').unescape(text or '')
         by[base] = {'id': id_.split('#')[0], 'd': d, 'ts': ts, 'b': [brand], 'src': src, 'k': 'Комментарий в чате' if kind == 'mention' else 'Пересылка' if kind == 'forward' else '', 'ch': handle, 'ct': ctype,

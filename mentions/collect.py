@@ -126,9 +126,11 @@ def search_queries(n_names, n_typos):
 class Skip(Exception): pass
 
 UZ_HINT = re.compile(r"o['‘’ʻ`]zbekiston|uzbekistan|узбекистан|ўзбекистон|toshkent|tashkent|ташкент|тошкент|samarqand|самарканд|buxoro|бухар|andijon|андижан|namangan|наманган|farg.ona|фергана|so['‘’ʻ`]?m\b|сўм|\bсум\b|yetkazib|filial|[ўқғҳ]", re.I)
+# boards for cars, flats, phones, livestock, furniture, wholesale: brands are not discussed there
+JUNK_CH = re.compile(r"mo?shina|mashin|avto|auto|uy_?bozor|uy_?joy|kvartir|ijara|telefon|telfon|chorva|mol_|parranda|mushuk|mebel|optim|rozgor|taxi|detski|olx", re.I)
 def found_channels():
     """Channels added by the brand-neutral weekly lookup (tg_search), read like the hand-made list."""
-    return {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date!='day'")}
+    return {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date!='day'") if not JUNK_CH.search(k)}
 
 def watch_list():
     w = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
@@ -155,7 +157,7 @@ def tg_search(c, cache):
             r = c(SearchRequest(q=q, limit=30))
             for e in r.chats:
                 h = getattr(e, 'username', None); n = getattr(e, 'participants_count', None) or 0
-                if not h or h.lower() in have or not (getattr(e, 'broadcast', False) or getattr(e, 'megagroup', False)): continue
+                if not h or JUNK_CH.search(h) or JUNK_CH.search(getattr(e, 'title', '') or '') or h.lower() in have or not (getattr(e, 'broadcast', False) or getattr(e, 'megagroup', False)): continue
                 if n < 5000: continue
                 found[h] = max(found.get(h, 0), n)
                 if h not in cache: cache[h] = {'id': e.id, 'hash': e.access_hash, 'lid': None, 'lhash': None, 'checked': 0}
