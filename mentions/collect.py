@@ -127,9 +127,8 @@ class Skip(Exception): pass
 
 UZ_HINT = re.compile(r"o['‘’ʻ`]zbekiston|uzbekistan|узбекистан|ўзбекистон|toshkent|tashkent|ташкент|тошкент|samarqand|самарканд|buxoro|бухар|andijon|андижан|namangan|наманган|farg.ona|фергана|so['‘’ʻ`]?m\b|сўм|\bсум\b|yetkazib|filial|[ўқғҳ]", re.I)
 def found_channels():
-    """Channels where the global Telegram search found any brand (same search for every brand), read like the hand-made list."""
-    since = str(dt.datetime.now(TZ).date() - dt.timedelta(days=60))
-    return {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date>=? AND date!='day'", (since,))}
+    """Channels added by the brand-neutral weekly lookup (tg_search), read like the hand-made list."""
+    return {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date!='day'")}
 
 def watch_list():
     w = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
@@ -138,55 +137,41 @@ def watch_list():
         if h.lower() not in low: w[h] = t
     return w
 
-def tg_search(c, cache, n_pages=5):
-    """Global Telegram search (all public channels and groups) for every brand with the same query budget.
-    Saves what matches the brand dictionary and remembers the channel, so it is read regularly afterwards.
-    Once a day; the first time 30 days back, then 3 days."""
-    from telethon.tl.functions.messages import SearchGlobalRequest
-    from telethon.tl.types import InputMessagesFilterEmpty, InputPeerEmpty
+def tg_search(c, cache):
+    """Brand-neutral growth of the channel list, the same for every brand: once a week the Mac looks up public Telegram channels
+    and groups of Uzbekistan by name (city or region × news / jobs / market / food) and adds the large ones to the read list.
+    Brands are then found by reading these channels, so no brand gets channels picked for it.
+    (Telegram has no free search of posts across all channels: messages.searchGlobal only searches chats the account is in.)"""
+    from telethon.tl.functions.contacts import SearchRequest
     from telethon.errors import FloodWaitError
-    day = dt.datetime.now(TZ).strftime('%Y-%m-%d')
-    if db.execute("SELECT 1 FROM snap WHERE date='day' AND source='tgsearch' AND key=?", (day,)).fetchone(): return 0, ''
-    first = db.execute("SELECT 1 FROM snap WHERE date='day' AND source='tgsearch'").fetchone() is None
-    since = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30 if first else 3)
-    got = 0; chans = {}; stop = ''
-    for q, b in search_queries(4, 1):
-        rate, peer, oid = 0, InputPeerEmpty(), 0
+    wk = dt.datetime.now(TZ).strftime('%G-W%V')
+    if db.execute("SELECT 1 FROM snap WHERE date='day' AND source='tgsearch' AND key=?", (wk,)).fetchone(): return 0, ''
+    places = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', "Farg'ona", 'Qarshi', 'Termiz', 'Jizzax', 'Navoiy', 'Guliston', 'Urganch', 'Nukus', "Qo'qon", 'Chirchiq', 'Ташкент', 'Самарканд']
+    kinds = ['yangiliklari', 'ish', 'bozor', 'новости']
+    have = {k.lower() for k in json.load(open(os.path.join(HERE, 'telegram_watch.json')))}
+    found = {}; stop = ''
+    for q in [f'{p} {k}' for p in places for k in kinds] + ['Uzbekistan news', "O'zbekiston yangiliklari", 'Toshkent ovqat', 'Ташкент еда', 'Toshkent vakansiya']:
         try:
-            for _ in range(n_pages):
-                r = c(SearchGlobalRequest(q=q, filter=InputMessagesFilterEmpty(), min_date=since, max_date=None, offset_rate=rate, offset_peer=peer, offset_id=oid, limit=100))
-                ch = {x.id: x for x in getattr(r, 'chats', [])}
-                if not r.messages: break
-                for m in r.messages:
-                    pid = getattr(m.peer_id, 'channel_id', None); e = ch.get(pid)
-                    h = getattr(e, 'username', None) if e else None
-                    if not (h and m.message) or getattr(m, 'via_bot_id', None): continue
-                    if not UZ_HINT.search(m.message + ' ' + (getattr(e, 'title', '') or '')): continue   # not about Uzbekistan
-                    bl = match_brands(m.message)
-                    if not bl: continue
-                    kind = 'forward' if m.fwd_from else ('post' if getattr(e, 'broadcast', False) else 'mention')
-                    got += save_multi(bl, 'tg', kind, f'tgw:{pid}:{m.id}', int(m.date.timestamp()), m.message, 'earned', url=f'https://t.me/{h}/{m.id}', parent='w:found')
-                    chans[h] = chans.get(h, 0) + 1
-                    if h not in cache: cache[h] = {'id': e.id, 'hash': e.access_hash, 'lid': None, 'lhash': None, 'checked': 0}   # no username lookup later
-                last = r.messages[-1]
-                if last.date < since or len(r.messages) < 100: break
-                rate = int(getattr(r, 'next_rate', None) or last.date.timestamp())
-                lp = ch.get(getattr(last.peer_id, 'channel_id', None))
-                if lp is None: break
-                from telethon.tl.types import InputPeerChannel
-                peer, oid = InputPeerChannel(lp.id, lp.access_hash), last.id
-                time.sleep(1.5)
+            r = c(SearchRequest(q=q, limit=30))
+            for e in r.chats:
+                h = getattr(e, 'username', None); n = getattr(e, 'participants_count', None) or 0
+                if not h or h.lower() in have or not (getattr(e, 'broadcast', False) or getattr(e, 'megagroup', False)): continue
+                if n < 5000: continue
+                found[h] = max(found.get(h, 0), n)
+                if h not in cache: cache[h] = {'id': e.id, 'hash': e.access_hash, 'lid': None, 'lhash': None, 'checked': 0}
         except FloodWaitError as ex:
             if ex.seconds <= 60: time.sleep(ex.seconds + 2); continue
-            stop = f'поиск: Telegram попросил паузу {ex.seconds // 60} мин'; break
+            stop = f'поиск каналов: Telegram попросил паузу {ex.seconds // 60} мин'; break
         except Exception as ex:
-            print(f'  поиск «{q}»: {type(ex).__name__} {ex}', flush=True)
-        time.sleep(2)
-    for h, k in chans.items(): db.execute("INSERT OR REPLACE INTO snap VALUES (?,?,?,?)", (day, 'tgsearch', h, k))
-    if not stop: db.execute("INSERT OR REPLACE INTO snap VALUES ('day','tgsearch',?,1)", (day,))
+            print(f'  поиск каналов «{q}»: {type(ex).__name__} {ex}', flush=True)
+        time.sleep(3)
+    keep = sorted(found.items(), key=lambda x: -x[1])[:150]
+    day = dt.datetime.now(TZ).strftime('%Y-%m-%d')
+    for h, n in keep: db.execute("INSERT OR REPLACE INTO snap VALUES (?,?,?,?)", (day, 'tgsearch', h, n))
+    if not stop: db.execute("INSERT OR REPLACE INTO snap VALUES ('day','tgsearch',?,1)", (wk,))
     db.commit()
-    print(f'  поиск по всему Telegram: упоминаний новых {got}, каналов с брендами {len(chans)}' + (f'; {stop}' if stop else ''), flush=True)
-    return got, f'поиск по всему Telegram: каналов {len(chans)}' + (f', {stop}' if stop else '')
+    print(f'  поиск каналов Узбекистана: найдено {len(found)}, добавлено {len(keep)}' + (f'; {stop}' if stop else ''), flush=True)
+    return 0, f'новых каналов в списке: {len(keep)}' + (f', {stop}' if stop else '')
 
 # ---------- Meta ----------
 TOKEN = secret('meta_token.txt')
