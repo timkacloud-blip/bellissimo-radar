@@ -1,21 +1,21 @@
-ads 375 active 334 thumbs 328 insights 16 dates ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31']
-journal 85 events; 45 high
+ads 404 active 334 thumbs 344 insights 15 dates ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']
+journal 89 events; 49 high
 _site:
-total 1264
-drwxr-xr-x  3 runner runner   4096 Oct 30 23:10 .
-drwxr-xr-x 12 runner runner   4096 Oct 30 23:10 ..
--rw-r--r--  1 runner runner      0 Oct 30 23:10 .nojekyll
--rw-r--r--  1 runner runner  66954 Oct 30 23:10 app.js
-drwxr-xr-x  2 runner runner   4096 Oct 30 23:10 data
--rw-r--r--  1 runner runner  49926 Oct 30 23:10 index.html
--rw-r--r--  1 runner runner  56538 Oct 30 23:10 mentions.js
--rw-r--r--  1 runner runner 355770 Oct 30 23:10 mentions_data.json
--rw-r--r--  1 runner runner 742348 Oct 30 23:10 mentions_feed.json
+total 1312
+drwxr-xr-x  3 runner runner   4096 Oct 31 22:44 .
+drwxr-xr-x 12 runner runner   4096 Oct 31 22:44 ..
+-rw-r--r--  1 runner runner      0 Oct 31 22:44 .nojekyll
+-rw-r--r--  1 runner runner  66954 Oct 31 22:44 app.js
+drwxr-xr-x  2 runner runner   4096 Oct 31 22:44 data
+-rw-r--r--  1 runner runner  49926 Oct 31 22:44 index.html
+-rw-r--r--  1 runner runner  56538 Oct 31 22:44 mentions.js
+-rw-r--r--  1 runner runner 359836 Oct 31 22:44 mentions_data.json
+-rw-r--r--  1 runner runner 786510 Oct 31 22:44 mentions_feed.json
 
 _site/data:
-total 4132
-drwxr-xr-x 2 runner runner    4096 Oct 30 23:10 .
-drwxr-xr-x 3 runner runner    4096 Oct 30 23:10 ..
--rw-r--r-- 1 runner runner  455956 Oct 30 23:10 comp.json
--rw-r--r-- 1 runner runner   34487 Oct 30 23:10 journal.json
--rw-r--r-- 1 runner runner 3725688 Oct 30 23:10 thumbs.json
+total 4304
+drwxr-xr-x 2 runner runner    4096 Oct 31 22:44 .
+drwxr-xr-x 3 runner runner    4096 Oct 31 22:44 ..
+-rw-r--r-- 1 runner runner  474357 Oct 31 22:44 comp.json
+-rw-r--r-- 1 runner runner   35668 Oct 31 22:44 journal.json
+-rw-r--r-- 1 runner runner 3886091 Oct 31 22:44 thumbs.json
