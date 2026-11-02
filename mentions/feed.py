@@ -18,7 +18,7 @@ NAMES = {'bellissimo': r"bell?i?ss?imo|бел+и+с+имо", 'kfc': r"\bkfc\b|к
          'apex': r"apex ?pi|апекс", 'dominos': r"domino|доминос"}
 NAMES = {b: re.compile(p, re.I) for b, p in NAMES.items()}
 
-HIRE = re.compile(r"kuryer(lar)? (bo.?lib|uchun)|kuryer bo.?l|daromad (oling|toping|qiling)|oyiga .{0,40}daromad|курьер(ом|ы)? .{0,30}(заработ|доход)|зарабатывай|ishga taklif|kuryer bo.?ling|kuryerlik|набира\w* курьер|курьером|kuryerlar? (oyiga|qancha)|ish(chi|chilar)? kerak|ish bor\b|kuryer(lar)? kerak|kerak:? *(kuryer|kassir|pizzerist|povar|oshpaz|ofitsiant)|pizzerist|kassir|vakans|ваканс|требу[юе]тся|ищем (курьер|сотрудник|повар)|"
+HIRE = re.compile(r"ишга (таклиф|марҳамат|олинади)|иш(чи)? керак|курьер(лар)? керак|kuryer(lar)? (bo.?lib|uchun)|kuryer bo.?l|daromad (oling|toping|qiling)|oyiga .{0,40}daromad|курьер(ом|ы)? .{0,30}(заработ|доход)|зарабатывай|ishga taklif|kuryer bo.?ling|kuryerlik|набира\w* курьер|курьером|kuryerlar? (oyiga|qancha)|ish(chi|chilar)? kerak|ish bor\b|kuryer(lar)? kerak|kerak:? *(kuryer|kassir|pizzerist|povar|oshpaz|ofitsiant)|pizzerist|kassir|vakans|ваканс|требу[юе]тся|ищем (курьер|сотрудник|повар)|"
                   r"приглашаем на работу|oylik maosh|maosh:|зарплат|курьер(ы|ов)? (нужн|требу)", re.I)
 PROMO_CODE = re.compile(r"(?i:promo-?[kc]od|prom[ao]kod|промо-?код|промокод)|(?<![A-Za-z])[A-Z]{3,}\d{2,}(?![A-Za-z0-9])")
 LANDMARK = re.compile(r"mo.ljal|ориентир|yonida|qarshisida|ro.parasida|o.ng tomon|chap tomon|рядом с|напротив|возле|за углом", re.I)
@@ -106,7 +106,13 @@ def build(db, today, names, days=120):
     for x in by.values():
         sent = x.pop('_s')
         if x['src'] == 'yt' or x['cat'] == 'Мнение': x['s'] = sent
-    feed = list(by.values())
+    # the same text posted again and again in one channel (a local cafe ad repeated 145 times) is one publication
+    seen = set(); out = []
+    for x in sorted(by.values(), key=lambda x: x['ts']):
+        k = (x['ch'].lower(), re.sub(r'\W+', ' ', x['t'].lower())[:120])
+        if x['src'] == 'tg' and k in seen: continue
+        seen.add(k); out.append(x)
+    feed = out
     # the same text in several channels (a seeded post) is one message: count where else it went
     key = lambda x: re.sub(r'\W+', ' ', x['t'].lower())[:120]
     grp = {}
