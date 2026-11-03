@@ -101,7 +101,7 @@ def build(db, today, names, days=120):
         t = __import__('html').unescape(text or '')
         by[base] = {'id': id_.split('#')[0], 'd': d, 'ts': ts, 'b': [brand], 'src': src, 'k': 'Комментарий в чате' if kind == 'mention' else 'Пересылка' if kind == 'forward' else '', 'ch': handle, 'ct': ctype,
                     'r': subs.get(handle.lower()) if src == 'tg' else None, 'v': views.get(url), 's': 'neu',
-                    'cat': category(t, src, ctype, sent), 'reg': region(handle if src == 'tg' else '', t), 'lg': lang(t), 'u': url or '', 't': t[:600], 'pk': 1 if src == 'tg' and handle.lower() in PICK else 0}
+                    'cat': category(t, src, ctype, sent), 'reg': region(handle if src == 'tg' else '', t), 'lg': lang(t), 'u': url or '', 't': t[:600], 'pk': 1 if src == 'tg' and (handle.lower() in PICK or ctype == 'disc') else 0}
         by[base]['_s'] = sent or 'neu'
     # the tone dictionary is made for comments and reviews: on news, ads, job posts and press it reads ad copy («mazali», «zo'r»)
     # or neutral words as emotion, so tone is kept only for YouTube and short opinion posts

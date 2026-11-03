@@ -128,9 +128,15 @@ class Skip(Exception): pass
 UZ_HINT = re.compile(r"o['‘’ʻ`]zbekiston|uzbekistan|узбекистан|ўзбекистон|toshkent|tashkent|ташкент|тошкент|samarqand|самарканд|buxoro|бухар|andijon|андижан|namangan|наманган|farg.ona|фергана|so['‘’ʻ`]?m\b|сўм|\bсум\b|yetkazib|filial|[ўқғҳ]", re.I)
 # boards for cars, flats, phones, livestock, furniture, wholesale: brands are not discussed there
 JUNK_CH = re.compile(r"mo?shina|mashin|avto|auto|uy_?bozor|uy_?joy|kvartir|ijara|telefon|telfon|chorva|mol_|parranda|mushuk|mebel|optim|rozgor|taxi|detski|olx", re.I)
+WATCH_LOW = set()
 def found_channels():
-    """Channels added by the brand-neutral weekly lookup (tg_search), read like the hand-made list."""
-    return {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date!='day'") if not JUNK_CH.search(k)}
+    """Channels added automatically: the brand-neutral weekly lookup (tg_search, type 'found') and the snowball —
+    channels that brand posts were forwarded from or linked to, seen at least twice in 14 days (type 'disc')."""
+    out = {k: 'found' for (k,) in db.execute("SELECT DISTINCT key FROM snap WHERE source='tgsearch' AND date!='day'") if not JUNK_CH.search(k)}
+    since = (dt.datetime.now(TZ).date() - dt.timedelta(days=14)).isoformat()
+    for k, n in db.execute("SELECT key, SUM(value) FROM snap WHERE source='tgcand' AND date>=? GROUP BY key", (since,)):
+        if n >= 2 and not JUNK_CH.search(k) and k not in out: out[k] = 'disc'
+    return out
 
 def watch_list():
     w = json.load(open(os.path.join(HERE, 'telegram_watch.json')))
@@ -500,7 +506,7 @@ def run_tgw():
 def run_tgweb():
     """Public Telegram channels through the web preview (t.me/s/...): posts only, no login, runs on GitHub. Comments need the Mac (run_tgw)."""
     import html as _h
-    watch = watch_list()
+    watch = watch_list(); global WATCH_LOW; WATCH_LOW = {k.lower() for k in watch}
     have = {r[0] for r in db.execute("SELECT url FROM items WHERE source='tg' AND url IS NOT NULL")}
     # channels the Mac already read 90 days back (first Telethon pass) need no web backfill
     full = {k for (k,) in db.execute("SELECT key FROM snap WHERE date='full' AND source='tgweb' AND value>=2")}   # 2 = read 30 days back with forwards
@@ -551,6 +557,11 @@ def run_tgweb():
                     bl = match_brands(text)
                     if bl:
                         got_ch += save_multi(bl, 'tg', 'forward' if fwd else 'post', f'tgweb:{ref}', ts, text, 'earned', url=url, parent='w:' + typ)
+                        # snowball: the channel a brand post was forwarded from, and t.me links inside it, are candidates for the read list
+                        srcs = re.findall(r'tgme_widget_message_forwarded_from_name"[^>]*href="https://t\.me/([A-Za-z0-9_]{5,})', blk) + re.findall(r't\.me/([A-Za-z0-9_]{5,})', t.group(1))
+                        for c in set(srcs):
+                            if c.lower() != h.lower() and c.lower() not in WATCH_LOW: db.execute(
+                                "INSERT INTO snap VALUES (?, 'tgcand', ?, 1) ON CONFLICT(date, source, key) DO UPDATE SET value = value + 1", (today, c))
                         v = re.search(r'tgme_widget_message_views">([^<]+)<', blk)
                         if v and cnt(v.group(1)): db.execute("INSERT OR REPLACE INTO snap VALUES ('v','tgviews',?,?)", (url, cnt(v.group(1))))
                 if oldest is None or oldest < since or first_id is None: break
