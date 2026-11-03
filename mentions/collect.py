@@ -579,44 +579,119 @@ def run_tgweb():
     return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + (f'; новых каналов дочитано за 30 дней: {backfill}, ждут очереди: {wait}' if backfill or wait > 0 else '') + (f'; групп без веб-ленты (читает Mac): {len(nopv)}' if nopv else '') + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
 
 # ---------- СМИ и газеты: ленты RSS/Atom (заголовок и анонс; полный текст не читаем) ----------
+MEDIA_UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36', 'Accept-Language': 'ru,uz;q=0.8,en;q=0.5'}
+def _get(url, n=3_000_000, timeout=25):
+    with urllib.request.urlopen(urllib.request.Request(url, headers=MEDIA_UA), timeout=timeout) as r:
+        raw = r.read(n); cs = r.headers.get_content_charset() or 'utf-8'
+    return raw.decode(cs, 'replace')
+
+def article_text(doc):
+    """Only the article itself: title, lead and paragraphs inside <article> (or the whole page's <p> when there is no <article>).
+    Side columns and «related news» lists are not taken: a link «Bellissimo в Казахстане» in the sidebar is not a mention."""
+    import html as _h
+    doc = re.sub(r'(?is)<(script|style|noscript|svg|nav|header|footer|aside|form)\b.*?</\1>', ' ', doc)
+    title = re.search(r'(?is)<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)', doc) or re.search(r'(?is)<h1[^>]*>(.*?)</h1>', doc) or re.search(r'(?is)<title>(.*?)</title>', doc)
+    title = _h.unescape(re.sub(r'<[^>]+>', ' ', title.group(1))).strip() if title else ''
+    arts = re.findall(r'(?is)<article\b[^>]*>(.*?)</article>', doc)
+    body = max(arts, key=len) if arts and len(max(arts, key=len)) > 800 else doc
+    ps = re.findall(r'(?is)<(p|h2|h3|li|blockquote)\b[^>]*>(.*?)</\1>', body)
+    text = ' '.join(re.sub(r'\s+', ' ', _h.unescape(re.sub(r'<[^>]+>', ' ', x))).strip() for _, x in ps)
+    pub = re.search(r'(?is)<meta[^>]+(?:property|name|itemprop)=["\'](?:article:published_time|datePublished|pubdate)["\'][^>]+content=["\']([^"\']+)', doc)
+    return title, text[:20000], (pub.group(1) if pub else '')
+
+def _sitemap_urls(url, since_day, depth=0):
+    """URLs from a sitemap (or the newest child sitemaps of an index) with lastmod/publication date not older than since_day."""
+    try: x = _get(url, 8_000_000)
+    except Exception: return []
+    if '<sitemapindex' in x and depth == 0:
+        kids = re.findall(r'(?is)<sitemap>.*?<loc>\s*([^<]+?)\s*</loc>(?:.*?<lastmod>\s*([^<]+?)\s*</lastmod>)?.*?</sitemap>', x)
+        kids = sorted(kids, key=lambda k: k[1] or '', reverse=True)[:3] if any(k[1] for k in kids) else kids[-3:]
+        return [u for k, _ in kids for u in _sitemap_urls(k, since_day, 1)]
+    out = []
+    for blk in re.findall(r'(?is)<url>(.*?)</url>', x):
+        loc = re.search(r'<loc>\s*([^<]+?)\s*</loc>', blk)
+        d = re.search(r'<(?:lastmod|news:publication_date)>\s*([^<]+?)\s*<', blk)
+        if loc and (not d or d.group(1)[:10] >= since_day): out.append((loc.group(1), d.group(1) if d else ''))
+    return out[:400]
+
 def run_media():
-    import xml.etree.ElementTree as ET, html as _h, email.utils
-    feeds = CFG.get('media_feeds') or {}
-    if not feeds: raise Skip('нет media_feeds в config.json')
-    n = 0; bad = []; ok_feeds = 0
-    def tx(e, *names):
-        for nm in names:
-            for x in e.iter():
-                if x.tag.split('}')[-1] == nm and (x.text or '').strip(): return x.text.strip()
-        return ''
-    for url, name in feeds.items():
-        try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; MentionsBot)'})
-            raw = urllib.request.urlopen(req, timeout=40).read()
-            raw = re.sub(rb'<(/?)[A-Za-z0-9_]+:', rb'<\1', raw); raw = re.sub(rb' [A-Za-z0-9_]+:([A-Za-z0-9_]+=)', rb' \1', raw); raw = re.sub(rb' xmlns:[A-Za-z0-9_]+="[^"]*"', b'', raw)
-            root = ET.fromstring(raw)
-            items = [e for e in root.iter() if e.tag.split('}')[-1] in ('item', 'entry')]
-            got = 0
-            for it in items:
-                title = _h.unescape(tx(it, 'title')); desc = re.sub(r'<[^>]+>', ' ', _h.unescape(tx(it, 'description', 'summary', 'encoded', 'content')))
-                text = (title + '. ' + re.sub(r'\s+', ' ', desc)).strip()
-                link = tx(it, 'link')
-                if not link:
-                    for x in it.iter():
-                        if x.tag.split('}')[-1] == 'link' and x.get('href'): link = x.get('href'); break
-                d = tx(it, 'pubDate', 'published', 'updated', 'date')
-                try: ts = int(email.utils.parsedate_to_datetime(d).timestamp())
-                except Exception:
-                    try: ts = parse_iso(d)
+    """СМИ: новые статьи с ~33 сайтов (RSS + карты сайта), каждая статья читается целиком; плюс Google Новости по каждому бренду одинаковыми запросами.
+    Статья, где бренд назван только в заголовке соседней новости, не считается: берётся только текст самой статьи."""
+    import xml.etree.ElementTree as ET, html as _h, email.utils, concurrent.futures as cf
+    M = json.load(open(os.path.join(HERE, 'media_sites.json'), encoding='utf-8'))
+    db.execute('CREATE TABLE IF NOT EXISTS media_seen(url TEXT PRIMARY KEY, site TEXT, date TEXT)')
+    today = dt.datetime.now(TZ).date()
+    db.execute('DELETE FROM media_seen WHERE date < ?', (str(today - dt.timedelta(days=60)),))
+    seen = {u for (u,) in db.execute('SELECT url FROM media_seen')}
+    queue, bad, ok_src = [], [], 0
+    for s in M['sites']:
+        first = db.execute('SELECT 1 FROM media_seen WHERE site=? LIMIT 1', (s['name'],)).fetchone() is None
+        since = str(today - dt.timedelta(days=30 if first else 4)); got = []
+        for u in s.get('rss', []):
+            try:
+                raw = _get(u, 4_000_000).encode('utf-8')
+                raw = re.sub(rb'<(/?)[A-Za-z0-9_]+:', rb'<\1', raw); raw = re.sub(rb' [A-Za-z0-9_]+:([A-Za-z0-9_]+=)', rb' \1', raw); raw = re.sub(rb' xmlns:[A-Za-z0-9_]+="[^"]*"', b'', raw)
+                root = ET.fromstring(raw); ok_src += 1
+                for it in [e for e in root.iter() if e.tag.split('}')[-1] in ('item', 'entry')]:
+                    link = next((x.text.strip() for x in it.iter() if x.tag.split('}')[-1] == 'link' and (x.text or '').strip()), '') or next((x.get('href') for x in it.iter() if x.tag.split('}')[-1] == 'link' and x.get('href')), '')
+                    d = next((x.text.strip() for x in it.iter() if x.tag.split('}')[-1] in ('pubDate', 'published', 'updated', 'date') and (x.text or '').strip()), '')
+                    if link: got.append((link, d))
+            except Exception as e: bad.append(f"{s['name']}: {type(e).__name__}")
+        for u in s.get('sitemap', []):
+            r = _sitemap_urls(u, since)
+            if r: ok_src += 1; got += r
+            else: bad.append(f"{s['name']} (карта сайта)")
+        for link, d in got:
+            link = link.split('#')[0]
+            if link not in seen: seen.add(link); queue.append((s['name'], link, d))
+    queue = queue[:900]   # one run; the rest comes next run (seen only after reading)
+    def fetch(q):
+        name, link, d = q
+        try: return q, article_text(_get(link))
+        except Exception: return q, None
+    n = 0; read = 0
+    with cf.ThreadPoolExecutor(8) as ex:
+        for (name, link, d), res in ex.map(fetch, queue):
+            db.execute('INSERT OR REPLACE INTO media_seen VALUES (?,?,?)', (link, name, str(today)))
+            if not res: continue
+            read += 1; title, text, pub = res
+            full = (title + '. ' + text).strip()
+            bl = match_brands(full)
+            if not bl: continue
+            try: ts = int(email.utils.parsedate_to_datetime(d).timestamp())
+            except Exception:
+                try: ts = parse_iso((pub or d)[:19])
+                except Exception: ts = int(time.time())
+            m = None
+            for b in bl:
+                m = m or next((x for x in [re.search(p, full, re.I) for p in [re.escape(w) for w in (CFG['brands'][b]['names'] + CFG['brands'][b].get('typos', []))]] if x), None)
+            snip = full[:300] if not m or m.start() < 300 else (title + ' … ' + full[max(0, m.start() - 250):m.start() + 350])
+            n += save_multi(bl, 'media', 'post', 'media:' + hashlib.md5(link.encode()).hexdigest()[:16], ts, snip, 'earned', url=link, parent='w:media:' + name)
+    db.commit()
+    # Google News: the same queries for every brand (two main names), last 7 days — catches sites not in the list
+    gn = 0
+    for b, d in (CFG.get('brands') or {}).items():
+        for q in [w for w in d['names'] if not w.startswith('#')][:M['google_news'].get('names_per_brand', 2)]:
+            for loc in M['google_news']['locales']:
+                try: x = _get('https://news.google.com/rss/search?q=' + urllib.parse.quote(f'"{q}" when:7d') + '&' + loc, 2_000_000)
+                except Exception: bad.append('Google Новости'); continue
+                for it in re.findall(r'(?is)<item>(.*?)</item>', x):
+                    t = _h.unescape(re.sub(r'<[^>]+>', '', (re.search(r'(?is)<title>(.*?)</title>', it) or [None, ''])[1]))
+                    src = _h.unescape((re.search(r'(?is)<source[^>]*>(.*?)</source>', it) or [None, 'Google Новости'])[1])
+                    link = (re.search(r'(?is)<link>(.*?)</link>', it) or [None, ''])[1].strip()
+                    pd = (re.search(r'(?is)<pubDate>(.*?)</pubDate>', it) or [None, ''])[1]
+                    title = re.sub(r'\s+-\s+[^-]+$', '', t).strip()
+                    if not title: continue
+                    key = 'gn:' + hashlib.md5(re.sub(r'\W+', '', title.lower())[:80].encode()).hexdigest()[:16]
+                    if db.execute('SELECT 1 FROM items WHERE source=? AND text LIKE ? LIMIT 1', ('media', title[:60].replace('%', '') + '%')).fetchone(): continue   # the same article already read in full
+                    bl = match_brands(title)
+                    if not bl: continue
+                    try: ts = int(email.utils.parsedate_to_datetime(pd).timestamp())
                     except Exception: ts = int(time.time())
-                bl = match_brands(text)
-                if bl: got += save_multi(bl, 'media', 'post', 'media:' + hashlib.md5((link or title).encode()).hexdigest()[:16], ts, text, 'earned', url=link, parent='w:media:' + name)
-            n += got; ok_feeds += 1; db.commit()
-            print(f'  {name}: в ленте {len(items)}, новых упоминаний {got}', flush=True)
-        except Exception as e:
-            bad.append(f'{name}: {type(e).__name__}'); print(f'  {name}: ОШИБКА {type(e).__name__} ({url})', flush=True)
-        time.sleep(1)
-    return n, f'лент работает {ok_feeds} из {len(feeds)}' + ('; не открылись: ' + ', '.join(bad[:10]) if bad else '')
+                    gn += save_multi(bl, 'media', 'post', key, ts, title, 'earned', url=link, parent='w:media:' + src)
+            time.sleep(1)
+    db.commit()
+    return n + gn, f'статей прочитано целиком {read} из {len(queue)} новых, источников работает {ok_src}; Google Новости: {gn}' + ('; не открылись: ' + ', '.join(sorted(set(bad))[:10]) if bad else '')
 
 # ---------- YouTube ----------
 def run_yt():
