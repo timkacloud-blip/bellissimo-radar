@@ -737,7 +737,42 @@ def rematch():
     db.commit()
     return dropped, f'проверено видео: {len(meta)}, удалено строк: {dropped}'
 
-SOURCES = {'rematch': rematch, 'tgweb': run_tgweb, 'ig': run_ig, 'ads': run_ads, 'play': run_play, 'appstore': run_appstore, 'igc': run_igc, 'tgw': run_tgw, 'media': run_media, 'yt': run_yt, 'trends': run_trends}
+
+# ---------- TGStat: крупные каналы Узбекистана, раз в неделю (замена ручного подбора; iMAS не нужен) ----------
+TGSTAT_CATS = ['', 'news', 'entertainment', 'blogs', 'food', 'business', 'marketing', 'career']
+TGSTAT_SKIP = re.compile(r"mo?shina|mashin|avto|auto|uy_?bozor|uy_?joy|kvartir|ijara|telefon|telfon|chorva|parranda|mebel|optim|taxi|olx|namoz|music|muzik|qoshiq|kino|film|multf|prikol|kulg|hazil|xazil|latifa|serial|retsept|cooking|pazanda|salat|pishir|tort|bank|kurs|dollar|valyuta|moliya|invest|pul_|soliq|ipoteka|pubg|cefr|cosmetic|parfum|"
+                         r"shmirziyoyev|migratsiya|mygov|pensionfund|ijtimoiyhimoya|hokim|deputat|korzinka|evosuzbekistan|oqtepalavash|uzum_market|click_uz|dodopizza|kfc|bellissimo", re.I)
+def run_tgstat():
+    import html as _h
+    wk = dt.datetime.now(TZ).strftime('%G-W%V')
+    if db.execute("SELECT 1 FROM snap WHERE date='day' AND source='tgstat' AND key=?", (wk,)).fetchone(): raise Skip('на этой неделе уже проверено')
+    def num(x):
+        x = x.replace(' ', '').replace('\xa0', '').replace(',', '.'); k = 1
+        if x[-1:] in 'kK': k, x = 1e3, x[:-1]
+        if x[-1:] in 'mM': k, x = 1e6, x[:-1]
+        try: return int(float(x) * k)
+        except Exception: return 0
+    have = {k.lower() for k in watch_list()}; found = {}; bad = []
+    for c in TGSTAT_CATS:
+        try:
+            req = urllib.request.Request('https://uz.tgstat.com/ru/ratings/channels' + ('/' + c if c else ''), headers={'User-Agent': 'Mozilla/5.0 (compatible; MentionsBot)', 'Accept-Language': 'ru'})
+            doc = urllib.request.urlopen(req, timeout=40).read().decode('utf-8', 'replace')
+        except Exception as e: bad.append(f'{c or "top"}: {type(e).__name__}'); continue
+        parts = re.split(r'(?=href="[^"]*/channel/@)', doc)
+        for blk in parts[1:]:
+            m = re.match(r'href="[^"]*/channel/@([A-Za-z0-9_]+)', blk)
+            if not m: continue
+            txt = re.sub(r'<[^>]+>', ' ', blk[:3000]); r = re.search(r'([\d.,]+\s?[kKmM]?)\s*охват', txt)
+            reach = num(r.group(1)) if r else 0; h = m.group(1)
+            if reach >= 10000 and h.lower() not in have and not TGSTAT_SKIP.search(h): found[h] = max(found.get(h, 0), reach)
+        time.sleep(3)
+    if len(bad) == len(TGSTAT_CATS): raise RuntimeError('TGStat не открылся: ' + ', '.join(bad))
+    day = dt.datetime.now(TZ).strftime('%Y-%m-%d')
+    for h, r in found.items(): db.execute("INSERT OR REPLACE INTO snap VALUES (?, 'tgsearch', ?, ?)", (day, h, r))
+    db.execute("INSERT OR REPLACE INTO snap VALUES ('day', 'tgstat', ?, 1)", (wk,)); db.commit()
+    return len(found), f'новых крупных каналов из рейтинга TGStat: {len(found)}' + ('; не открылись: ' + ', '.join(bad) if bad else '')
+
+SOURCES = {'rematch': rematch, 'tgweb': run_tgweb, 'ig': run_ig, 'ads': run_ads, 'play': run_play, 'appstore': run_appstore, 'igc': run_igc, 'tgw': run_tgw, 'media': run_media, 'yt': run_yt, 'trends': run_trends, 'tgstat': run_tgstat}
 # старый сборщик 'tg' (личный аккаунт, глобальный поиск) отключён: читает только чужие каналы из telegram_watch.json через отдельный аккаунт
 GROUPS = {'fast': ['ig', 'ads', 'play', 'appstore', 'igc', 'yt', 'trends'], 'slow': ['media', 'tgw']}
 
