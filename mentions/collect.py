@@ -614,6 +614,15 @@ def _sitemap_urls(url, since_day, depth=0):
         if loc and (not d or d.group(1)[:10] >= since_day): out.append((loc.group(1), d.group(1) if d else ''))
     return out[:400]
 
+def match_media(text):
+    """For news: the brand's name is enough (a news piece «EVOS запустил программу лояльности» has no food words), minus-words still apply.
+    Oqtepa is also a district of Tashkent: there the full rule (lavash/food words) is kept."""
+    out = match_brands(text); t = norm(text or '')
+    for b, p in _bp.items():
+        if b in out or b == 'oqtepa': continue
+        if any(r.search(t) for r in p['names']) and not any(r.search(t) for r in p['minus']): out.append(b)
+    return out
+
 def run_media():
     """СМИ: новые статьи с ~33 сайтов (RSS + карты сайта), каждая статья читается целиком; плюс Google Новости по каждому бренду одинаковыми запросами.
     Статья, где бренд назван только в заголовке соседней новости, не считается: берётся только текст самой статьи."""
@@ -656,7 +665,7 @@ def run_media():
             if not res: continue
             read += 1; title, text, pub = res
             full = (title + '. ' + text).strip()
-            bl = match_brands(full)
+            bl = match_media(full)
             if not bl: continue
             try: ts = int(email.utils.parsedate_to_datetime(d).timestamp())
             except Exception:
@@ -684,7 +693,7 @@ def run_media():
                     if not title: continue
                     key = 'gn:' + hashlib.md5(re.sub(r'\W+', '', title.lower())[:80].encode()).hexdigest()[:16]
                     if db.execute('SELECT 1 FROM items WHERE source=? AND text LIKE ? LIMIT 1', ('media', title[:60].replace('%', '') + '%')).fetchone(): continue   # the same article already read in full
-                    bl = match_brands(title)
+                    bl = match_media(title)
                     if not bl: continue
                     try: ts = int(email.utils.parsedate_to_datetime(pd).timestamp())
                     except Exception: ts = int(time.time())
