@@ -698,7 +698,9 @@ def run_media():
                     if not title: continue
                     key = 'gn:' + hashlib.md5(re.sub(r'\W+', '', title.lower())[:80].encode()).hexdigest()[:16]
                     if db.execute('SELECT 1 FROM items WHERE source=? AND text LIKE ? LIMIT 1', ('media', title[:60].replace('%', '') + '%')).fetchone(): continue   # the same article already read in full
-                    bl = match_media(title)
+                    # Google found the name in the article itself; the title may not have it («Международный фестиваль рекламы TAF!26»).
+                    # For an Uzbek outlet the query's brand is taken; Oqtepa (district) and Safia (a name) need the name in the title.
+                    bl = match_media(title) or ([b] if b not in ('oqtepa', 'safia') else [])
                     if not bl: continue
                     try: ts = int(email.utils.parsedate_to_datetime(pd).timestamp())
                     except Exception: ts = int(time.time())
