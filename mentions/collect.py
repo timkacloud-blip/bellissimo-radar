@@ -829,7 +829,7 @@ def rematch():
     return dropped, f'проверено видео: {len(meta)}, удалено строк: {dropped}'
 
 
-# ---------- TGStat: крупные каналы Узбекистана, раз в неделю (замена ручного подбора; iMAS не нужен) ----------
+# ---------- TGStat: крупные каналы Узбекистана. Сайт пускает только настоящий браузер (Cloudflare), поэтому в расписании нет: запуск вручную ----------
 TGSTAT_CATS = ['', 'news', 'entertainment', 'blogs', 'food', 'business', 'marketing', 'career']
 TGSTAT_SKIP = re.compile(r"mo?shina|mashin|avto|auto|uy_?bozor|uy_?joy|kvartir|ijara|telefon|telfon|chorva|parranda|mebel|optim|taxi|olx|namoz|music|muzik|qoshiq|kino|film|multf|prikol|kulg|hazil|xazil|latifa|serial|retsept|cooking|pazanda|salat|pishir|tort|bank|kurs|dollar|valyuta|moliya|invest|pul_|soliq|ipoteka|pubg|cefr|cosmetic|parfum|"
                          r"shmirziyoyev|migratsiya|mygov|pensionfund|ijtimoiyhimoya|hokim|deputat|korzinka|evosuzbekistan|oqtepalavash|uzum_market|click_uz|dodopizza|kfc|bellissimo", re.I)
@@ -857,7 +857,7 @@ def run_tgstat():
             reach = num(r.group(1)) if r else 0; h = m.group(1)
             if reach >= 10000 and h.lower() not in have and not TGSTAT_SKIP.search(h): found[h] = max(found.get(h, 0), reach)
         time.sleep(3)
-    if len(bad) == len(TGSTAT_CATS): raise RuntimeError('TGStat не открылся: ' + ', '.join(bad))
+    if len(bad) == len(TGSTAT_CATS): raise Skip('TGStat закрыт проверкой Cloudflare для программ; рейтинг обновляется вручную через браузер')
     day = dt.datetime.now(TZ).strftime('%Y-%m-%d')
     for h, r in found.items(): db.execute("INSERT OR REPLACE INTO snap VALUES (?, 'tgsearch', ?, ?)", (day, h, r))
     db.execute("INSERT OR REPLACE INTO snap VALUES ('day', 'tgstat', ?, 1)", (wk,)); db.commit()

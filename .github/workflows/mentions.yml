@@ -32,7 +32,7 @@ jobs:
           # once per Tashkent day (first run after midnight): app reviews and Google Trends. GitHub may delay or skip scheduled runs, so we look at the DB, not the clock.
           TODAY=$(TZ=Asia/Tashkent date +%F)
           LAST=$(python3 -c "import sqlite3;r=sqlite3.connect('state/mentions_data.db').execute(\"select last_run from status where source='play'\").fetchone();print((r[0] if r else '')[:10])")
-          if [ "$LAST" != "$TODAY" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC play appstore trends yt tgstat"; fi
+          if [ "$LAST" != "$TODAY" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC play appstore trends yt"; fi
           # Instagram and ad comments (moved from the Mac): when the last run is 10+ hours old, i.e. about twice a day
           IGH=$(python3 -c "import sqlite3,datetime as d;r=sqlite3.connect('state/mentions_data.db').execute(\"select last_run from status where source='ig'\").fetchone();n=d.datetime.utcnow()+d.timedelta(hours=5);print(999 if not r else int((n-d.datetime.fromisoformat(r[0])).total_seconds()//3600))")
           if [ "$IGH" -ge 10 ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then SRC="$SRC ig ads igc"; fi
