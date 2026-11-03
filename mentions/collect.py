@@ -644,7 +644,7 @@ def run_media():
         for link, d in got:
             link = link.split('#')[0]
             if link not in seen: seen.add(link); queue.append((s['name'], link, d))
-    queue = queue[:900]   # one run; the rest comes next run (seen only after reading)
+    queue = queue[:int(os.environ.get('MEDIA_MAX', 900))]   # one run; the rest comes next run (seen only after reading)
     def fetch(q):
         name, link, d = q
         try: return q, article_text(_get(link))
