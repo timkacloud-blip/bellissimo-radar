@@ -633,6 +633,7 @@ def run_media():
     today = dt.datetime.now(TZ).date()
     db.execute('DELETE FROM media_seen WHERE date < ?', (str(today - dt.timedelta(days=60)),))
     seen = {u for (u,) in db.execute('SELECT url FROM media_seen')}
+    gn_days = 7 if seen else 30   # the first run also looks 30 days back in Google News
     queue, bad, ok_src = [], [], 0
     for s in M['sites']:
         first = db.execute('SELECT 1 FROM media_seen WHERE site=? LIMIT 1', (s['name'],)).fetchone() is None
@@ -683,7 +684,7 @@ def run_media():
     for b, d in (CFG.get('brands') or {}).items():
         for q in [w for w in d['names'] if not w.startswith('#')][:M['google_news'].get('names_per_brand', 2)]:
             for loc in M['google_news']['locales']:
-                try: x = _get('https://news.google.com/rss/search?q=' + urllib.parse.quote(f'"{q}" when:7d') + '&' + loc, 2_000_000)
+                try: x = _get('https://news.google.com/rss/search?q=' + urllib.parse.quote(f'"{q}" when:{gn_days}d') + '&' + loc, 2_000_000)
                 except Exception: bad.append('Google Новости'); continue
                 for it in re.findall(r'(?is)<item>(.*?)</item>', x):
                     t = _h.unescape(re.sub(r'<[^>]+>', '', (re.search(r'(?is)<title>(.*?)</title>', it) or [None, ''])[1]))
