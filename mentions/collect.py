@@ -579,6 +579,7 @@ def run_tgweb():
     return n, f'каналов прочитано {ok} из {len(watch)} (посты, без комментариев)' + (f'; новых каналов дочитано за 30 дней: {backfill}, ждут очереди: {wait}' if backfill or wait > 0 else '') + (f'; групп без веб-ленты (читает Mac): {len(nopv)}' if nopv else '') + ('; не открылись: ' + ', '.join(bad[:12]) if bad else '')
 
 # ---------- СМИ и газеты: ленты RSS/Atom (заголовок и анонс; полный текст не читаем) ----------
+UZ_MEDIA_HOSTS = {'uz.kursiv.media', 'kursiv.media', 'uz.sputniknews.ru', 'hook.report', 'review.uz', 'fergana.agency', 'fergana.media', 'weproject.media', 'nova24.uz'}
 MEDIA_UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36', 'Accept-Language': 'ru,uz;q=0.8,en;q=0.5'}
 def _get(url, n=3_000_000, timeout=25):
     with urllib.request.urlopen(urllib.request.Request(url, headers=MEDIA_UA), timeout=timeout) as r:
@@ -687,6 +688,9 @@ def run_media():
                 for it in re.findall(r'(?is)<item>(.*?)</item>', x):
                     t = _h.unescape(re.sub(r'<[^>]+>', '', (re.search(r'(?is)<title>(.*?)</title>', it) or [None, ''])[1]))
                     src = _h.unescape((re.search(r'(?is)<source[^>]*>(.*?)</source>', it) or [None, 'Google Новости'])[1])
+                    surl = (re.search(r'(?is)<source[^>]*url="([^"]+)"', it) or [None, ''])[1]
+                    host = urllib.parse.urlparse(surl).netloc.lower()
+                    if not (host.endswith('.uz') or host in UZ_MEDIA_HOSTS): continue   # Google News for Uzbekistan still mixes in Russia, Israel, Kazakhstan
                     link = (re.search(r'(?is)<link>(.*?)</link>', it) or [None, ''])[1].strip()
                     pd = (re.search(r'(?is)<pubDate>(.*?)</pubDate>', it) or [None, ''])[1]
                     title = re.sub(r'\s+-\s+[^-]+$', '', t).strip()
