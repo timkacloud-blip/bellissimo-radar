@@ -8,6 +8,8 @@ H = os.path.dirname(os.path.abspath(__file__))
 try: REGION_OF = json.load(open(os.path.join(H, 'channels_meta.json'), encoding='utf-8')).get('region', {})
 except Exception: REGION_OF = {}
 REGION_OF = {k.lower(): v for k, v in REGION_OF.items()}
+try: PICK = {k.lower() for k in json.load(open(os.path.join(H, 'channels_meta.json'), encoding='utf-8')).get('imas_pick', {})}
+except Exception: PICK = set()
 try: WATCH = {k.lower(): v for k, v in json.load(open(os.path.join(H, 'telegram_watch.json'), encoding='utf-8')).items()}
 except Exception: WATCH = {}
 
@@ -99,7 +101,7 @@ def build(db, today, names, days=120):
         t = __import__('html').unescape(text or '')
         by[base] = {'id': id_.split('#')[0], 'd': d, 'ts': ts, 'b': [brand], 'src': src, 'k': 'Комментарий в чате' if kind == 'mention' else 'Пересылка' if kind == 'forward' else '', 'ch': handle, 'ct': ctype,
                     'r': subs.get(handle.lower()) if src == 'tg' else None, 'v': views.get(url), 's': 'neu',
-                    'cat': category(t, src, ctype, sent), 'reg': region(handle if src == 'tg' else '', t), 'lg': lang(t), 'u': url or '', 't': t[:600]}
+                    'cat': category(t, src, ctype, sent), 'reg': region(handle if src == 'tg' else '', t), 'lg': lang(t), 'u': url or '', 't': t[:600], 'pk': 1 if src == 'tg' and handle.lower() in PICK else 0}
         by[base]['_s'] = sent or 'neu'
     # the tone dictionary is made for comments and reviews: on news, ads, job posts and press it reads ad copy («mazali», «zo'r»)
     # or neutral words as emotion, so tone is kept only for YouTube and short opinion posts
