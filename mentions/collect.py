@@ -616,10 +616,10 @@ def _sitemap_urls(url, since_day, depth=0):
 
 def match_media(text):
     """For news: the brand's name is enough (a news piece «EVOS запустил программу лояльности» has no food words), minus-words still apply.
-    Oqtepa is also a district of Tashkent: there the full rule (lavash/food words) is kept."""
+    Oqtepa (a district of Tashkent) and Safia (a name) keep the full rule with food words."""
     out = match_brands(text); t = norm(text or '')
     for b, p in _bp.items():
-        if b in out or b == 'oqtepa': continue
+        if b in out or b in ('oqtepa', 'safia'): continue   # Safia is also a woman's name
         if any(r.search(t) for r in p['names']) and not any(r.search(t) for r in p['minus']): out.append(b)
     return out
 
