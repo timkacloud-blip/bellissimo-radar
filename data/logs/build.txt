@@ -1,21 +1,21 @@
-ads 483 active 282 thumbs 400 insights 12 dates ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04']
-journal 111 events; 63 high
+ads 490 active 274 thumbs 405 insights 12 dates ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05']
+journal 114 events; 66 high
 _site:
-total 1140
-drwxr-xr-x  3 runner runner   4096 Nov  4 00:09 .
-drwxr-xr-x 12 runner runner   4096 Nov  4 00:09 ..
--rw-r--r--  1 runner runner      0 Nov  4 00:09 .nojekyll
--rw-r--r--  1 runner runner  66954 Nov  4 00:09 app.js
-drwxr-xr-x  2 runner runner   4096 Nov  4 00:09 data
--rw-r--r--  1 runner runner  49926 Nov  4 00:09 index.html
--rw-r--r--  1 runner runner  57176 Nov  4 00:09 mentions.js
--rw-r--r--  1 runner runner 375978 Nov  4 00:09 mentions_data.json
--rw-r--r--  1 runner runner 597050 Nov  4 00:09 mentions_feed.json
+total 1220
+drwxr-xr-x  3 runner runner   4096 Nov  5 00:34 .
+drwxr-xr-x 12 runner runner   4096 Nov  5 00:34 ..
+-rw-r--r--  1 runner runner      0 Nov  5 00:34 .nojekyll
+-rw-r--r--  1 runner runner  66954 Nov  5 00:34 app.js
+drwxr-xr-x  2 runner runner   4096 Nov  5 00:34 data
+-rw-r--r--  1 runner runner  49926 Nov  5 00:34 index.html
+-rw-r--r--  1 runner runner  57176 Nov  5 00:34 mentions.js
+-rw-r--r--  1 runner runner 382271 Nov  5 00:34 mentions_data.json
+-rw-r--r--  1 runner runner 671450 Nov  5 00:34 mentions_feed.json
 
 _site/data:
-total 5096
-drwxr-xr-x 2 runner runner    4096 Nov  4 00:09 .
-drwxr-xr-x 3 runner runner    4096 Nov  4 00:09 ..
--rw-r--r-- 1 runner runner  570048 Nov  4 00:09 comp.json
--rw-r--r-- 1 runner runner   45000 Nov  4 00:09 journal.json
--rw-r--r-- 1 runner runner 4589158 Nov  4 00:09 thumbs.json
+total 5168
+drwxr-xr-x 2 runner runner    4096 Nov  5 00:34 .
+drwxr-xr-x 3 runner runner    4096 Nov  5 00:34 ..
+-rw-r--r-- 1 runner runner  581622 Nov  5 00:34 comp.json
+-rw-r--r-- 1 runner runner   46484 Nov  5 00:34 journal.json
+-rw-r--r-- 1 runner runner 4650404 Nov  5 00:34 thumbs.json
