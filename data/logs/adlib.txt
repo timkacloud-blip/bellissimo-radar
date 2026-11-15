@@ -68,4 +68,4 @@ oqtepa instagram-asc count=59 groups=18 new=0 covered=54/59
 uzum facebook-asc count=101 groups=24 new=0 covered=50/101
 oqtepa facebook-asc count=59 groups=18 new=0 covered=54/59
 uzum ig-video count=30 groups=29 new=0 covered=50/101
-adlib OK kfc:8/8 evos:16/16 oqtepa:59/54 dodo:54/54 maxway:0/0 uzum:101/53 bellissimo:78/31 sariqbola:78/57 hardees:0/0 safia:28/22
+adlib OK kfc:8/8 evos:16/16 oqtepa:59/54 dodo:54/54 maxway:0/0 uzum:101/51 bellissimo:78/31 sariqbola:78/57 hardees:0/0 safia:28/21
