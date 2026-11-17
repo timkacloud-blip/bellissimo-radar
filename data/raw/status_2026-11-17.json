@@ -1,0 +1,23 @@
+{
+ "ios": {
+  "ok": true,
+  "msg": "11 прил., чарт 25",
+  "at": "02:31"
+ },
+ "play": {
+  "ok": true,
+  "msg": "11 прил.",
+  "at": "02:31"
+ },
+ "tg": {
+  "ok": true,
+  "msg": "evos:15K/18 uzum:24.2K/10 safia:8.41K/20",
+  "at": "02:32"
+ },
+ "adlib": {
+  "ok": true,
+  "msg": "kfc:9/9 evos:16/16 oqtepa:59/54 dodo:54/54 maxway:0/0 uzum:101/50 bellissimo:73/30 sariqbola:78/57 hardees:0/0 safia:29/22",
+  "at": "07:39",
+  "by": "server"
+ }
+}
