@@ -1,5 +1,5 @@
-kfc base count=9 groups=5 new=5 covered=9/9
-evos base count=14 groups=13 new=13 covered=14/14
+kfc base count=11 groups=5 new=5 covered=11/11
+evos base count=15 groups=14 new=14 covered=15/15
 oqtepa base count=52 groups=16 new=16 covered=28/52
 dodo base count=52 groups=21 new=21 covered=37/52
 maxway base count=3 groups=2 new=2 covered=3/3
@@ -78,4 +78,4 @@ bellissimo ig-video count=77 groups=16 new=0 covered=53/105
 uzum ig-video count=41 groups=24 new=0 covered=98/130
 bellissimo fb-video count=77 groups=16 new=0 covered=53/105
 uzum fb-video count=41 groups=24 new=0 covered=98/130
-adlib OK kfc:9/9 evos:14/14 oqtepa:52/48 dodo:52/52 maxway:3/3 uzum:130/101 bellissimo:105/55 sariqbola:77/56 hardees:0/0 safia:32/32
+adlib OK kfc:11/11 evos:15/15 oqtepa:52/44 dodo:52/52 maxway:3/3 uzum:130/99 bellissimo:105/55 sariqbola:77/56 hardees:0/0 safia:32/32
